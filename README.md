@@ -1,3 +1,6 @@
+
+![Uploading 277478745-ac9ec8a9-7e79-47e4-8b45-945366200842.png…]()
+
 # Tauri + Svelte + Typescript
 
 This template should help get you started developing with Tauri, Svelte and TypeScript in Vite.

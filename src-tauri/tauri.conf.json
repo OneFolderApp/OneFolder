@@ -4,7 +4,7 @@
     "beforeBuildCommand": "yarn build",
     "devPath": "http://localhost:1420",
     "distDir": "../dist",
-    "withGlobalTauri": false
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "photofolder",
@@ -16,6 +16,22 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "fs": {
+        "all": true, 
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true,
+        "exists": true,
+        "scope": ["$DESKTOP", "$DESKTOP/*"]
+      },
+      "path": {
+        "all": true
       }
     },
     "bundle": {
@@ -37,9 +53,11 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "photofolder",
-        "width": 800,
-        "height": 600
+        "title": "PhotoFolder",
+        "width": 1200,
+        "height": 1000,
+        "x": 0,
+        "y": 0
       }
     ]
   }

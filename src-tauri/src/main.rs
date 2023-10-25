@@ -4,8 +4,18 @@
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+    format!("Hello, {}! You've been greeted from Rust!wsdasd", name)
 }
+
+// #[tauri::command]
+// fn get_files(name: &str) -> String {
+//     format!("Hello, {}! You've been greeted from Rust!wsdasd", name)
+// }
+
+// fn read_file_string(filepath: &str) -> Result<String, Box<dyn std::error::Error>> {
+//     let data = fs::read_to_string(filepath)?;
+//     Ok(data)
+// }
 
 fn main() {
     tauri::Builder::default()

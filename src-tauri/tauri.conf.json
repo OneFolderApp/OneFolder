@@ -18,7 +18,7 @@
         "open": true
       },
       "fs": {
-        "all": true, 
+        "all": true,
         "readFile": true,
         "writeFile": true,
         "readDir": true,
@@ -28,7 +28,7 @@
         "removeFile": true,
         "renameFile": true,
         "exists": true,
-        "scope": ["$DESKTOP", "$DESKTOP/*"]
+        "scope": ["$DESKTOP", "$DESKTOP/*", "$DESKTOP/*/*"]
       },
       "path": {
         "all": true

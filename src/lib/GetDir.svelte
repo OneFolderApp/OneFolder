@@ -11,18 +11,26 @@
   let listFiles: File[] = [];
   let fullSelectedPath: string = "";
   let selectedFile: string = "";
+  let selectedFileBinary: Uint8Array;
+  let blobURL: string;
 
   async function getDesktop() {
     const desktopPath = await desktopDir();
-    listFiles = await fs.readDir(desktopPath, { recursive: true });
+    listFiles = await fs.readDir(`${desktopPath}photofolder-samples`, {
+      recursive: true,
+    });
 
     console.log("desktopPath", desktopPath);
     console.log("listFiless", listFiles);
   }
 
   async function readSelectedFile() {
-    selectedFile = await fs.readTextFile(fullSelectedPath);
-    console.log("file", selectedFile);
+    // selectedFile = await fs.readTextFile(fullSelectedPath);
+    selectedFileBinary = await fs.readBinaryFile(fullSelectedPath);
+    var b = new Blob([selectedFileBinary], {
+      type: "application/octet-stream",
+    });
+    blobURL = URL.createObjectURL(b);
   }
   getDesktop();
 </script>
@@ -36,6 +44,7 @@
       }}>{listFile.name}</button
     >
   {/each}
-  <p>fullSelectedPath: {fullSelectedPath}</p>
-  <p>selectedFile: {selectedFile}</p>
+  <p>blobURL: {blobURL}</p>
+  <!-- <p>selectedFileBinary: {selectedFileBinary}</p> -->
+  <img src={blobURL} alt="" srcset="" />
 </div>

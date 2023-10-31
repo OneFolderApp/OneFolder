@@ -14,6 +14,7 @@ Learn more: https://photofolder.github.io/
 ## Tech Stack
 - [Tauri](https://tauri.app/) - Tiny and fast binaries for all major desktop platforms
 - [Rust](https://www.rust-lang.org/)
+- [Svelte](https://svelte.dev/)
 
 ## Roadmap
 - [ ] Index Metadata

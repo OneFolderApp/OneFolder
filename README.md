@@ -15,6 +15,7 @@ Learn more: https://photofolder.github.io/
 - Framework: [Tauri](https://tauri.app/) - Tiny and fast binaries for all major desktop platforms
 - Lang: [Rust](https://www.rust-lang.org/)
 - UI: [Svelte](https://svelte.dev/) and [Tailwind](https://tailwindcss.com/)
+- [RustFace](https://github.com/atomashpolskiy/rustface)
 
 ## Roadmap
 - [ ] Index Metadata

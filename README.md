@@ -16,3 +16,4 @@ Learn more: https://photofolder.github.io/
 - [ ] Calendar View
 - [ ] Map View
 - [ ] Face detection
+- [ ] Image Optimization

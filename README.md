@@ -15,3 +15,4 @@ Learn more: https://photofolder.github.io/
 - [ ] Index Metadata
 - [ ] Calendar View
 - [ ] Map View
+- [ ] Face detection

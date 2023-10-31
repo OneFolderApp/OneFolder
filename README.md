@@ -10,3 +10,8 @@ Analogies:
 - Finder for pictures
 
 Learn more: https://photofolder.github.io/
+
+## Roadmap
+- [ ] Index Metadata
+- [ ] Calendar View
+- [ ] Map View

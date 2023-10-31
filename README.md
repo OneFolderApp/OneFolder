@@ -12,7 +12,8 @@ Analogies:
 Learn more: https://photofolder.github.io/
 
 ## Tech Stack
-- [Tauri](https://tauri.app/) - Framework for building tiny, fast binaries for all major desktop platforms
+- [Tauri](https://tauri.app/) - Tiny and fast binaries for all major desktop platforms
+- [Rust](https://www.rust-lang.org/)
 
 ## Roadmap
 - [ ] Index Metadata

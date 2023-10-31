@@ -12,7 +12,7 @@ Analogies:
 Learn more: https://photofolder.github.io/
 
 ## Tech Stack
-- [Tauri](https://tauri.app/)
+- [Tauri](https://tauri.app/) - Framework for building tiny, fast binaries for all major desktop platforms
 
 ## Roadmap
 - [ ] Index Metadata

@@ -11,6 +11,9 @@ Analogies:
 
 Learn more: https://photofolder.github.io/
 
+## Tech Stack
+- [Tauri](https://tauri.app/)
+
 ## Roadmap
 - [ ] Index Metadata
 - [ ] Calendar View

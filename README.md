@@ -7,6 +7,7 @@
 PhotoFolder uses file's metadata to give you the experience of Google Photos, but locally, no need to lunch a server.
 
 Website: https://photofolder.github.io/
+
 Presentation video (4:22 min): https://youtu.be/5VEm7qhPo2M
 
 ## Tech Stack

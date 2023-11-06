@@ -26,3 +26,5 @@ PhotoFolder uses file's metadata to give you the experience of Google Photos, bu
 - Lang: [Rust](https://www.rust-lang.org/)
 - UI: [Svelte](https://svelte.dev/) and [Tailwind](https://tailwindcss.com/)
 - Image Analysis: [Tenserflow Rust](https://github.com/tensorflow/rust) and [RustFace](https://github.com/atomashpolskiy/rustface)
+
+If you want to contribute to the [project let us know](https://forms.gle/UPmNKp9FncKYnvcW7)!

@@ -12,6 +12,7 @@ PhotoFolder uses file's metadata to give you the experience of Google Photos, bu
 ## Features
 
 ### Calendar view
+![Screenshot 2023-11-06 at 14 31-PhotoRoom (1)](https://github.com/PhotoFolder/app/assets/27826950/ae700cbe-c4ca-4689-a1cd-e5417988e272)
 
 ## Tech Stack
 - Framework: [Tauri](https://tauri.app/)

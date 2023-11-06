@@ -6,12 +6,8 @@
 
 PhotoFolder uses file's metadata to give you the experience of Google Photos, but locally, no need to lunch a server.
 
-Analogies:
-- Obsidian.md for pictures
-- Serverless Google Photos
-- Finder for pictures
-
-Learn more: https://photofolder.github.io/
+Website: https://photofolder.github.io/
+Presentation video (4:22 min): https://youtu.be/5VEm7qhPo2M
 
 ## Tech Stack
 - Framework: [Tauri](https://tauri.app/)

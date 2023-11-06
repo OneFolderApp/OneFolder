@@ -8,6 +8,11 @@ PhotoFolder uses file's metadata to give you the experience of Google Photos, bu
 
 > ⚠️ This project is not stable yet, backup your files before using it. [Get notified](https://forms.gle/UPmNKp9FncKYnvcW7) when we have a stable version.
 
+
+## Features
+
+### Calendar view
+
 ## Tech Stack
 - Framework: [Tauri](https://tauri.app/)
 - Lang: [Rust](https://www.rust-lang.org/)

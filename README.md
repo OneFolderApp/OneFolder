@@ -28,4 +28,5 @@ PhotoFolder uses file's metadata to give you the experience of Google Photos, bu
 - Image Analysis: [Tenserflow Rust](https://github.com/tensorflow/rust) and [RustFace](https://github.com/atomashpolskiy/rustface)
 
 If you want to contribute to the [project let us know](https://forms.gle/UPmNKp9FncKYnvcW7)!
+
 ![bottom-photos](https://github.com/PhotoFolder/app/assets/27826950/9f1b14fd-6629-4c21-8d9f-bdfeb669c0ed)

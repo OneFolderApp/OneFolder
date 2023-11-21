@@ -256,6 +256,9 @@ const TagItem = observer((props: ITagItemProps) => {
   const handleSelect = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
+      nodeData.isSelected
+        ? uiStore.replaceCriteriaWithTagSelection()
+        : uiStore.replaceSearchCriteria(new ClientTagSearchCriteria('tags', nodeData.id));
       select(event, nodeData);
     },
     [nodeData, select],
@@ -565,6 +568,7 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       id="tags"
       title="Tags"
       onKeyDown={handleKeyDown}
+      isCollapsed={false}
       headerProps={{
         onDragOver: handleDragOverAndLeave,
         onDragLeave: handleDragOverAndLeave,

@@ -29,12 +29,12 @@ const Outliner = () => {
           <LocationsPanel />
           <TagsPanel />
           {/* <SavedSearchesPanel /> */}
-          <GenericButtonNavigation
+          {/* <GenericButtonNavigation
             text="Give Feedback!"
             onClick={() => {
               shell.openExternal('https://forms.gle/UjkHgSa8a7335icQ7');
             }}
-          />
+          /> */}
         </MultiSplit>
       </div>
       <OutlinerActionBar />

@@ -28,7 +28,7 @@ const Outliner = () => {
         >
           <LocationsPanel />
           <TagsPanel />
-          <SavedSearchesPanel />
+          {/* <SavedSearchesPanel /> */}
           <GenericButtonNavigation
             text="Give Feedback!"
             onClick={() => {

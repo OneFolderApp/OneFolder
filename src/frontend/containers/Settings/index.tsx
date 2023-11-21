@@ -5,11 +5,11 @@ import PopupWindow from '../../components/PopupWindow';
 import { useStore } from '../../contexts/StoreContext';
 import { Advanced } from './Advanced';
 import { Appearance } from './Appearance';
-import { BackgroundProcesses } from './BackgroundProcesses';
+// import { BackgroundProcesses } from './BackgroundProcesses';
 import { ImageFormatPicker } from './ImageFormatPicker';
 import { ImportExport } from './ImportExport';
-import { Shortcuts } from './Shortcuts';
-import { StartupBehavior } from './StartupBehavior';
+// import { Shortcuts } from './Shortcuts';
+// import { StartupBehavior } from './StartupBehavior';
 
 const Settings = () => {
   const { uiStore } = useStore();
@@ -45,14 +45,14 @@ const Tabs = () => {
       label: 'Appearance',
       content: Appearance,
     },
-    {
-      label: 'Keyboard Shortcuts',
-      content: Shortcuts,
-    },
-    {
-      label: 'Startup Behavior',
-      content: StartupBehavior,
-    },
+    // {
+    //   label: 'Keyboard Shortcuts',
+    //   content: Shortcuts,
+    // },
+    // {
+    //   label: 'Startup Behavior',
+    //   content: StartupBehavior,
+    // },
     {
       label: 'Image Formats',
       content: ImageFormatPicker,
@@ -61,10 +61,10 @@ const Tabs = () => {
       label: 'Import/Export',
       content: ImportExport,
     },
-    {
-      label: 'Background Processes',
-      content: BackgroundProcesses,
-    },
+    // {
+    //   label: 'Background Processes',
+    //   content: BackgroundProcesses,
+    // },
     {
       label: 'Advanced',
       content: Advanced,

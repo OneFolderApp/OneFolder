@@ -149,6 +149,15 @@ const Layout = ({ contentRect }: LayoutProps) => {
         />
       );
       break;
+    case ViewMethod.Calendar:
+      overviewElem = (
+        <MasonryRenderer
+          contentRect={contentRect}
+          select={handleFileSelect}
+          lastSelectionIndex={lastSelectionIndex}
+        />
+      );
+      break;
     default:
       overviewElem = 'unknown view method';
   }

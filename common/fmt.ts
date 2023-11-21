@@ -62,6 +62,32 @@ export function formatDateTime(d: Date) {
     .reduce((str, part) => str + part);
 }
 
+const DateTimeFormatShort = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+export function formatDateTimeShort(d: Date) {
+  return DateTimeFormatShort.formatToParts(d)
+    .map(({ type, value }) => (type === 'literal' && value === ', ' ? ' ' : value))
+    .reduce((str, part) => str + part);
+}
+
+const DateFormat = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+});
+
+export function formatDate(d: Date) {
+  return DateFormat.formatToParts(d)
+    .map(({ type, value }) => (type === 'literal' && value === ', ' ? ' ' : value))
+    .reduce((str, part) => str + part);
+}
+
 export const jsDateFormatter = {
   formatDate: (date: Date) => date.toLocaleDateString(),
   parseDate: (str: string) => new Date(str),

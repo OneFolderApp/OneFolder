@@ -55,13 +55,13 @@ const sortMenuData: Array<{
 }> = [
   // { prop: 'tags', icon: IconSet.TAG, text: 'Tag' },
   { prop: 'name', icon: IconSet.FILTER_NAME_UP, text: 'Name' },
-  { prop: 'absolutePath', icon: IconSet.FOLDER_OPEN, text: 'Path' },
+  // { prop: 'absolutePath', icon: IconSet.FOLDER_OPEN, text: 'Path' },
   { prop: 'extension', icon: IconSet.FILTER_FILE_TYPE, text: 'File type' },
   { prop: 'size', icon: IconSet.FILTER_FILTER_DOWN, text: 'File size' },
   { prop: 'dateAdded', icon: IconSet.FILTER_DATE, text: 'Date added' },
   { prop: 'dateModified', icon: IconSet.FILTER_DATE, text: 'Date modified' },
   { prop: 'dateCreated', icon: IconSet.FILTER_DATE, text: 'Date created' },
-  { prop: 'random', icon: IconSet.RELOAD_COMPACT, text: 'Random', hideDirection: true },
+  // { prop: 'random', icon: IconSet.RELOAD_COMPACT, text: 'Random', hideDirection: true },
 ];
 
 export const SortMenuItems = observer(() => {
@@ -113,20 +113,27 @@ export const LayoutMenuItems = observer(() => {
         text="Grid"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewGrid} />}
       />
-      <MenuRadioItem
+      {/* <MenuRadioItem
         icon={IconSet.VIEW_MASONRY_V}
         onClick={uiStore.setMethodMasonryVertical}
         checked={uiStore.isMasonryVertical}
         // TODO: "masonry" might not ring a bell to some people. Suggestions for a better name? "Flow", "Stream"?
         text="Vertical Masonry"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewMasonryVertical} />}
-      />
-      <MenuRadioItem
+      /> */}
+      {/* <MenuRadioItem
         icon={IconSet.VIEW_MASONRY_H}
         onClick={uiStore.setMethodMasonryHorizontal}
         checked={uiStore.isMasonryHorizontal}
         text="Horizontal Masonry"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewMasonryHorizontal} />}
+      /> */}
+      <MenuRadioItem
+        icon={IconSet.FILTER_DATE}
+        onClick={uiStore.setMethodCalendar}
+        checked={uiStore.isCalendar}
+        text="Calendar"
+        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewCalendar} />}
       />
     </MenuRadioGroup>
   );

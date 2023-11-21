@@ -47,7 +47,7 @@
   -webkit-user-drag: element;
   background-color: var(--background-color-alt);
   border: 0.0625rem solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
 
   transition: background-color 0.2s $pt-transition-cubic2;
 
@@ -65,7 +65,7 @@
     margin-left: auto;
     margin-right: auto;
     display: block;
-    border-radius: 0.25rem;
+    border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
   }
 
   &[data-dnd-target='true'] {

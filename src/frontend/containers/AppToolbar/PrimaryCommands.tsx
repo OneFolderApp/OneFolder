@@ -8,6 +8,8 @@ import FileTagEditor from '../../containers/AppToolbar/FileTagEditor';
 import { useStore } from '../../contexts/StoreContext';
 import { SortCommand, ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
+import { MenuRadioItem } from 'widgets/menus';
+import SecondaryCommands from './SecondaryCommands';
 
 const OutlinerToggle = observer(() => {
   const { uiStore } = useStore();
@@ -27,27 +29,52 @@ const OutlinerToggle = observer(() => {
 
 const PrimaryCommands = observer(() => {
   const { fileStore } = useStore();
+  const { uiStore } = useStore();
 
   return (
-    <>
-      <OutlinerToggle />
-      <FileSelectionCommand />
+    <div className="primary-commands">
+      <div className="primary-commands__top">
+        <OutlinerToggle />
+        <FileSelectionCommand />
 
-      <Searchbar />
+        <Searchbar />
 
-      {/* TODO: Put back tag button (or just the T hotkey) */}
-      {fileStore.showsMissingContent ? (
-        // Only show option to remove selected files in toolbar when viewing missing files */}
-        <RemoveFilesPopover />
-      ) : (
-        // Only show when not viewing missing files (so it is replaced by the Delete button)
-        <FileTagEditor />
-      )}
+        {/* TODO: Put back tag button (or just the T hotkey) */}
+        {fileStore.showsMissingContent ? (
+          // Only show option to remove selected files in toolbar when viewing missing files */}
+          <RemoveFilesPopover />
+        ) : (
+          // Only show when not viewing missing files (so it is replaced by the Delete button)
+          <FileTagEditor />
+        )}
 
-      <SortCommand />
-
-      <ViewCommand />
-    </>
+        {/* <ViewCommand /> */}
+        <SecondaryCommands />
+      </div>
+      <div className="primary-commands__bottom">
+        <div className="primary-commands__bottom__left">
+          <MenuRadioItem
+            icon={IconSet.VIEW_LIST}
+            onClick={uiStore.setMethodList}
+            checked={uiStore.isList}
+            text="List"
+          />
+          <MenuRadioItem
+            icon={IconSet.VIEW_GRID}
+            onClick={uiStore.setMethodGrid}
+            checked={uiStore.isGrid}
+            text="Grid"
+          />
+          <MenuRadioItem
+            icon={IconSet.FILTER_DATE}
+            onClick={uiStore.setMethodCalendar}
+            checked={uiStore.isCalendar}
+            text="Calendar"
+          />
+        </div>
+        <SortCommand />
+      </div>
+    </div>
   );
 });
 

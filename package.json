@@ -1,7 +1,7 @@
 {
-  "name": "allusion",
-  "productName": "Allusion",
-  "version": "1.0.0-rc.10",
+  "name": "photofolder",
+  "productName": "PhotoFolder",
+  "version": "1.0.0-rc.1",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -19,8 +19,8 @@
     "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr"
   },
   "build": {
-    "appId": "com.allusion-app.allusion",
-    "productName": "Allusion",
+    "appId": "com.photofolder.photofolder",
+    "productName": "PhotoFolder",
     "mac": {
       "category": "public.app-category.graphics-design",
       "extraResources": [
@@ -72,14 +72,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/allusion-app/Allusion.git"
+    "url": "git+https://github.com/Antoine-lb/PhotoFolder"
   },
-  "author": "Allusion-App",
+  "author": "Antoine-lb",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/allusion-app/Allusion/issues"
-  },
-  "homepage": "https://github.com/allusion-app/Allusion#readme",
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
     "@types/chrome": "^0.0.195",

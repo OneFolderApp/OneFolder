@@ -264,31 +264,31 @@ const TagItem = observer((props: ITagItemProps) => {
     [nodeData, select],
   );
 
-  const handleQuickQuery = useCallback(
-    (event: React.MouseEvent) => {
-      runInAction(() => {
-        event.stopPropagation();
-        if (nodeData.isSearched) {
-          // if already searched, un-search
-          const crit = uiStore.searchCriteriaList.find(
-            (c) => c instanceof ClientTagSearchCriteria && c.value === nodeData.id,
-          );
-          if (crit) {
-            uiStore.removeSearchCriteria(crit);
-          }
-        } else {
-          // otherwise, search it
-          const query = new ClientTagSearchCriteria('tags', nodeData.id, 'containsRecursively');
-          if (event.ctrlKey || event.metaKey) {
-            uiStore.addSearchCriteria(query);
-          } else {
-            uiStore.replaceSearchCriteria(query);
-          }
-        }
-      });
-    },
-    [nodeData, uiStore],
-  );
+  // const handleQuickQuery = useCallback(
+  //   (event: React.MouseEvent) => {
+  //     runInAction(() => {
+  //       event.stopPropagation();
+  //       if (nodeData.isSearched) {
+  //         // if already searched, un-search
+  //         const crit = uiStore.searchCriteriaList.find(
+  //           (c) => c instanceof ClientTagSearchCriteria && c.value === nodeData.id,
+  //         );
+  //         if (crit) {
+  //           uiStore.removeSearchCriteria(crit);
+  //         }
+  //       } else {
+  //         // otherwise, search it
+  //         const query = new ClientTagSearchCriteria('tags', nodeData.id, 'containsRecursively');
+  //         if (event.ctrlKey || event.metaKey) {
+  //           uiStore.addSearchCriteria(query);
+  //         } else {
+  //           uiStore.replaceSearchCriteria(query);
+  //         }
+  //       }
+  //     });
+  //   },
+  //   [nodeData, uiStore],
+  // );
 
   const handleRename = useCallback(
     () => dispatch(Factory.enableEditing(nodeData.id)),
@@ -326,7 +326,7 @@ const TagItem = observer((props: ITagItemProps) => {
         onSubmit={submit}
         tooltip={`${nodeData.path.join(' › ')} (${nodeData.fileCount})`}
       />
-      {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />}
+      {/* {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />} */}
     </div>
   );
 });

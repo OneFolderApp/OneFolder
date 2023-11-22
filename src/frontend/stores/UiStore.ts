@@ -18,11 +18,13 @@ export const enum ViewMethod {
   Grid,
   MasonryVertical,
   MasonryHorizontal,
+  Calendar,
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
 export type UpscaleMode = 'smooth' | 'pixelated';
 export type GalleryVideoPlaybackMode = 'auto' | 'hover' | 'disabled';
+
 export const PREFERENCES_STORAGE_KEY = 'preferences';
 
 export interface IHotkeyMap {
@@ -44,6 +46,7 @@ export interface IHotkeyMap {
   viewGrid: string;
   viewMasonryVertical: string;
   viewMasonryHorizontal: string;
+  viewCalendar: string;
   viewSlide: string;
   search: string;
   advancedSearch: string;
@@ -69,6 +72,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewGrid: 'alt + 2',
   viewMasonryVertical: 'alt + 3',
   viewMasonryHorizontal: 'alt + 4',
+  viewCalendar: 'alt + 5',
   search: 'mod + f',
   advancedSearch: 'mod + shift + f',
   openPreviewWindow: 'space',
@@ -125,7 +129,7 @@ class UiStore {
   private readonly rootStore: RootStore;
 
   // Theme
-  @observable theme: 'light' | 'dark' = 'dark';
+  @observable theme: 'light' | 'dark' = 'light';
 
   // UI
   @observable isOutlinerOpen: boolean = true;
@@ -157,9 +161,9 @@ class UiStore {
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
 
   @observable isToolbarTagPopoverOpen: boolean = false;
-  /** Dialog for removing unlinked files from Allusion's database */
+  /** Dialog for removing unlinked files from PhotoFolder's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
-  /** Dialog for moving files to the system's trash bin, and removing from Allusion's database */
+  /** Dialog for moving files to the system's trash bin, and removing from PhotoFolder's database */
   @observable isMoveFilesToTrashOpen: boolean = false;
   /** Dialog to warn the user when he tries to open too many files externally */
   @observable isManyExternalFilesOpen: boolean = false;
@@ -197,6 +201,10 @@ class UiStore {
 
   @computed get isMasonryHorizontal(): boolean {
     return this.method === ViewMethod.MasonryHorizontal;
+  }
+
+  @computed get isCalendar(): boolean {
+    return this.method === ViewMethod.Calendar;
   }
 
   @action.bound setThumbnailSize(size: ThumbnailSize): void {
@@ -259,6 +267,11 @@ class UiStore {
 
   @action.bound setMethodMasonryHorizontal(): void {
     this.method = ViewMethod.MasonryHorizontal;
+  }
+
+  @action.bound setMethodCalendar(): void {
+    this.rootStore.fileStore.orderFilesBy('dateCreated');
+    this.method = ViewMethod.Calendar;
   }
 
   @action.bound enableSlideMode(): void {
@@ -761,6 +774,8 @@ class UiStore {
       this.setMethodMasonryVertical();
     } else if (matches(hotkeyMap.viewMasonryHorizontal)) {
       this.setMethodMasonryHorizontal();
+    } else if (matches(hotkeyMap.viewCalendar)) {
+      this.setMethodCalendar();
     } else if (matches(hotkeyMap.viewSlide)) {
       this.toggleSlideMode();
     } else {
@@ -828,9 +843,6 @@ class UiStore {
         if (prefs.upscaleMode) {
           this.setUpscaleMode(prefs.upscaleMode);
         }
-        if (prefs.galleryVideoPlaybackMode) {
-          this.setGalleryVideoPlaybackMode(prefs.galleryVideoPlaybackMode);
-        }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
         this.isThumbnailFilenameOverlayEnabled = Boolean(
           prefs.isThumbnailFilenameOverlayEnabled ?? false,
@@ -857,7 +869,7 @@ class UiStore {
           );
           this.searchCriteriaList.push(...newCrits);
 
-          // and other content-related options. So it's just like you never closed Allusion!
+          // and other content-related options. So it's just like you never closed PhotoFolder!
           this.firstItem = prefs.firstItem;
           this.searchMatchAny = prefs.searchMatchAny;
           this.isSlideMode = prefs.isSlideMode;

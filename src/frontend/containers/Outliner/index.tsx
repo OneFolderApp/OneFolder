@@ -6,6 +6,8 @@ import { useStore } from '../../contexts/StoreContext';
 import LocationsPanel from './LocationsPanel';
 import SavedSearchesPanel from './SavedSearchesPanel';
 import TagsPanel, { OutlinerActionBar } from './TagsPanel';
+import GenericButtonNavigation from './GenericButtonNavigation';
+import { shell } from 'electron';
 
 const Outliner = () => {
   const { uiStore } = useStore();
@@ -26,7 +28,13 @@ const Outliner = () => {
         >
           <LocationsPanel />
           <TagsPanel />
-          <SavedSearchesPanel />
+          {/* <SavedSearchesPanel /> */}
+          {/* <GenericButtonNavigation
+            text="Give Feedback!"
+            onClick={() => {
+              shell.openExternal('https://forms.gle/UjkHgSa8a7335icQ7');
+            }}
+          /> */}
         </MultiSplit>
       </div>
       <OutlinerActionBar />

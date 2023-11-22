@@ -3,7 +3,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  
+
   &.unmaximized {
     // Ensure scrollbar isn't right up to the window edge when window is not fully maximized
     // the cursor events of the window edge interfere with the narrow scrollbar
@@ -27,7 +27,6 @@
 // If selected, and any other selected image is a drop target: normal yellow border
 // (as an indication that dropping a tag will apply it to all selected files)
 #gallery-content[data-selected-file-dropping='true'] {
-
   .masonry {
     [aria-selected='true'] > .thumbnail {
       background-color: var(--accent-color-yellow);
@@ -48,7 +47,7 @@
   -webkit-user-drag: element;
   background-color: var(--background-color-alt);
   border: 0.0625rem solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
 
   transition: background-color 0.2s $pt-transition-cubic2;
 
@@ -66,7 +65,7 @@
     margin-left: auto;
     margin-right: auto;
     display: block;
-    border-radius: 0.25rem;
+    border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
   }
 
   &[data-dnd-target='true'] {
@@ -328,11 +327,13 @@
   position: relative;
 }
 
-.thumbnail-square img, video {
+.thumbnail-square img,
+video {
   background-position: center;
   object-fit: cover;
 }
-.thumbnail-letterbox img, video {
+.thumbnail-letterbox img,
+video {
   object-fit: contain;
 }
 
@@ -420,10 +421,11 @@
     right: 0;
   }
 
-  img, video {
+  img,
+  video {
     // Let the compositor know that the image will transform for better performance
     will-change: transform;
-  
+
     cursor: pointer;
     transform-origin: 0 0;
   }
@@ -494,6 +496,24 @@
       }
     }
 
+    .calendar-tag {
+      grid-area: tags;
+      display: block;
+      position: absolute;
+      top: 0 !important;
+      overflow: hidden;
+      transition: 0.25s $pt-transition-cubic2;
+      max-height: 2.8em;
+      max-width: 100%;
+
+      // Allow dragging of images to elsewhere here too, just like the .thumbnail itself (drag-export)
+      -webkit-user-drag: element;
+
+      > .tag {
+        margin: 0.25em;
+      }
+    }
+
     .thumbnail-overlay {
       display: flex;
       justify-content: space-between;
@@ -519,10 +539,10 @@
         white-space: nowrap;
         overflow: hidden visible;
         text-overflow: ellipsis;
-        
+
         // Only here to avoid vertical scrollbar due to overflow-x: hidden
         // It won't take up more than 1 line due to no-wrap
-        height: 2em; 
+        height: 2em;
       }
     }
 

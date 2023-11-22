@@ -11,7 +11,7 @@ body {
   margin: 0;
   overflow: hidden;
 
-  --toolbar-height: 2.5625rem;
+  --toolbar-height: 4.6rem;
 }
 
 // Global specific styles for the main window
@@ -47,8 +47,8 @@ body {
   left: 0;
   right: 0;
   height: var(--toolbar-height);
-  padding: 0 0.5rem;
-  display: flex;
+  padding: 0 0.2rem;
+  // display: flex;
   align-items: center;
   background: var(--background-color);
   border-bottom: 0.0625rem solid var(--border-color);

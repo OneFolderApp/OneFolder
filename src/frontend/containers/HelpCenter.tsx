@@ -4,7 +4,6 @@ import React, { memo, useCallback, useRef, useState } from 'react';
 
 import { chromeExtensionUrl, firefoxExtensionUrl } from 'common/config';
 import { clamp } from 'common/core';
-import Logo_About from 'resources/images/helpcenter/logo-about-helpcenter-dark.jpg';
 import { Button, ButtonGroup, IconSet, Split } from 'widgets';
 import { ToolbarButton } from 'widgets/toolbar';
 import ExternalLink from '../components/ExternalLink';
@@ -198,7 +197,6 @@ const PAGE_DATA: () => IPageData[] = () => [
         title: 'What is PhotoFolder',
         content: (
           <>
-            <img className="centered" src={Logo_About} alt="Logo" />
             <p>
               <strong>
                 PhotoFolder is a tool designed to help artists organize their visual library. It is

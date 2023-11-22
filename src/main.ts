@@ -101,7 +101,7 @@ function createWindow() {
     icon: `${__dirname}/${AppIcon}`,
     // Should be same as body background: Only for split second before css is loaded
     backgroundColor: '#1c1e23',
-    title: 'Allusion',
+    title: 'PhotoFolder',
     show: false, // only show once initial loading is finished
     ...previousWindowState,
   };
@@ -141,7 +141,7 @@ function createWindow() {
         // Should be same as body background: Only for split second before css is loaded
         backgroundColor: '#1c1e23',
         parent: mainWindow,
-        title: `${WINDOW_TITLES[frameName]} • Allusion`,
+        title: `${WINDOW_TITLES[frameName]} • PhotoFolder`,
         frame: true,
         titleBarStyle: 'default',
       },
@@ -193,7 +193,7 @@ function createWindow() {
   const menuBar: Electron.MenuItemConstructorOptions[] = [];
 
   menuBar.push({
-    label: 'Allusion',
+    label: 'PhotoFolder',
     submenu: [
       { role: 'about' },
       { type: 'separator' },
@@ -363,7 +363,7 @@ function createPreviewWindow() {
     icon: `${__dirname}/${AppIcon}`,
     // Should be same as body background: Only for split second before css is loaded
     backgroundColor: '#14181a',
-    title: 'Allusion Quick View',
+    title: 'PhotoFolder Quick View',
     show: false, // invis by default
   });
   previewWindow.setMenuBarVisibility(false);
@@ -400,7 +400,7 @@ function createTrayMenu() {
       },
     ]);
     tray.setContextMenu(trayMenu);
-    tray.setToolTip('Allusion - Your Visual Library');
+    tray.setToolTip('PhotoFolder - Your Visual Library');
     tray.on('click', onTrayClick);
   }
 }
@@ -416,11 +416,11 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Ensure only a single instance of Allusion can be open
+// Ensure only a single instance of PhotoFolder can be open
 // https://www.electronjs.org/docs/api/app#apprequestsingleinstancelock
 const HAS_INSTANCE_LOCK = app.requestSingleInstanceLock();
 if (!HAS_INSTANCE_LOCK) {
-  console.log('Another instance of Allusion is already running');
+  console.log('Another instance of PhotoFolder is already running');
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -501,7 +501,7 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
   if (dialogResult.response === 0) {
     autoUpdater.downloadUpdate();
   } else if (dialogResult.response === 2) {
-    shell.openExternal('https://github.com/allusion-app/Allusion/releases/latest');
+    shell.openExternal('https://github.com/PhotoFolder/PhotoFolder/releases/latest');
   }
 });
 
@@ -527,7 +527,7 @@ autoUpdater.on('update-downloaded', async () => {
   }
   await dialog.showMessageBox({
     title: 'Install Updates',
-    message: 'Updates downloaded, Allusion will restart...',
+    message: 'Updates downloaded, PhotoFolder will restart...',
   });
   setImmediate(() => autoUpdater.quitAndInstall());
 });
@@ -538,7 +538,7 @@ autoUpdater.on('download-progress', (progressObj: { percent: number }) => {
     return;
   }
   if (tray && !tray.isDestroyed()) {
-    tray.setToolTip(`Allusion - Downloading update ${progressObj.percent.toFixed(0)}%`);
+    tray.setToolTip(`PhotoFolder - Downloading update ${progressObj.percent.toFixed(0)}%`);
   }
   // TODO: could also do this for other tasks (e.g. importing folders)
   mainWindow.setProgressBar(progressObj.percent / 100);
@@ -559,7 +559,12 @@ process.on('uncaughtException', async (error) => {
         type: 'error',
         title: 'Unexpected error',
         message: errorMessage,
-        buttons: ['Try to keep running', 'File bug report', 'Restart Allusion', 'Quit Allusion'],
+        buttons: [
+          'Try to keep running',
+          'File bug report',
+          'Restart PhotoFolder',
+          'Quit PhotoFolder',
+        ],
       });
       if (dialogResult.response === 0) {
         // Keep running

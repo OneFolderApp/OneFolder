@@ -17,7 +17,7 @@ const ALLOWED_FILE_DROP_TYPES = IMG_EXTENSIONS.map((ext) => `image/${ext}`);
 export const isAcceptableType = (e: React.DragEvent) =>
   e.dataTransfer.types.some((type) => ALLOWED_DROP_TYPES.includes(type));
 
-/** Returns the IDs of the files that match those in Allusion given dropData. Returns false if one or files has no matches */
+/** Returns the IDs of the files that match those in PhotoFolder given dropData. Returns false if one or files has no matches */
 export const findDroppedFileMatches = action(
   (dropData: (File | string)[], fs: FileStore): ClientFile[] | false => {
     const matches = dropData.map(

@@ -65,7 +65,7 @@ const PreviewWindowPlaceholder = observer(() => {
 
       <Button
         styling="outlined"
-        text="Reload Allusion"
+        text="Reload PhotoFolder"
         onClick={() => RendererMessenger.reload()}
       />
     </ContentPlaceholder>
@@ -75,20 +75,20 @@ const PreviewWindowPlaceholder = observer(() => {
 const Welcome = () => {
   const { uiStore } = useStore();
   return (
-    <ContentPlaceholder title="Welcome to Allusion" icon={<SVG src={LOGO_FC} />}>
+    <ContentPlaceholder title="Welcome to PhotoFolder" icon={<SVG src={LOGO_FC} />}>
       <p>
-        Allusion is a tool designed to help you organize your Visual Library, so you can easily find
-        what you need throughout your creative process.
+        PhotoFolder is a tool designed to help you organize your Visual Library, so you can easily
+        find what you need throughout your creative process.
       </p>
       <p>
-        Allusion needs to know where to find your images.
+        PhotoFolder needs to know where to find your images.
         <br />
         Add a Location to get started.
       </p>
 
       <div className="divider" />
 
-      <p>New to Allusion?</p>
+      <p>New to PhotoFolder?</p>
       <Button styling="outlined" text="Open Help Center" onClick={uiStore.toggleHelpCenter} />
 
       <br />
@@ -96,7 +96,7 @@ const Welcome = () => {
       <br />
 
       {/* Mention principles (?) */}
-      <small>Allusion is a read-only application. We&rsquo;ll never touch your files</small>
+      <small>PhotoFolder is a read-only application. We&rsquo;ll never touch your files</small>
     </ContentPlaceholder>
   );
 };

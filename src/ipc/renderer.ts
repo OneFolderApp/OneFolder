@@ -174,7 +174,7 @@ export class RendererMessenger {
 
   static getDefaultThumbnailDirectory = async () => {
     const userDataPath = await RendererMessenger.getPath('temp');
-    return path.join(userDataPath, 'Allusion', 'thumbnails');
+    return path.join(userDataPath, 'PhotoFolder', 'thumbnails');
   };
 
   static getDefaultBackupDirectory = async () => {

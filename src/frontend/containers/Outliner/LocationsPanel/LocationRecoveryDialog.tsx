@@ -100,7 +100,7 @@ const RecoveryInfo = observer(({ location, status, match }: IRecoveryInfoProps) 
           <p>The location {location.name} could not be found on your system.</p>
           <p>
             If it has been moved to a different directory, you can relocate the location by choosing
-            its new path to recover information Allusion has stored about your images
+            its new path to recover information PhotoFolder has stored about your images
           </p>
           <p>Original path:</p>
           <pre>{location.path}</pre>

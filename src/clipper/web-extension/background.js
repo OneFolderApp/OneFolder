@@ -3,7 +3,7 @@ const apiUrl = 'http://localhost:5454';
 let errCount = 0;
 
 ///////////////////////////////////
-// Communication to Allusion app //
+// Communication to PhotoFolder app //
 ///////////////////////////////////
 /**
  *
@@ -56,8 +56,8 @@ async function importImage(filename, url, pageUrl) {
     chrome.notifications.create('import-error-' + errCount++, {
       type: 'basic',
       iconUrl: 'favicon_32x32.png',
-      title: 'Allusion Clipper',
-      message: 'Could not import image, is Allusion running? Click to retry',
+      title: 'PhotoFolder Clipper',
+      message: 'Could not import image, is PhotoFolder running? Click to retry',
       isClickable: true,
       // Buttons are not supported in Firefox https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/Notifications/NotificationOptions
       // buttons: [{ title: 'Retry' }],
@@ -100,11 +100,11 @@ function filenameFromUrl(srcUrl, fallback) {
 // Context menu ////////////////
 ////////////////////////////////
 function setupContextMenus() {
-  // Todo: Disable context menu (or change text) when allusion is not open
+  // Todo: Disable context menu (or change text) when PhotoFolder is not open
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create(
       {
-        title: 'Add to Allusion',
+        title: 'Add to PhotoFolder',
         id: 'add-image',
         // Todo: Could add page, then look though clicked element to find image (for instagram, they put an invisible div on top of images...)
         contexts: ['image'],

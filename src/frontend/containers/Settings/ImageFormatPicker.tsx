@@ -38,7 +38,7 @@ export const ImageFormatPicker = observer(() => {
 
     locationStore.setSupportedImageExtensions(newEnabledFileExtensions);
 
-    window.alert('Allusion will restart to load your new preferences.');
+    window.alert('PhotoFolder will restart to load your new preferences.');
 
     RendererMessenger.reload();
   }, [fileStore, locationStore, newEnabledFileExtensions, removeDisabledImages]);
@@ -47,7 +47,7 @@ export const ImageFormatPicker = observer(() => {
   return (
     <>
       <fieldset>
-        <legend>Image formats to be discovered by Allusion in your Locations</legend>
+        <legend>Image formats to be discovered by PhotoFolder in your Locations</legend>
         <div className="checkbox-set-container">
           {IMG_EXTENSIONS.map((ext) => (
             <Checkbox

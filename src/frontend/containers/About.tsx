@@ -27,14 +27,14 @@ const About = observer(() => {
           It&apos;s completely <b>free and open source</b>! Find out more at
         </p>
         <span>
-          <ExternalLink url="https://allusion-app.github.io/">allusion-app.github.io</ExternalLink>.
+          <ExternalLink url="https://PhotoFolder.github.io/">PhotoFolder.github.io</ExternalLink>.
         </span>
         <ul>
           <li>General information</li>
           <li>Download the latest version</li>
         </ul>
-        <ExternalLink url="https://github.com/allusion-app/Allusion">
-          github.com/allusion-app/Allusion
+        <ExternalLink url="https://github.com/PhotoFolder/PhotoFolder">
+          github.com/PhotoFolder/PhotoFolder
         </ExternalLink>
         <ul>
           <li>🤓 View the source code</li>

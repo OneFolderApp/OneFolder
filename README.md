@@ -1,16 +1,3 @@
-[![Build Status](https://travis-ci.com/allusion-app/Allusion.svg?token=a7yw4czL1Lye2zty617R&branch=master)](https://travis-ci.com/allusion-app/Allusion)
-
-<img alt="Allusion" src="./resources/images/helpcenter/logo-about-helpcenter-dark.jpg" width="250" />
-
-Allusion is a tool built for artists, aimed to help you organize your **Visual Library** – A single place that contains your entire collection of references, inspiration and any other kinds of images.
-
-[Read more about Allusion →](https://allusion-app.github.io/)
-
-## Installation
-
-Find the latest version of Allusion on the [Releases](https://github.com/allusion-app/Allusion/releases) page.
-The application can be automatically updated when a new version becomes available.
-
 ## Development
 
 ### Quick Start
@@ -26,7 +13,3 @@ Then run the following commands to get started:
 
 An installable executable can be built using `yarn package` for your platform in the `/dist` folder. The building is performed using the [electron-builder](https://www.electron.build/) package, and is configured by a section in the `package.json` file.
 Builds are automatically published to Github Releases when a tag is created in GitHub.
-
-## Further Information
-
-Anything related from documentation to frequently asked questions can be found in our [wiki](https://github.com/allusion-app/Allusion/wiki).

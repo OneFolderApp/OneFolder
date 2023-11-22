@@ -10,9 +10,9 @@
       "js": ["ElementPicker.js", "content-script.js"]
     }
   ],
-  
+
   "browser_action": {
-    "default_title": "Allusion",
+    "default_title": "PhotoFolder",
     "default_popup": "popup.html",
     "browser_style": false
   },
@@ -25,7 +25,7 @@
       }
     },
     "pick-image": {
-      "description": "Pick an image from the page to import into Allusion",
+      "description": "Pick an image from the page to import into PhotoFolder",
       "suggested_key": {
         "default": "Ctrl+Shift+1",
         "mac": "Command+Shift+1"
@@ -34,10 +34,10 @@
   },
 
   "manifest_version": 2,
-  "name": "Allusion Web Clipper",
+  "name": "PhotoFolder Web Clipper",
   "version": "1.2.1",
 
-  "description": "Web Clipper for Allusion - for organizing your Visual Library",
+  "description": "Web Clipper for PhotoFolder - for organizing your Visual Library",
   "icons": {
     "32": "favicon_32x32.png"
   },

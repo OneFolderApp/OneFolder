@@ -66,7 +66,7 @@ const SplashScreen = () => {
           style={{ fill: '#fff', width: '42px', height: '36px' }}
         />
 
-        <p style={textStyles}>Allusion</p>
+        <p style={textStyles}>PhotoFolder</p>
       </div>
     </div>
   );

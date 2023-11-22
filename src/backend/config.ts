@@ -4,7 +4,7 @@ import fse from 'fs-extra';
 import { FileDTO } from '../api/file';
 
 // The name of the IndexedDB
-export const DB_NAME = 'Allusion';
+export const DB_NAME = 'PhotoFolder';
 
 export const NUM_AUTO_BACKUPS = 6;
 

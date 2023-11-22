@@ -62,9 +62,9 @@ class RootStore {
     const rootStore = new RootStore(backend, backup, (fileStore, uiStore) => {
       if (uiStore.isSlideMode && fileStore.fileList.length > 0) {
         const activeFile = fileStore.fileList[uiStore.firstItem];
-        return `${activeFile.filename}.${activeFile.extension} - Allusion`;
+        return `${activeFile.filename}.${activeFile.extension} - PhotoFolder`;
       } else {
-        return 'Allusion';
+        return 'PhotoFolder';
       }
     });
 
@@ -122,7 +122,7 @@ class RootStore {
 
   static async preview(backend: DataStorage, backup: DataBackup): Promise<RootStore> {
     const rootStore = new RootStore(backend, backup, (fileStore, uiStore) => {
-      const PREVIEW_WINDOW_BASENAME = 'Allusion Quick View';
+      const PREVIEW_WINDOW_BASENAME = 'PhotoFolder Quick View';
       const index = uiStore.firstItem;
       if (index >= 0 && index < fileStore.fileList.length) {
         const file = fileStore.fileList[index];

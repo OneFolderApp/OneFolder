@@ -19,7 +19,7 @@ tagForm.onsubmit = async function (e) {
     // Confirm success to user
     submissionStatus.innerText = success
       ? 'Saved!'
-      : 'Something went wrong... \nIs Allusion running?';
+      : 'Something went wrong... \nIs PhotoFolder running?';
   });
 };
 
@@ -42,7 +42,7 @@ window.onload = function () {
         formInfo.innerHTML = `Imported <i>${lastSubmittedItem.filename}</i> !`;
       } else {
         formInfo.innerHTML =
-          'Could not import this image, please try again. <br /> Is Allusion running with Browser Extension support enabled?';
+          'Could not import this image, please try again. <br /> Is PhotoFolder running with Browser Extension support enabled?';
       }
       previewImg.src = lastSubmittedItem.url;
 
@@ -68,12 +68,12 @@ window.onload = function () {
       chrome.commands.getAll((commands) => {
         const pickCommand = commands.find((c) => c.name === 'pick-image');
         const browserActionCommand = commands.find((c) => c.name === '_execute_browser_action');
-        const placeholderText = `To import an image into <a target="_blank" href="https://allusion-app.github.io/">Allusion</a>:
-          <br />Use the "Add to Allusion" option in the context menu of any image</li>${
+        const placeholderText = `To import an image into <a target="_blank" href="https://photofolder.github.io/">PhotoFolder</a>:
+          <br />Use the "Add to PhotoFolder" option in the context menu of any image</li>${
             pickCommand?.shortcut
               ? `, <br />or press <code>${pickCommand.shortcut}</code> to pick an image.`
               : ''
-          }<br/> Then click the Allusion badge or press <code>${
+          }<br/> Then click the PhotoFolder badge or press <code>${
           browserActionCommand?.shortcut || '[UNBOUND]'
         }</code> to open this panel for assigning tags.`;
 

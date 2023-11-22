@@ -9,12 +9,12 @@ export type FileDTO = {
   relativePath: string;
   absolutePath: string;
   tags: ID[];
-  /** When the file was imported into Allusion */
+  /** When the file was imported into PhotoFolder */
   dateAdded: Date;
-  /** When the file was modified in Allusion, not related to OS modified date */
+  /** When the file was modified in PhotoFolder, not related to OS modified date */
   dateModified: Date;
   /**
-   * When the file was last indexed in Allusion: concerning the metadata and thumbnail.
+   * When the file was last indexed in PhotoFolder: concerning the metadata and thumbnail.
    * If the system's modified date of the file exceeds this date, those properties shoudld be re-initialized
    **/
   dateLastIndexed: Date;
@@ -27,7 +27,7 @@ export type FileDTO = {
   size: number;
   width: number;
   height: number;
-  /** Date when this file was created (from the OS, not related to Allusion) */
+  /** Date when this file was created (from the OS, not related to PhotoFolder) */
   dateCreated: Date;
 };
 

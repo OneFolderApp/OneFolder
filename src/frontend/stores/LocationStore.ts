@@ -99,7 +99,7 @@ class LocationStore {
     const getLocation = action((index: number) => this.locationList[index]);
 
     // Get all files in the DB, set up data structures for quick lookups
-    // Doing it for all locations, so files moved to another Location on disk, it's properly re-assigned in Allusion too
+    // Doing it for all locations, so files moved to another Location on disk, it's properly re-assigned in PhotoFolder too
     // TODO: Could be optimized, at startup we already fetch all files, don't need to fetch them again here
     const dbFiles: FileDTO[] = await this.backend.fetchFiles('id', OrderDirection.Asc);
     const dbFilesPathSet = new Set(dbFiles.map((f) => f.absolutePath));
@@ -215,7 +215,7 @@ class LocationStore {
       const foundCreatedMatches = createdMatches.filter((m) => m !== undefined) as FileDTO[];
       if (foundCreatedMatches.length > 0) {
         console.debug(
-          `Found ${foundCreatedMatches.length} renamed/moved files in location ${location.name}. These are detected as new files, but will instead replace their original entry in the DB of Allusion`,
+          `Found ${foundCreatedMatches.length} renamed/moved files in location ${location.name}. These are detected as new files, but will instead replace their original entry in the DB of PhotoFolder`,
           foundCreatedMatches,
         );
         // TODO: remove thumbnail as well (clean-up needed, since the path changed)

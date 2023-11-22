@@ -24,6 +24,10 @@ import { IS_DEV, IS_MAC } from '../common/process';
 import { TagDTO, ROOT_TAG_ID } from './api/tag';
 import { MainMessenger } from './ipc/main';
 import { WindowSystemButtonPress } from './ipc/messages';
+import Analytics from 'electron-google-analytics4'; // esm
+
+const analytics = new Analytics('G-YHFREMQ9JJ', 'cnDlOQw3QXOXow-XvUvyUA');
+analytics.event('page_view');
 
 // TODO: change this when running in portable mode, see portable-improvements branch
 const basePath = app.getPath('userData');
@@ -46,6 +50,8 @@ let tray: Tray | null = null;
 let clipServer: ClipServer | null = null;
 
 function initialize() {
+  analytics.event('page_view');
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     if (details.responseHeaders === undefined) {
       callback({});

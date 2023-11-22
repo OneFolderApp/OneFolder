@@ -25,23 +25,23 @@
   }
 
   // Background image
-  &::before {
-    background: var(--background-color);
-    background: linear-gradient(-135deg,#23d5ab, #7af2a6, #51b4cf, #1473e6 ); /*  */
-    background-size: 400% 400%;
-    animation: gradient 2s ease infinite;
-    z-index: 0;
-  }
+  // &::before {
+  //   background: var(--background-color);
+  //   background: linear-gradient(-135deg,#23d5ab, #7af2a6, #51b4cf, #1473e6 ); /*  */
+  //   background-size: 400% 400%;
+  //   animation: gradient 2s ease infinite;
+  //   z-index: 0;
+  // }
 }
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
+// @keyframes gradient {
+//   0% {
+//     background-position: 0% 50%;
+//   }
+//   50% {
+//     background-position: 100% 50%;
+//   }
+//   100% {
+//     background-position: 0% 50%;
+//   }
+// }

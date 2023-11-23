@@ -47,56 +47,25 @@ const PreviewWindowPlaceholder = observer(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileStore.fileListLastModified]);
 
-  if (isLoading) {
+  if (true) {
     return (
       <ContentPlaceholder title="Loading..." icon={<SVG src={LOGO_FC} />}>
         {IconSet.LOADING}
       </ContentPlaceholder>
     );
   }
-
-  // There should always be images to preview.
-  // If the placeholder is shown, something went wrong (probably the DB of the preview window is out of sync with the main window)
-  return (
-    <ContentPlaceholder title="That's not supposed to happen..." icon={<SVG src={LOGO_FC} />}>
-      <p>Something went wrong while previewing the selected images</p>
-
-      <div className="divider" />
-
-      <Button
-        styling="outlined"
-        text="Reload PhotoFolder"
-        onClick={() => RendererMessenger.reload()}
-      />
-    </ContentPlaceholder>
-  );
 });
 
 const Welcome = () => {
   const { uiStore } = useStore();
   return (
-    <ContentPlaceholder title="Welcome to PhotoFolder" icon={<SVG src={LOGO_FC} />}>
-      <p>
-        PhotoFolder is a tool designed to help you organize your Visual Library, so you can easily
-        find what you need throughout your creative process.
-      </p>
-      <p>
-        PhotoFolder needs to know where to find your images.
-        <br />
-        Add a Location to get started.
-      </p>
+    <ContentPlaceholder title="" icon={<SVG src={LOGO_FC} />}>
+      <br />
+      <p>↖️ Add a Location in the top left cornet to get started</p>
 
-      <div className="divider" />
-
-      <p>New to PhotoFolder?</p>
-      <Button styling="outlined" text="Open Help Center" onClick={uiStore.toggleHelpCenter} />
-
+      {/* <Button styling="filled" text="Select a Location" onClick={uiStore.toggleHelpCenter} /> */}
       <br />
       <br />
-      <br />
-
-      {/* Mention principles (?) */}
-      <small>PhotoFolder is a read-only application. We&rsquo;ll never touch your files</small>
     </ContentPlaceholder>
   );
 };

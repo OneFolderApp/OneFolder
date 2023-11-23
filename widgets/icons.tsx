@@ -37,6 +37,7 @@ import DELETE from 'resources/icons/delete.svg';
 import DOUBLE_CARET from 'resources/icons/double-caret.svg';
 import EDIT from 'resources/icons/edit.svg';
 // import FILTER from 'resources/icons/filter.svg';
+import FACE_SMILING from 'resources/icons/face-smiling.svg';
 import FILTER_DATE from 'resources/icons/filter-date.svg';
 import FILTER_FILE_TYPE from 'resources/icons/filter-file-type.svg';
 import FILTER_FILTER_DOWN from 'resources/icons/filter-filter-down.svg';
@@ -112,6 +113,7 @@ import VIEW_MASONRY_V from 'resources/icons/view-masonry-v.svg';
 import WARNING_FILL from 'resources/icons/warning-fill.svg';
 import WARNING_BROKEN_LINK from 'resources/icons/warning-broken-link.svg';
 import WARNING from 'resources/icons/warning.svg';
+import WORLD from 'resources/icons/world.svg';
 import QUESTION_MARK from 'resources/icons/questionmark.svg';
 
 const toSvg = (src: any) => <SVG src={src} className="custom-icon" aria-hidden="true" />;
@@ -141,6 +143,7 @@ const IconSet = {
   DOUBLE_CARET: toSvg(DOUBLE_CARET),
   EDIT: toSvg(EDIT),
   // FILTER: toSvg(FILTER),
+  FACE_SMILING: toSvg(FACE_SMILING),
   FILTER_DATE: toSvg(FILTER_DATE),
   FILTER_FILE_TYPE: toSvg(FILTER_FILE_TYPE),
   FILTER_FILTER_DOWN: toSvg(FILTER_FILTER_DOWN),
@@ -217,6 +220,7 @@ const IconSet = {
   WARNING_FILL: toSvg(WARNING_FILL),
   WARNING_BROKEN_LINK: toSvg(WARNING_BROKEN_LINK),
   WARNING: toSvg(WARNING),
+  WORLD: toSvg(WORLD),
   QUESTION_MARK: toSvg(QUESTION_MARK),
 };
 

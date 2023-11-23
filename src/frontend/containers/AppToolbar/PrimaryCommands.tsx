@@ -6,7 +6,7 @@ import { ToolbarButton } from 'widgets/toolbar';
 import { FileRemoval } from '../../components/RemovalAlert';
 import FileTagEditor from '../../containers/AppToolbar/FileTagEditor';
 import { useStore } from '../../contexts/StoreContext';
-import { SortCommand, ViewCommand } from './Menus';
+import { SortCommand } from './Menus';
 import Searchbar from './Searchbar';
 import { MenuRadioItem } from 'widgets/menus';
 import SecondaryCommands from './SecondaryCommands';
@@ -70,6 +70,20 @@ const PrimaryCommands = observer(() => {
             onClick={uiStore.setMethodCalendar}
             checked={uiStore.isCalendar}
             text="Calendar"
+          />
+          <MenuRadioItem
+            icon={IconSet.WORLD}
+            onClick={uiStore.setMethodCalendar}
+            checked={false}
+            disabled={true}
+            text="Map (WIP)"
+          />
+          <MenuRadioItem
+            icon={IconSet.FACE_SMILING}
+            onClick={uiStore.setMethodCalendar}
+            checked={false}
+            disabled={true}
+            text="Faces (WIP)"
           />
         </div>
         <SortCommand />

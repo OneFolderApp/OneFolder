@@ -13,6 +13,8 @@ import { ClientTag } from '../entities/Tag';
 import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
 
+import { analytics } from '../../analytics';
+
 export const enum ViewMethod {
   List,
   Grid,
@@ -254,35 +256,43 @@ class UiStore {
   }
 
   @action.bound setMethodList(): void {
+    analytics.event('setMethodList');
     this.method = ViewMethod.List;
   }
 
   @action.bound setMethodGrid(): void {
+    analytics.event('setMethodGrid');
     this.method = ViewMethod.Grid;
   }
 
   @action.bound setMethodMasonryVertical(): void {
+    analytics.event('setMethodMasonryVertical');
     this.method = ViewMethod.MasonryVertical;
   }
 
   @action.bound setMethodMasonryHorizontal(): void {
+    analytics.event('setMethodMasonryHorizontal');
     this.method = ViewMethod.MasonryHorizontal;
   }
 
   @action.bound setMethodCalendar(): void {
+    analytics.event('setMethodCalendar');
     this.rootStore.fileStore.orderFilesBy('dateCreated');
     this.method = ViewMethod.Calendar;
   }
 
   @action.bound enableSlideMode(): void {
+    analytics.event('enableSlideMode');
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
+    analytics.event('disableSlideMode');
     this.isSlideMode = false;
   }
 
   @action.bound toggleSlideMode(): void {
+    analytics.event('toggleSlideMode');
     this.isSlideMode = !this.isSlideMode;
   }
 
@@ -324,6 +334,7 @@ class UiStore {
   }
 
   @action.bound openPreviewWindow(): void {
+    analytics.event('openPreviewWindow');
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -351,6 +362,7 @@ class UiStore {
   }
 
   @action.bound openExternal(warnIfTooManyFiles: boolean = true): void {
+    analytics.event('openExternal');
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -366,18 +378,22 @@ class UiStore {
   }
 
   @action.bound toggleInspector(): void {
+    analytics.event('toggleInspector');
     this.isInspectorOpen = !this.isInspectorOpen;
   }
 
   @action.bound openInspector(): void {
+    analytics.event('openInspector');
     this.isInspectorOpen = true;
   }
 
   @action.bound toggleSettings(): void {
+    analytics.event('toggleSettings');
     this.isSettingsOpen = !this.isSettingsOpen;
   }
 
   @action.bound closeSettings(): void {
+    analytics.event('closeSettings');
     this.isSettingsOpen = false;
   }
 
@@ -443,18 +459,22 @@ class UiStore {
   }
 
   @action.bound closePreviewWindow(): void {
+    analytics.event('closePreviewWindow');
     this.isPreviewOpen = false;
   }
 
   @action.bound setThumbnailDirectory(dir: string = ''): void {
+    analytics.event('setThumbnailDirectory');
     this.thumbnailDirectory = dir;
   }
 
   @action.bound setImportDirectory(dir: string): void {
+    analytics.event('setImportDirectory');
     this.importDirectory = dir;
   }
 
   @action.bound setTheme(theme: 'light' | 'dark' = 'dark'): void {
+    analytics.event('setTheme');
     this.theme = theme;
     RendererMessenger.setTheme({ theme });
   }
@@ -485,6 +505,7 @@ class UiStore {
   }
 
   @action.bound toggleFileSelection(file: ClientFile, clear?: boolean): void {
+    analytics.event('toggleFileSelection');
     if (this.fileSelection.has(file)) {
       this.fileSelection.delete(file);
     } else {
@@ -513,6 +534,7 @@ class UiStore {
   }
 
   @action.bound selectTag(tag: ClientTag, clear?: boolean): void {
+    analytics.event('selectTag');
     if (clear === true) {
       this.clearTagSelection();
     }
@@ -533,6 +555,7 @@ class UiStore {
 
   /** Selects a range of tags, where indices correspond to the flattened tag list. */
   @action.bound selectTagRange(start: number, end: number, additive?: boolean): void {
+    analytics.event('selectTagRange');
     const tagTreeList = this.rootStore.tagStore.tagList;
     if (!additive) {
       this.tagSelection.replace(tagTreeList.slice(start, end + 1));
@@ -620,6 +643,8 @@ class UiStore {
 
   /////////////////// Search Actions ///////////////////
   @action.bound clearSearchCriteriaList(): void {
+    analytics.event('clearSearchCriteriaList');
+
     if (this.searchCriteriaList.length > 0) {
       this.searchCriteriaList.forEach((c) => c.dispose());
       this.searchCriteriaList.clear();
@@ -947,6 +972,7 @@ class UiStore {
   }
 
   @action private viewAllContent(): void {
+    analytics.event('viewAllContent');
     this.rootStore.fileStore.fetchAllFiles();
   }
 

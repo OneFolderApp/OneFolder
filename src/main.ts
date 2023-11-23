@@ -20,10 +20,7 @@ import { createBugReport, githubUrl } from '../common/config';
 import { IS_DEV } from '../common/process';
 import { MainMessenger } from './ipc/main';
 import { WindowSystemButtonPress } from './ipc/messages';
-import Analytics from 'electron-google-analytics4'; // esm
-
-const analytics = new Analytics('G-YHFREMQ9JJ', 'cnDlOQw3QXOXow-XvUvyUA');
-analytics.event('page_view');
+import { analytics } from './analytics'; // esm
 
 // TODO: change this when running in portable mode, see portable-improvements branch
 const basePath = app.getPath('userData');
@@ -44,8 +41,6 @@ let mainWindow: BrowserWindow | null = null;
 let previewWindow: BrowserWindow | null = null;
 
 function initialize() {
-  analytics.event('page_view');
-
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     if (details.responseHeaders === undefined) {
       callback({});

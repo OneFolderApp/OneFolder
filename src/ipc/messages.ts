@@ -1,4 +1,3 @@
-import { IImportItem } from '../clipper/server';
 import { ID } from '../api/id';
 import { TagDTO } from '../api/tag';
 import { ViewMethod } from '../frontend/stores/UiStore';
@@ -71,14 +70,8 @@ export type StoreFileReplyMessage = {
 };
 
 export const IMPORT_EXTERNAL_IMAGE = 'IMPORT_EXTERNAL_IMAGE';
-export type ImportExternalImageMessage = {
-  item: IImportItem;
-};
 
 export const ADD_TAGS_TO_FILE = 'ADD_TAGS_TO_FILE';
-export type AddTagsToFileMessage = {
-  item: IImportItem;
-};
 
 //////////////// Preview window ////////////////
 export const CLOSED_PREVIEW_WINDOW = 'CLOSED_PREVIEW_WINDOW';

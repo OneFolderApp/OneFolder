@@ -10,11 +10,8 @@ import {
   GET_TAGS,
   GET_VERSION,
   GET_ZOOM_FACTOR,
-  AddTagsToFileMessage,
   ClipServerEnabledMessage,
   DragExportMessage,
-  ImportExternalImageMessage,
-  IMPORT_EXTERNAL_IMAGE,
   INITIALIZED,
   PreviewFilesMessage,
   RunInBackgroundMessage,
@@ -138,12 +135,6 @@ export class MainMessenger {
 
   static sendPreviewFiles = (wc: WebContents, msg: PreviewFilesMessage) =>
     wc.send(RECEIEVE_PREVIEW_FILES, msg);
-
-  static sendImportExternalImage = (wc: WebContents, msg: ImportExternalImageMessage) =>
-    wc.send(IMPORT_EXTERNAL_IMAGE, msg);
-
-  static sendAddTagsToFile = (wc: WebContents, msg: AddTagsToFileMessage) =>
-    wc.send(ADD_TAGS_TO_FILE, msg);
 
   static onSendPreviewFiles = (cb: (msg: PreviewFilesMessage) => void) =>
     ipcMain.on(SEND_PREVIEW_FILES, (_, msg: PreviewFilesMessage) => cb(msg));

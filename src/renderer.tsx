@@ -13,7 +13,6 @@ import React from 'react';
 import { Root, createRoot } from 'react-dom/client';
 
 import { IS_DEV } from 'common/process';
-import { promiseRetry } from 'common/timeout';
 import { IS_PREVIEW_WINDOW, WINDOW_STORAGE_KEY } from 'common/window';
 import { RendererMessenger } from 'src/ipc/renderer';
 import Backend from './backend/backend';
@@ -109,48 +108,9 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
   // Messaging with the main process
   // -------------------------------------------
 
-  RendererMessenger.onImportExternalImage(async ({ item }) => {
-    console.log('Importing image...', item);
-    // Might take a while for the file watcher to detect the image - otherwise the image is not in the DB and cannot be tagged
-    promiseRetry(() => addTagsToFile(item.filePath, item.tagNames));
-  });
-
-  RendererMessenger.onAddTagsToFile(async ({ item }) => {
-    console.log('Adding tags to file...', item);
-    await addTagsToFile(item.filePath, item.tagNames);
-  });
-
   RendererMessenger.onGetTags(async () => ({ tags: await backend.fetchTags() }));
 
   RendererMessenger.onFullScreenChanged((val) => rootStore.uiStore.setFullScreen(val));
-
-  /**
-   * Adds tags to a file, given its name and the names of the tags
-   * @param filePath The path of the file
-   * @param tagNames The names of the tags
-   */
-  async function addTagsToFile(filePath: string, tagNames: string[]) {
-    const { fileStore, tagStore } = rootStore;
-    const clientFile = runInAction(() =>
-      fileStore.fileList.find((file) => file.absolutePath === filePath),
-    );
-    if (clientFile) {
-      const tags = await Promise.all(
-        tagNames.map(async (tagName) => {
-          const clientTag = tagStore.findByName(tagName);
-          if (clientTag !== undefined) {
-            return clientTag;
-          } else {
-            const newClientTag = await tagStore.create(tagStore.root, tagName);
-            return newClientTag;
-          }
-        }),
-      );
-      tags.forEach(clientFile.addTag);
-    } else {
-      throw new Error('Could not find image to set tags for ' + filePath);
-    }
-  }
 
   RendererMessenger.onClosedPreviewWindow(() => {
     rootStore.uiStore.closePreviewWindow();

@@ -1,7 +1,6 @@
 import { ipcRenderer } from 'electron';
 import path from 'path';
 import {
-  ADD_TAGS_TO_FILE,
   CHECK_FOR_UPDATES,
   CLEAR_DATABASE,
   CLOSED_PREVIEW_WINDOW,
@@ -11,11 +10,8 @@ import {
   GET_TAGS,
   GET_VERSION,
   GET_ZOOM_FACTOR,
-  AddTagsToFileMessage,
   ClipServerEnabledMessage,
   DragExportMessage,
-  ImportExternalImageMessage,
-  IMPORT_EXTERNAL_IMAGE,
   INITIALIZED,
   PreviewFilesMessage,
   RunInBackgroundMessage,
@@ -121,12 +117,6 @@ export class RendererMessenger {
   };
 
   static startDragExport = (msg: DragExportMessage) => ipcRenderer.send(DRAG_EXPORT, msg);
-
-  static onImportExternalImage = (cb: (msg: ImportExternalImageMessage) => void) =>
-    ipcRenderer.on(IMPORT_EXTERNAL_IMAGE, (_, msg: ImportExternalImageMessage) => cb(msg));
-
-  static onAddTagsToFile = (cb: (msg: AddTagsToFileMessage) => void) =>
-    ipcRenderer.on(ADD_TAGS_TO_FILE, (_, msg: AddTagsToFileMessage) => cb(msg));
 
   static sendPreviewFiles = (msg: PreviewFilesMessage) => {
     ipcRenderer.send(SEND_PREVIEW_FILES, msg);

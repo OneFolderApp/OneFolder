@@ -10,18 +10,14 @@ import {
   session,
   shell,
   Rectangle,
-  Tray,
 } from 'electron';
 import path from 'path';
 import fse from 'fs-extra';
 import { autoUpdater, UpdateInfo } from 'electron-updater';
 import TrayIcon from '../resources/logo/png/full-color/photofolder-logomark-fc-256x256.png';
 import AppIcon from '../resources/logo/png/full-color/photofolder-logomark-fc-512x512.png';
-import TrayIconMac from '../resources/logo/png/black/photofolderTemplate@2x.png'; // filename convention: https://www.electronjs.org/docs/api/native-image#template-image
-import ClipServer, { IImportItem } from './clipper/server';
 import { createBugReport, githubUrl } from '../common/config';
-import { IS_DEV, IS_MAC } from '../common/process';
-import { TagDTO, ROOT_TAG_ID } from './api/tag';
+import { IS_DEV } from '../common/process';
 import { MainMessenger } from './ipc/main';
 import { WindowSystemButtonPress } from './ipc/messages';
 import Analytics from 'electron-google-analytics4'; // esm
@@ -46,8 +42,6 @@ const updatePreferences = (prefs: PreferencesFile) => {
 
 let mainWindow: BrowserWindow | null = null;
 let previewWindow: BrowserWindow | null = null;
-let tray: Tray | null = null;
-let clipServer: ClipServer | null = null;
 
 function initialize() {
   analytics.event('page_view');
@@ -323,26 +317,6 @@ function createWindow() {
     'blur',
     () => mainWindow !== null && MainMessenger.blur(mainWindow.webContents),
   );
-
-  if (clipServer === null) {
-    clipServer = new ClipServer(importExternalImage, addTagsToFile, getTags);
-  }
-
-  // System tray icon: Always show on Mac, or other platforms when the app is running in the background
-  // Useful for browser extension, so it will work even when the window is closed
-  if (IS_MAC || clipServer.isRunInBackgroundEnabled()) {
-    createTrayMenu();
-  }
-
-  // Import images that were added while the window was closed
-  MainMessenger.onceInitialized().then(async () => {
-    if (clipServer === null || mainWindow === null) {
-      return;
-    }
-    const importItems = await clipServer.getImportQueue();
-    await Promise.all(importItems.map(importExternalImage));
-    clipServer.clearImportQueue();
-  });
 }
 
 function createPreviewWindow() {
@@ -387,40 +361,6 @@ function createPreviewWindow() {
   });
   return previewWindow;
 }
-
-function createTrayMenu() {
-  if (tray === null || tray.isDestroyed()) {
-    const onTrayClick = () =>
-      mainWindow === null || mainWindow.isDestroyed() ? initialize() : mainWindow.focus();
-
-    tray = new Tray(`${__dirname}/${IS_MAC ? TrayIconMac : TrayIcon}`);
-    const trayMenu = Menu.buildFromTemplate([
-      {
-        label: 'Open',
-        type: 'normal',
-        click: onTrayClick,
-      },
-      {
-        label: 'Quit',
-        click: () => app.quit(),
-      },
-    ]);
-    tray.setContextMenu(trayMenu);
-    tray.setToolTip('PhotoFolder - Your Visual Library');
-    tray.on('click', onTrayClick);
-  }
-}
-
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  if (clipServer === null || !clipServer.isRunInBackgroundEnabled()) {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
-      app.quit();
-    }
-  }
-});
 
 // Ensure only a single instance of PhotoFolder can be open
 // https://www.electronjs.org/docs/api/app#apprequestsingleinstancelock
@@ -543,9 +483,6 @@ autoUpdater.on('download-progress', (progressObj: { percent: number }) => {
   if (mainWindow === null || mainWindow.isDestroyed()) {
     return;
   }
-  if (tray && !tray.isDestroyed()) {
-    tray.setToolTip(`PhotoFolder - Downloading update ${progressObj.percent.toFixed(0)}%`);
-  }
   // TODO: could also do this for other tasks (e.g. importing folders)
   mainWindow.setProgressBar(progressObj.percent / 100);
 });
@@ -600,29 +537,6 @@ process.on('uncaughtException', async (error) => {
 //---------------------------------------------------------------------------------//
 // Messaging: Sending and receiving messages between the main and renderer process //
 //---------------------------------------------------------------------------------//
-MainMessenger.onIsClipServerRunning(() => clipServer?.isEnabled() === true);
-MainMessenger.onIsRunningInBackground(() => clipServer?.isRunInBackgroundEnabled() === true);
-
-MainMessenger.onSetClipServerEnabled(({ isClipServerRunning }) =>
-  clipServer?.setEnabled(isClipServerRunning),
-);
-MainMessenger.onSetClipServerImportLocation((dir) => clipServer?.setImportLocation(dir));
-MainMessenger.onSetRunningInBackground(({ isRunInBackground }) => {
-  if (clipServer === null) {
-    return;
-  }
-  clipServer.setRunInBackground(isRunInBackground);
-  if (isRunInBackground) {
-    createTrayMenu();
-  } else if (tray) {
-    tray.destroy();
-    tray = null;
-  }
-});
-
-MainMessenger.onStoreFile(({ directory, filenameWithExt, imgBase64 }) =>
-  clipServer!.storeImageWithoutImport(directory, filenameWithExt, imgBase64),
-);
 
 // Forward files from the main window to the preview window
 MainMessenger.onSendPreviewFiles((msg) => {
@@ -848,29 +762,4 @@ function getVersion(): string {
   } else {
     return app.getVersion();
   }
-}
-
-/** Returns whether main window is open - so whether files can be immediately imported */
-async function importExternalImage(item: IImportItem): Promise<boolean> {
-  if (mainWindow !== null) {
-    MainMessenger.sendImportExternalImage(mainWindow.webContents, { item });
-    return true;
-  }
-  return false;
-}
-
-async function addTagsToFile(item: IImportItem): Promise<boolean> {
-  if (mainWindow !== null) {
-    MainMessenger.sendAddTagsToFile(mainWindow.webContents, { item });
-    return true;
-  }
-  return false;
-}
-
-async function getTags(): Promise<TagDTO[]> {
-  if (mainWindow !== null) {
-    const { tags } = await MainMessenger.getTags(mainWindow.webContents);
-    return tags.filter((t) => t.id !== ROOT_TAG_ID);
-  }
-  return [];
 }

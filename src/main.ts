@@ -20,7 +20,6 @@ import { createBugReport, githubUrl } from '../common/config';
 import { IS_DEV } from '../common/process';
 import { MainMessenger } from './ipc/main';
 import { WindowSystemButtonPress } from './ipc/messages';
-import { analytics } from './analytics'; // esm
 
 // TODO: change this when running in portable mode, see portable-improvements branch
 const basePath = app.getPath('userData');

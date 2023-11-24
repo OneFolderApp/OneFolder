@@ -257,42 +257,58 @@ class UiStore {
 
   @action.bound setMethodList(): void {
     analytics.event('setMethodList');
+    analytics.set('engagement_time_msec', 10);
+
     this.method = ViewMethod.List;
   }
 
   @action.bound setMethodGrid(): void {
     analytics.event('setMethodGrid');
+    analytics.set('engagement_time_msec', 10);
+
     this.method = ViewMethod.Grid;
   }
 
   @action.bound setMethodMasonryVertical(): void {
     analytics.event('setMethodMasonryVertical');
+    analytics.set('engagement_time_msec', 10);
+
     this.method = ViewMethod.MasonryVertical;
   }
 
   @action.bound setMethodMasonryHorizontal(): void {
     analytics.event('setMethodMasonryHorizontal');
+    analytics.set('engagement_time_msec', 10);
+
     this.method = ViewMethod.MasonryHorizontal;
   }
 
   @action.bound setMethodCalendar(): void {
     analytics.event('setMethodCalendar');
+    analytics.set('engagement_time_msec', 10);
+
     this.rootStore.fileStore.orderFilesBy('dateCreated');
     this.method = ViewMethod.Calendar;
   }
 
   @action.bound enableSlideMode(): void {
     analytics.event('enableSlideMode');
+    analytics.set('engagement_time_msec', 10);
+
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
     analytics.event('disableSlideMode');
+    analytics.set('engagement_time_msec', 10);
+
     this.isSlideMode = false;
   }
 
   @action.bound toggleSlideMode(): void {
     analytics.event('toggleSlideMode');
+    analytics.set('engagement_time_msec', 10);
+
     this.isSlideMode = !this.isSlideMode;
   }
 
@@ -335,6 +351,8 @@ class UiStore {
 
   @action.bound openPreviewWindow(): void {
     analytics.event('openPreviewWindow');
+    analytics.set('engagement_time_msec', 10);
+
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -363,6 +381,8 @@ class UiStore {
 
   @action.bound openExternal(warnIfTooManyFiles: boolean = true): void {
     analytics.event('openExternal');
+    analytics.set('engagement_time_msec', 10);
+
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -379,21 +399,29 @@ class UiStore {
 
   @action.bound toggleInspector(): void {
     analytics.event('toggleInspector');
+    analytics.set('engagement_time_msec', 10);
+
     this.isInspectorOpen = !this.isInspectorOpen;
   }
 
   @action.bound openInspector(): void {
     analytics.event('openInspector');
+    analytics.set('engagement_time_msec', 10);
+
     this.isInspectorOpen = true;
   }
 
   @action.bound toggleSettings(): void {
     analytics.event('toggleSettings');
+    analytics.set('engagement_time_msec', 10);
+
     this.isSettingsOpen = !this.isSettingsOpen;
   }
 
   @action.bound closeSettings(): void {
     analytics.event('closeSettings');
+    analytics.set('engagement_time_msec', 10);
+
     this.isSettingsOpen = false;
   }
 
@@ -460,21 +488,29 @@ class UiStore {
 
   @action.bound closePreviewWindow(): void {
     analytics.event('closePreviewWindow');
+    analytics.set('engagement_time_msec', 10);
+
     this.isPreviewOpen = false;
   }
 
   @action.bound setThumbnailDirectory(dir: string = ''): void {
     analytics.event('setThumbnailDirectory');
+    analytics.set('engagement_time_msec', 10);
+
     this.thumbnailDirectory = dir;
   }
 
   @action.bound setImportDirectory(dir: string): void {
     analytics.event('setImportDirectory');
+    analytics.set('engagement_time_msec', 10);
+
     this.importDirectory = dir;
   }
 
   @action.bound setTheme(theme: 'light' | 'dark' = 'dark'): void {
     analytics.event('setTheme');
+    analytics.set('engagement_time_msec', 10);
+
     this.theme = theme;
     RendererMessenger.setTheme({ theme });
   }
@@ -506,6 +542,8 @@ class UiStore {
 
   @action.bound toggleFileSelection(file: ClientFile, clear?: boolean): void {
     analytics.event('toggleFileSelection');
+    analytics.set('engagement_time_msec', 10);
+
     if (this.fileSelection.has(file)) {
       this.fileSelection.delete(file);
     } else {
@@ -535,6 +573,8 @@ class UiStore {
 
   @action.bound selectTag(tag: ClientTag, clear?: boolean): void {
     analytics.event('selectTag');
+    analytics.set('engagement_time_msec', 10);
+
     if (clear === true) {
       this.clearTagSelection();
     }
@@ -556,6 +596,8 @@ class UiStore {
   /** Selects a range of tags, where indices correspond to the flattened tag list. */
   @action.bound selectTagRange(start: number, end: number, additive?: boolean): void {
     analytics.event('selectTagRange');
+    analytics.set('engagement_time_msec', 10);
+
     const tagTreeList = this.rootStore.tagStore.tagList;
     if (!additive) {
       this.tagSelection.replace(tagTreeList.slice(start, end + 1));
@@ -644,6 +686,7 @@ class UiStore {
   /////////////////// Search Actions ///////////////////
   @action.bound clearSearchCriteriaList(): void {
     analytics.event('clearSearchCriteriaList');
+    analytics.set('engagement_time_msec', 10);
 
     if (this.searchCriteriaList.length > 0) {
       this.searchCriteriaList.forEach((c) => c.dispose());
@@ -973,6 +1016,8 @@ class UiStore {
 
   @action private viewAllContent(): void {
     analytics.event('viewAllContent');
+    analytics.set('engagement_time_msec', 10);
+
     this.rootStore.fileStore.fetchAllFiles();
   }
 

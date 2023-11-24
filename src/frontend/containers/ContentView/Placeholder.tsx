@@ -61,6 +61,13 @@ const Welcome = () => {
   return (
     <ContentPlaceholder title="" icon={<SVG src={LOGO_FC} />}>
       <br />
+      <br />
+      <p>note: this app is read only by default, but we recomend having a backup anyways.</p>
+      <br />
+      <p>note2: Tags can be in a hierarchy (like folders)</p>
+      <br />
+      <p>note3: to quickly add tags to an image press the `t` key on your keyboard</p>
+      <br />
       <p>↖️ Add a Location in the top left cornet to get started</p>
 
       {/* <Button styling="filled" text="Select a Location" onClick={uiStore.toggleHelpCenter} /> */}

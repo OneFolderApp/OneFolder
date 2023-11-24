@@ -74,12 +74,14 @@ export const OutlinerActionBar = observer(() => {
             shell.openExternal('https://photofolder.canny.io/feedback');
           }}
         >
-          → 💡idea + 🐞bugs
+          → 💡ideas + 🐞bugs
         </button>
         <button
           className="footer-link"
           onClick={() => {
-            shell.openExternal('https://photofolder.canny.io/feedback');
+            shell.openExternal(
+              'https://foul-channel-e2c.notion.site/Photo-Folder-71473f9595304d4fb7832237a787c56b?pvs=4',
+            );
           }}
         >
           → help center

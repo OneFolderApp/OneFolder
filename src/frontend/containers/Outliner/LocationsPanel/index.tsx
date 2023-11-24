@@ -600,7 +600,12 @@ const LocationsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
       {...props}
     >
       <LocationsTree onDelete={setDeletableLocation} onExclude={setExcludableSubLocation} />
-      {isEmpty && <Callout icon={IconSet.INFO}>Click + to choose a location.</Callout>}
+      {isEmpty && (
+        <button onClick={handleChooseWatchedDir} className="add-location-button">
+          {IconSet.PLUS}
+          Add Location
+        </button>
+      )}
 
       <LocationRecoveryDialog />
 

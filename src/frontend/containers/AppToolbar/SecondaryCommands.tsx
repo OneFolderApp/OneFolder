@@ -22,12 +22,12 @@ const SecondaryCommands = observer(() => {
         text="Advanced Search"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.advancedSearch} />}
       /> */}
-      {/* <MenuItem
+      <MenuItem
         icon={IconSet.HELPCENTER}
         onClick={uiStore.toggleHelpCenter}
         text="Help Center"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.toggleHelpCenter} />}
-      /> */}
+      />
       <MenuItem
         icon={IconSet.SETTINGS}
         onClick={uiStore.toggleSettings}

@@ -64,12 +64,12 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
       <MenuItem onClick={handleViewFullSize} text="View at Full Size" icon={IconSet.SEARCH} />
       <MenuItem
         onClick={handlePreviewWindow}
-        text="Open In Preview Window"
+        text="Open In Preview Window (space bar)"
         icon={IconSet.PREVIEW}
       />
       <MenuItem
         onClick={uiStore.openToolbarTagPopover}
-        text="Open Tag Selector"
+        text="Open Tag Selector (T)"
         icon={IconSet.TAG}
       />
       <MenuSubItem text="Search Similar Images..." icon={IconSet.MORE}>

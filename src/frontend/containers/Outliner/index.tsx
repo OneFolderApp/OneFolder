@@ -26,15 +26,15 @@ const Outliner = () => {
           heights={heights}
           setHeights={setHeights}
         >
-          <LocationsPanel />
           <TagsPanel />
+          <LocationsPanel />
           {/* <SavedSearchesPanel /> */}
-          <GenericButtonNavigation
+          {/* <GenericButtonNavigation
             text="Give Feedback!"
             onClick={() => {
               shell.openExternal('https://forms.gle/UjkHgSa8a7335icQ7');
             }}
-          />
+          /> */}
         </MultiSplit>
       </div>
       <OutlinerActionBar />

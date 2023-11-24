@@ -9,6 +9,7 @@ import { ClientTagSearchCriteria } from '../../../entities/SearchCriteria';
 import { useAction } from '../../../hooks/mobx';
 import { comboMatches, getKeyCombo, parseKeyCombo } from '../../../hotkeyParser';
 import TagsTree from './TagsTree';
+import { shell } from 'electron';
 
 // Tooltip info
 const enum TooltipInfo {
@@ -40,29 +41,50 @@ export const OutlinerActionBar = observer(() => {
 
   return (
     <Toolbar id="actionbar" label="Action Bar" controls="content-view">
-      <ToolbarButton
-        text={fileStore.numTotalFiles}
-        icon={IconSet.MEDIA}
-        onClick={fileStore.fetchAllFiles}
-        pressed={fileStore.showsAllContent}
-        tooltip={TooltipInfo.AllImages}
-      />
-      <ToolbarButton
-        text={fileStore.numUntaggedFiles}
-        icon={IconSet.TAG_BLANCO}
-        onClick={handleUntaggedClick}
-        pressed={fileStore.showsUntaggedContent}
-        tooltip={TooltipInfo.Untagged}
-      />
-      {fileStore.numMissingFiles > 0 && (
+      <div>
         <ToolbarButton
-          text={fileStore.numMissingFiles}
-          icon={IconSet.WARNING_FILL}
-          onClick={fileStore.fetchMissingFiles}
-          pressed={fileStore.showsMissingContent}
-          tooltip={TooltipInfo.Missing}
+          text={fileStore.numTotalFiles}
+          icon={IconSet.MEDIA}
+          onClick={fileStore.fetchAllFiles}
+          pressed={fileStore.showsAllContent}
+          tooltip={TooltipInfo.AllImages}
         />
-      )}
+        <ToolbarButton
+          text={fileStore.numUntaggedFiles}
+          icon={IconSet.TAG_BLANCO}
+          onClick={handleUntaggedClick}
+          pressed={fileStore.showsUntaggedContent}
+          tooltip={TooltipInfo.Untagged}
+        />
+        {fileStore.numMissingFiles > 0 && (
+          <ToolbarButton
+            text={fileStore.numMissingFiles}
+            icon={IconSet.WARNING_FILL}
+            onClick={fileStore.fetchMissingFiles}
+            pressed={fileStore.showsMissingContent}
+            tooltip={TooltipInfo.Missing}
+          />
+        )}
+      </div>
+      <hr className="footer-separator" />
+      <div className="footer-buttons">
+        <button
+          className="footer-link"
+          onClick={() => {
+            shell.openExternal('https://photofolder.canny.io/feedback');
+          }}
+        >
+          → 💡idea + 🐞bugs
+        </button>
+        <button
+          className="footer-link"
+          onClick={() => {
+            shell.openExternal('https://photofolder.canny.io/feedback');
+          }}
+        >
+          → help center
+        </button>
+      </div>
     </Toolbar>
   );
 });

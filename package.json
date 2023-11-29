@@ -1,7 +1,7 @@
 {
   "name": "photofolder",
   "productName": "PhotoFolder",
-  "version": "1.0.0-rc.5",
+  "version": "0.1.0",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -30,7 +30,8 @@
       ]
     },
     "dmg": {
-      "icon": false
+      "icon": false,
+      "sign": false
     },
     "linux": {
       "target": [
@@ -70,12 +71,15 @@
     ],
     "asar": true
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Antoine-lb/PhotoFolder"
+  "repository": "https://github.com/PhotoFolder/PhotoFolder",
+  "publish": {
+    "provider": "github",
+    "owner": "PhotoFolder",
+    "repo": "PhotoFolder",
+    "releaseType": "release"
   },
-  "author": "Antoine-lb",
-  "license": "ISC",
+  "author": "PhotoFolder",
+  "license": "MIT",
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
     "@types/chrome": "^0.0.195",
@@ -89,7 +93,7 @@
     "@typescript-eslint/eslint-plugin": "^5.52.0",
     "@typescript-eslint/parser": "^5.52.0",
     "css-loader": "^6.7.3",
-    "electron": "21.3.0",
+    "electron": "27.1.2",
     "electron-builder": "23.6.0",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
@@ -123,7 +127,7 @@
     "dexie": "^3.2.3",
     "dexie-export-import": "^1.0.3",
     "electron-google-analytics4": "^1.1.1",
-    "electron-updater": "^5.3.0",
+    "electron-updater": "^6.1.7",
     "fs-extra": "^11.1.0",
     "mobx": "^6.8.0",
     "mobx-react-lite": "^3.4.0",

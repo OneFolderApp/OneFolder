@@ -27,6 +27,14 @@ const basePath = app.getPath('userData');
 const preferencesFilePath = path.join(basePath, 'preferences.json');
 const windowStateFilePath = path.join(basePath, 'windowState.json');
 
+// if (IS_DEV) {
+//   Object.defineProperty(app, 'isPackaged', {
+//     get() {
+//       return true;
+//     },
+//   });
+// }
+
 type PreferencesFile = {
   checkForUpdatesOnStartup?: boolean;
 };
@@ -151,7 +159,7 @@ function createWindow() {
     childWindow.setMenu(null); // no toolbar needed
 
     if (IS_DEV) {
-      childWindow.webContents.openDevTools();
+      // childWindow.webContents.openDevTools({ mode: 'detach' });
     }
 
     mainWindow.webContents.once('will-navigate', () => {
@@ -276,7 +284,7 @@ function createWindow() {
 
   // Open the DevTools if in dev mode.
   if (IS_DEV) {
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
   // Emitted when the window is closed.

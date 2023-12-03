@@ -1,7 +1,7 @@
 {
-  "name": "photofolder",
-  "productName": "PhotoFolder",
-  "version": "0.1.0",
+  "name": "onefolder",
+  "productName": "OneFolder",
+  "version": "0.1.1",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -19,9 +19,13 @@
     "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr"
   },
   "build": {
-    "appId": "com.photofolder.photofolder",
-    "productName": "PhotoFolder",
+    "appId": "com.onefolder-app.onefolder",
+    "productName": "OneFolder",
+    "afterSign": "scripts/notarize.js",
     "mac": {
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "category": "public.app-category.graphics-design",
       "extraResources": [
         "resources/exiftool/exiftool.pl",
@@ -71,16 +75,17 @@
     ],
     "asar": true
   },
-  "repository": "https://github.com/PhotoFolder/PhotoFolder",
+  "repository": "https://github.com/PhotoFolder/OneFolder",
   "publish": {
     "provider": "github",
     "owner": "PhotoFolder",
-    "repo": "PhotoFolder",
+    "repo": "OneFolder",
     "releaseType": "release"
   },
-  "author": "PhotoFolder",
+  "author": "OneFolder",
   "license": "MIT",
   "devDependencies": {
+    "@electron/notarize": "^2.2.0",
     "@svgr/webpack": "^6.5.1",
     "@types/chrome": "^0.0.195",
     "@types/fs-extra": "^11.0.1",
@@ -124,6 +129,7 @@
     "ag-psd": "^15.0.0",
     "chokidar": "^3.5.3",
     "comlink": "^4.4.1",
+    "copy-webpack-plugin": "^11.0.0",
     "dexie": "^3.2.3",
     "dexie-export-import": "^1.0.3",
     "electron-google-analytics4": "^1.1.1",

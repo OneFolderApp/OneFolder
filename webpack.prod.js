@@ -5,6 +5,7 @@
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 let mainConfig = {
@@ -41,6 +42,16 @@ let mainConfig = {
       },
     ],
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'entitlements.mac.plist',
+          to: path.join(__dirname, 'build', 'entitlements.mac.plist'),
+        },
+      ],
+    }),
+  ],
 };
 
 let rendererConfig = {
@@ -130,6 +141,14 @@ let rendererConfig = {
     new MiniCssExtractPlugin({
       filename: '[name].[contenthash].css',
       chunkFilename: '[id].[contenthash].css',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'entitlements.mac.plist',
+          to: path.join(__dirname, 'build', 'entitlements.mac.plist'),
+        },
+      ],
     }),
   ],
 };

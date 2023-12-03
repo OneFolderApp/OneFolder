@@ -53,7 +53,7 @@ const PreviewApp = observer(() => {
             onClick={handleRightButton}
             disabled={uiStore.firstItem === fileStore.fileList.length - 1}
           />
-          <Toggle onChange={uiStore.toggleSlideMode} checked={!uiStore.isSlideMode}>
+          <Toggle onChange={uiStore.toggleSlideMode} checked={uiStore.isSlideMode}>
             Full size
           </Toggle>
 

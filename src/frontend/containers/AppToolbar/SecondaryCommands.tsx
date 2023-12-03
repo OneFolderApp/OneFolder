@@ -5,6 +5,7 @@ import { IconSet, KeyCombo } from 'widgets';
 import { MenuButton, MenuItem } from 'widgets/menus';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { useStore } from 'src/frontend/contexts/StoreContext';
+import { ThumbnailSizeSliderMenuItem } from './Menus';
 
 const SecondaryCommands = observer(() => {
   const { uiStore } = useStore();
@@ -40,6 +41,7 @@ const SecondaryCommands = observer(() => {
         text="Check for updates"
       /> */}
       {/* <MenuItem icon={IconSet.LOGO} onClick={uiStore.toggleAbout} text="About" /> */}
+      <ThumbnailSizeSliderMenuItem />
     </MenuButton>
   );
 });

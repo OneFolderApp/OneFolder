@@ -71,12 +71,12 @@ export const OutlinerActionBar = observer(() => {
         <button
           className="footer-link"
           onClick={() => {
-            shell.openExternal('https://photofolder.canny.io/feedback');
+            shell.openExternal('https://onefolder.canny.io/feedback');
           }}
         >
           → 💡ideas + 🐞bugs
         </button>
-        {/* <button
+        <button
           className="footer-link"
           onClick={() => {
             shell.openExternal(
@@ -85,7 +85,7 @@ export const OutlinerActionBar = observer(() => {
           }}
         >
           → help center
-        </button> */}
+        </button>
       </div>
     </Toolbar>
   );

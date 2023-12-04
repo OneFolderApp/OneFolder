@@ -76,7 +76,7 @@ export const OutlinerActionBar = observer(() => {
         >
           → 💡ideas + 🐞bugs
         </button>
-        <button
+        {/* <button
           className="footer-link"
           onClick={() => {
             shell.openExternal(
@@ -85,7 +85,7 @@ export const OutlinerActionBar = observer(() => {
           }}
         >
           → help center
-        </button>
+        </button> */}
       </div>
     </Toolbar>
   );

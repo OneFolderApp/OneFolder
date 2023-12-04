@@ -25,7 +25,7 @@ interface IMetaData {
   size: number;
   width: number;
   height: number;
-  /** Date when this file was created (from the OS, not related to PhotoFolder) */
+  /** Date when this file was created (from the OS, not related to OneFolder) */
   dateCreated: Date;
 }
 

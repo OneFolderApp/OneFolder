@@ -9,9 +9,9 @@
 // compatibility.
 
 // Note about the terminology:
-// - In PhotoFolder, we call "tags" the labels you can assign to images
+// - In OneFolder, we call "tags" the labels you can assign to images
 // - In ExifTool, any attribute in the metadata of an image is called a "tag"
-//   The type of tags we use in PhotoFolder are stored in the "Subject", "Keyword"
+//   The type of tags we use in OneFolder are stored in the "Subject", "Keyword"
 //   and "HierarchicalSubject" attributes - this last one being special, e.g. "Body | Arm | Hand"
 
 /**
@@ -223,7 +223,7 @@ class ExifIO {
     }
   }
 
-  /** Can be used to write arbitrary metadata. For "Subject" data (the "tags" in PhotoFolder), use writeTags! */
+  /** Can be used to write arbitrary metadata. For "Subject" data (the "tags" in OneFolder), use writeTags! */
   @action.bound async writeData(
     filepath: string,
     data: exiftool.IMetadata,

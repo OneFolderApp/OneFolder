@@ -196,7 +196,7 @@ export class ClientLocation {
       // - not trivial to do a re-scan. Could also just re-start, won't be used that often anyways I think
       if (this.isInitialized) {
         AppToaster.show({
-          message: 'Restart PhotoFolder to re-detect any images',
+          message: 'Restart OneFolder to re-detect any images',
           timeout: 8000,
           clickAction: {
             onClick: RendererMessenger.reload,

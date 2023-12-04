@@ -20,7 +20,7 @@ export const LocationRemoval = (props: IRemovalProps<ClientLocation>) => (
   <RemovalAlert
     open
     title={`Are you sure you want to delete the location "${props.object.name}"?`}
-    information="This will permanently remove the location and all data linked to its images in PhotoFolder."
+    information="This will permanently remove the location and all data linked to its images in OneFolder."
     onCancel={props.onClose}
     onConfirm={() => {
       props.onClose();
@@ -64,7 +64,7 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
     <RemovalAlert
       open
       title={text}
-      information="Deleting tags or collections will permanently remove them from PhotoFolder."
+      information="Deleting tags or collections will permanently remove them from OneFolder."
       body={
         tagsToRemove.length > 0 && (
           <div id="tag-remove-overview">
@@ -103,7 +103,7 @@ export const FileRemoval = observer(() => {
       title={`Are you sure you want to delete ${selection.size} missing file${
         selection.size > 1 ? 's' : ''
       }?`}
-      information="Deleting files will permanently remove them from PhotoFolder, so any tags saved on them will be lost. If you move files back into their location, they will be automatically detected by PhotoFolder."
+      information="Deleting files will permanently remove them from OneFolder, so any tags saved on them will be lost. If you move files back into their location, they will be automatically detected by OneFolder."
       body={
         <div className="deletion-confirmation-list">
           {Array.from(selection).map((f) => (
@@ -158,7 +158,7 @@ export const MoveFilesToTrashBin = observer(() => {
         isMulti ? 'them' : 'it'
       } from your system's trash bin, but all assigned tags to ${
         isMulti ? 'them' : 'it'
-      } in PhotoFolder will be lost.`}
+      } in OneFolder will be lost.`}
       body={
         <div className="deletion-confirmation-list">
           {Array.from(selection).map((f) => (

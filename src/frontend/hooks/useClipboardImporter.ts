@@ -10,7 +10,7 @@ export function useClipboardImporter(uiStore: UiStore) {
     (e: ClipboardEvent) => {
       const { items, files } = e.clipboardData!;
 
-      let fileName = `photofolder_${Date.now()}`;
+      let fileName = `onefolder_${Date.now()}`;
       const type = items[0].type;
       if (!type.match(/image/)) {
         return;
@@ -23,7 +23,7 @@ export function useClipboardImporter(uiStore: UiStore) {
       const file = files[0];
       if (file && file.type.includes('image')) {
         fileName =
-          file.name == DEFAULT_FILE_NAME ? `photofolder_${file.lastModified}.png` : file.name;
+          file.name == DEFAULT_FILE_NAME ? `onefolder_${file.lastModified}.png` : file.name;
       }
 
       const reader = new FileReader();

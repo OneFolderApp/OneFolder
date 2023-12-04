@@ -41,7 +41,7 @@ export const Advanced = observer(() => {
     if (!(await isDirEmpty(newDir))) {
       if (
         window.confirm(
-          `The directory you picked is not empty. PhotoFolder might delete any files inside of it. Do you still wish to pick this directory?\n\nYou picked: ${newDir}`,
+          `The directory you picked is not empty. OneFolder might delete any files inside of it. Do you still wish to pick this directory?\n\nYou picked: ${newDir}`,
         )
       ) {
         changeThumbnailDirectory(newDir);

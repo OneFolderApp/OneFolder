@@ -23,7 +23,7 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**PhotoFolder version**
+**OneFolder version**
 
 - e.g. v1.0.0 (you can find this in the about menu or in the name of the installer file)
 

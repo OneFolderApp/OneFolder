@@ -1,6 +1,6 @@
 import React from 'react';
 
-import PreloadIcon from 'resources/logo/svg/full-color/photofolderTemplate-fc-@2x.svg';
+import PreloadIcon from 'resources/logo/svg/full-color/onefolderTemplate-fc-@2x.svg';
 import { SVG } from 'widgets/icons';
 
 const SplashScreen = () => {
@@ -38,7 +38,7 @@ const SplashScreen = () => {
           style={{ height: '180px' }}
         />
 
-        {/* <p style={textStyles}>PhotoFolder</p> */}
+        {/* <p style={textStyles}>OneFolder</p> */}
       </div>
     </div>
   );

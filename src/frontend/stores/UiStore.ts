@@ -163,9 +163,9 @@ class UiStore {
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
 
   @observable isToolbarTagPopoverOpen: boolean = false;
-  /** Dialog for removing unlinked files from PhotoFolder's database */
+  /** Dialog for removing unlinked files from OneFolder's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
-  /** Dialog for moving files to the system's trash bin, and removing from PhotoFolder's database */
+  /** Dialog for moving files to the system's trash bin, and removing from OneFolder's database */
   @observable isMoveFilesToTrashOpen: boolean = false;
   /** Dialog to warn the user when he tries to open too many files externally */
   @observable isManyExternalFilesOpen: boolean = false;
@@ -937,7 +937,7 @@ class UiStore {
           );
           this.searchCriteriaList.push(...newCrits);
 
-          // and other content-related options. So it's just like you never closed PhotoFolder!
+          // and other content-related options. So it's just like you never closed OneFolder!
           this.firstItem = prefs.firstItem;
           this.searchMatchAny = prefs.searchMatchAny;
           this.isSlideMode = prefs.isSlideMode;

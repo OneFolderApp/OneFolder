@@ -36,7 +36,7 @@ const handleMove = async (
 ) => {
   let isReplaceAllActive = false;
 
-  // If it's a file being dropped that's already in PhotoFolder, move it
+  // If it's a file being dropped that's already in OneFolder, move it
   for (const file of matches) {
     const src = path.normalize(file.absolutePath);
     const dst = path.normalize(path.join(dir, file.name));
@@ -155,7 +155,7 @@ export const useFileDropHandling = (
             await handleMove(fileStore, matches, loc, fullPath);
             setTimeout(() => fileStore.refetch(), 500);
           } else {
-            // Otherwise it's an external file (e.g. from the web or a folder not set up as a Location in PhotoFolder)
+            // Otherwise it's an external file (e.g. from the web or a folder not set up as a Location in OneFolder)
             // -> download it and "copy" it to the target folder
             await storeDroppedImage(dropData, fullPath);
           }

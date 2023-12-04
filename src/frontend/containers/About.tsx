@@ -25,14 +25,14 @@ const About = observer(() => {
           It&apos;s completely <b>free and open source</b>! Find out more at
         </p>
         <span>
-          <ExternalLink url="https://PhotoFolder.github.io/">PhotoFolder.github.io</ExternalLink>.
+          <ExternalLink url="https://onefolder.app/">onefolder.app</ExternalLink>.
         </span>
         <ul>
           <li>General information</li>
           <li>Download the latest version</li>
         </ul>
-        <ExternalLink url="https://github.com/PhotoFolder/PhotoFolder">
-          github.com/PhotoFolder/PhotoFolder
+        <ExternalLink url="https://github.com/PhotoFolder/OneFolder">
+          github.com/PhotoFolder/OneFolder
         </ExternalLink>
         <ul>
           <li>🤓 View the source code</li>

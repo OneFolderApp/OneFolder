@@ -15,7 +15,7 @@ import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
 
-export const FILE_STORAGE_KEY = 'PhotoFolder_File';
+export const FILE_STORAGE_KEY = 'OneFolder_File';
 
 /** These fields are stored and recovered when the application opens up */
 type PersistentPreferenceFields = 'orderDirection' | 'orderBy';
@@ -81,7 +81,7 @@ class FileStore {
         try {
           const tagsNameHierarchies = await this.rootStore.exifTool.readTags(absolutePath);
 
-          // Now that we know the tag names in file metadata, add them to the files in PhotoFolder
+          // Now that we know the tag names in file metadata, add them to the files in OneFolder
           // Main idea: Find matching tag with same name, otherwise, insert new
           //   for now, just match by the name at the bottom of the hierarchy
 
@@ -402,7 +402,7 @@ class FileStore {
       AppToaster.show(
         {
           message:
-            'Some files can no longer be found. Either move them back to their location, or delete them from PhotoFolder',
+            'Some files can no longer be found. Either move them back to their location, or delete them from OneFolder',
           timeout: 12000,
         },
         'recovery-view',

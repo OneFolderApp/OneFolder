@@ -2,4 +2,4 @@ const params = new URLSearchParams(window.location.search.slice(1));
 export const IS_PREVIEW_WINDOW = params.get('preview') === 'true';
 
 // Window State
-export const WINDOW_STORAGE_KEY = 'PhotoFolder_Window';
+export const WINDOW_STORAGE_KEY = 'OneFolder_Window';

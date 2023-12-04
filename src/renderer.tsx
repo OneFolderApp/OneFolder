@@ -195,9 +195,9 @@ async function runPreviewApp(db: Dexie, root: Root): Promise<void> {
 }
 
 main()
-  .then(() => console.info('Successfully initialized PhotoFolder!'))
+  .then(() => console.info('Successfully initialized OneFolder!'))
   .catch((err) => {
-    console.error('Could not initialize PhotoFolder!', err);
+    console.error('Could not initialize OneFolder!', err);
     window.alert('An error has occurred, check the console for more details');
 
     // In dev mode, the console is already automatically opened: only open in non-dev mode here

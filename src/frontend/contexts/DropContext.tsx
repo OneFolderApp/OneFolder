@@ -47,7 +47,7 @@ const useFileDropper = () => {
 
       e.dataTransfer!.dropEffect = 'none';
 
-      // Detect whether the drag event came from within PhotoFolder
+      // Detect whether the drag event came from within OneFolder
       // FIXME: Yes, this is hacky. But... The native drag event does not allow you to specify any metadata, just a list of files...
       const w = window as any;
       const isInternalEvent =

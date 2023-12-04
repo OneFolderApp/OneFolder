@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import LOGO_FC from 'resources/logo/svg/full-color/photofolder-logomark-fc.svg';
+import LOGO_FC from 'resources/logo/svg/full-color/onefolder-logomark-fc.svg';
 import { IS_PREVIEW_WINDOW } from 'common/window';
 
 import { useStore } from '../../contexts/StoreContext';

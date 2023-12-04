@@ -14,8 +14,8 @@ import {
 import path from 'path';
 import fse from 'fs-extra';
 import { autoUpdater, UpdateInfo } from 'electron-updater';
-import TrayIcon from '../resources/logo/png/full-color/photofolder-logomark-fc-256x256.png';
-import AppIcon from '../resources/logo/png/full-color/photofolder-logomark-fc-512x512.png';
+import TrayIcon from '../resources/logo/png/full-color/onefolder-logomark-fc-256x256.png';
+import AppIcon from '../resources/logo/png/full-color/onefolder-logomark-fc-512x512.png';
 import { createBugReport, githubUrl } from '../common/config';
 import { IS_DEV } from '../common/process';
 import { MainMessenger } from './ipc/main';
@@ -103,7 +103,7 @@ function createWindow() {
     icon: `${__dirname}/${AppIcon}`,
     // Should be same as body background: Only for split second before css is loaded
     backgroundColor: '#1c1e23',
-    title: 'PhotoFolder',
+    title: 'OneFolder',
     show: false, // only show once initial loading is finished
     ...previousWindowState,
   };
@@ -143,7 +143,7 @@ function createWindow() {
         // Should be same as body background: Only for split second before css is loaded
         backgroundColor: '#1c1e23',
         parent: mainWindow,
-        title: `${WINDOW_TITLES[frameName]} • PhotoFolder`,
+        title: `${WINDOW_TITLES[frameName]} • OneFolder`,
         frame: true,
         titleBarStyle: 'default',
       },
@@ -195,7 +195,7 @@ function createWindow() {
   const menuBar: Electron.MenuItemConstructorOptions[] = [];
 
   menuBar.push({
-    label: 'PhotoFolder',
+    label: 'OneFolder',
     submenu: [
       { role: 'about' },
       { type: 'separator' },
@@ -345,7 +345,7 @@ function createPreviewWindow() {
     icon: `${__dirname}/${AppIcon}`,
     // Should be same as body background: Only for split second before css is loaded
     backgroundColor: '#14181a',
-    title: 'PhotoFolder Quick View',
+    title: 'OneFolder Quick View',
     show: false, // invis by default
   });
   previewWindow.setMenuBarVisibility(false);
@@ -364,11 +364,11 @@ function createPreviewWindow() {
   return previewWindow;
 }
 
-// Ensure only a single instance of PhotoFolder can be open
+// Ensure only a single instance of OneFolder can be open
 // https://www.electronjs.org/docs/api/app#apprequestsingleinstancelock
 const HAS_INSTANCE_LOCK = app.requestSingleInstanceLock();
 if (!HAS_INSTANCE_LOCK) {
-  console.log('Another instance of PhotoFolder is already running');
+  console.log('Another instance of OneFolder is already running');
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -449,7 +449,7 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
   if (dialogResult.response === 0) {
     autoUpdater.downloadUpdate();
   } else if (dialogResult.response === 2) {
-    shell.openExternal('https://github.com/PhotoFolder/PhotoFolder/releases/latest');
+    shell.openExternal('https://github.com/PhotoFolder/OneFolder/releases/latest');
   }
 });
 
@@ -475,7 +475,7 @@ autoUpdater.on('update-downloaded', async () => {
   }
   await dialog.showMessageBox({
     title: 'Install Updates',
-    message: 'Updates downloaded, PhotoFolder will restart...',
+    message: 'Updates downloaded, OneFolder will restart...',
   });
   setImmediate(() => autoUpdater.quitAndInstall());
 });
@@ -504,12 +504,7 @@ process.on('uncaughtException', async (error) => {
         type: 'error',
         title: 'Unexpected error',
         message: errorMessage,
-        buttons: [
-          'Try to keep running',
-          'File bug report',
-          'Restart PhotoFolder',
-          'Quit PhotoFolder',
-        ],
+        buttons: ['Try to keep running', 'File bug report', 'Restart OneFolder', 'Quit OneFolder'],
       });
       if (dialogResult.response === 0) {
         // Keep running

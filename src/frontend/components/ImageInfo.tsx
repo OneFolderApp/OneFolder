@@ -25,7 +25,7 @@ const commonMetadataLabels: Record<keyof CommonMetadata, string> = {
   dimensions: 'Dimensions',
   size: 'Size',
   imported: 'Imported',
-  // TODO: modified in PhotoFolder vs modified in system?
+  // TODO: modified in OneFolder vs modified in system?
   created: 'Created',
   modified: 'Modified',
 };

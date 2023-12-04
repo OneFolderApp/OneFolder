@@ -3,7 +3,7 @@ import os from 'os';
 // Randomly chosen, hopefully no conflicts with other apps/services
 export const SERVER_PORT = 5454;
 
-export const githubUrl = 'https://github.com/PhotoFolder/PhotoFolder';
+export const githubUrl = 'https://github.com/PhotoFolder/OneFolder';
 
 export const chromeExtensionUrl = 'https://chrome.google.com/webstore/';
 
@@ -49,7 +49,7 @@ ${error || 'No error message available'}
 
 <b>Runtime info</b>
 <ul>
-<li>PhotoFolder version: v${version}</li>
+<li>OneFolder version: v${version}</li>
 <li>Operating system: ${os.type()} ${os.release()}, ${process.platform} ${process.arch}</li>
 <li>Node version: ${process.version}</li>
 </ul>

@@ -11,6 +11,7 @@ import Path from 'path';
 import { FileDTO, IMG_EXTENSIONS_TYPE } from '../../api/file';
 import { ID } from '../../api/id';
 import ImageLoader from '../image/ImageLoader';
+import { detectFaces } from '../image/aiModels';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
@@ -118,6 +119,10 @@ export class ClientFile {
         this.store.decrementNumUntaggedFiles();
       }
     }
+  }
+
+  @action.bound detectFaces(img: HTMLImageElement): void {
+    detectFaces(img);
   }
 
   @action.bound removeTag(tag: ClientTag): void {

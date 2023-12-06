@@ -27,7 +27,7 @@
     // Similar behavior to toolbar in the outliner
     [role='toolbar'] {
       opacity: 0;
-      
+
       position: absolute;
       top: 0;
       right: 1rem;
@@ -41,7 +41,7 @@
     .toolbar-button {
       min-height: 1.5rem;
       min-width: 1.5rem;
-  
+
       &[aria-pressed='true'],
       &[aria-checked='true'] {
         color: var(--accent-color);
@@ -107,4 +107,15 @@ table#file-info {
   input {
     width: 100%;
   }
+}
+
+// Antoine: this is tmp to test the face detector model
+.small-thumbnail {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.5rem;
+  border-radius: 0.25rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }

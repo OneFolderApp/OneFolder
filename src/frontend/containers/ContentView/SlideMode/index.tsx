@@ -15,9 +15,10 @@ import { CommandDispatcher } from '../Commands';
 import ZoomPan, { CONTAINER_DEFAULT_STYLE, SlideTransform } from '../SlideMode/ZoomPan';
 import { ContentRect } from '../utils';
 import { Vec2, createDimension, createTransform } from './utils';
+import AnnotoriousWrapper from './AnnotoriousWrapper';
 
-import { Annotorious } from '@recogito/annotorious';
-import '@recogito/annotorious/dist/annotorious.min.css';
+// import { Annotorious } from '@recogito/annotorious';
+// import '@recogito/annotorious/dist/annotorious.min.css';
 
 const SlideMode = observer(({ contentRect }: { contentRect: ContentRect }) => {
   const { uiStore } = useStore();
@@ -233,6 +234,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     const src = await imageLoader.getImageSrc(file);
     return src ?? thumbnailPath;
   });
+  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
 
   const image = usePromise(
     source,
@@ -285,24 +287,12 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     },
   );
 
-  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
-  const [anno, setAnno] = useState<Annotorious | undefined>(undefined);
-
   useEffect(() => {
-    let annotorious: Annotorious | undefined;
+    let annotorious: AnnotoriousWrapper | undefined;
 
     if (imgEl.current) {
-      annotorious = new Annotorious({
-        image: imgEl.current,
-        widgets: [{ widget: 'TAG', vocabulary: null }],
-      });
-
-      // Attach event handlers here
-      // ...
+      annotorious = new AnnotoriousWrapper(imgEl.current);
     }
-
-    setAnno(annotorious);
-
     return () => annotorious?.destroy();
   }, [imgEl]);
 
@@ -349,6 +339,8 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
         </ZoomPan>
       );
     }
+
+    // import AnnotoriousWrapper from './AnnotoriousWrapper';
 
     return (
       <ZoomPan

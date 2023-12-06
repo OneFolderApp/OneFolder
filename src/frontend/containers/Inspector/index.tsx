@@ -45,7 +45,13 @@ const Inspector = observer(() => {
       <button
         onClick={() => {
           console.log('imageThumbnail', imageThumbnail.current);
-          first.detectFaces(imageThumbnail.current);
+
+          if (imageThumbnail.current) {
+            console.log('imageThumbnail', imageThumbnail.current);
+            first.detectFaces(imageThumbnail.current);
+          } else {
+            console.error('imageThumbnail is null');
+          }
         }}
       >
         <img ref={imageThumbnail} src={first.absolutePath} alt="img" className="small-thumbnail" />

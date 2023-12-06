@@ -338,30 +338,34 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     }
 
     return (
-      <ZoomPan
-        position="center"
-        initialScale="auto"
-        doubleTapBehavior="zoomOrReset"
-        imageDimension={dimension}
-        containerDimension={createDimension(width, height)}
-        minScale={minScale}
-        maxScale={5}
-        transitionStart={transitionStart}
-        transitionEnd={transitionEnd}
-        onClose={onClose}
-        upscaleMode={upscaleMode}
-      >
-        {(props) => (
-          <img
-            {...props}
-            src={encodeFilePath(src)}
-            width={dimension[0]}
-            height={dimension[1]}
-            alt=""
-            ref={imgEl}
-          />
-        )}
-      </ZoomPan>
+      // Antoine 06/12/23: remove pan to make Annotorius
+      // <ZoomPan
+      //   position="center"
+      //   initialScale="auto"
+      //   doubleTapBehavior="zoomOrReset"
+      //   imageDimension={dimension}
+      //   containerDimension={createDimension(width, height)}
+      //   minScale={minScale}
+      //   maxScale={5}
+      //   transitionStart={transitionStart}
+      //   transitionEnd={transitionEnd}
+      //   onClose={onClose}
+      //   upscaleMode={upscaleMode}
+      // >
+      //   {(props) => (
+      <div className="image_preview__wrapper">
+        <img
+          // {...props}
+          src={encodeFilePath(src)}
+          // width={dimension[0]}
+          // height={dimension[1]}
+          alt=""
+          ref={imgEl}
+          className="image_preview"
+        />
+      </div>
+      //   )}
+      // </ZoomPan>
     );
   }
 };

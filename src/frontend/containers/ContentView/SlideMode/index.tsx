@@ -2,7 +2,7 @@ import { shell } from 'electron';
 import { autorun, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import SysPath from 'path';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState, RefObject } from 'react';
 import { ClientFile } from 'src/frontend/entities/File';
 import { useStore } from 'src/frontend/contexts/StoreContext';
 import { useAction, useComputed } from 'src/frontend/hooks/mobx';
@@ -15,6 +15,9 @@ import { CommandDispatcher } from '../Commands';
 import ZoomPan, { CONTAINER_DEFAULT_STYLE, SlideTransform } from '../SlideMode/ZoomPan';
 import { ContentRect } from '../utils';
 import { Vec2, createDimension, createTransform } from './utils';
+
+import { Annotorious } from '@recogito/annotorious';
+import '@recogito/annotorious/dist/annotorious.min.css';
 
 const SlideMode = observer(({ contentRect }: { contentRect: ContentRect }) => {
   const { uiStore } = useStore();
@@ -282,6 +285,27 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     },
   );
 
+  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
+  const [anno, setAnno] = useState<Annotorious | undefined>(undefined);
+
+  useEffect(() => {
+    let annotorious: Annotorious | undefined;
+
+    if (imgEl.current) {
+      annotorious = new Annotorious({
+        image: imgEl.current,
+        widgets: [{ widget: 'TAG', vocabulary: null }],
+      });
+
+      // Attach event handlers here
+      // ...
+    }
+
+    setAnno(annotorious);
+
+    return () => annotorious?.destroy();
+  }, [imgEl]);
+
   if (image.tag === 'ready' && 'err' in image.value) {
     console.log(image.value.err);
     return <ImageFallback error={image.value.err} absolutePath={absolutePath} />;
@@ -347,6 +371,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
             width={dimension[0]}
             height={dimension[1]}
             alt=""
+            ref={imgEl}
           />
         )}
       </ZoomPan>

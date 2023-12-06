@@ -111,3 +111,32 @@ declare module 'node-exiftool' {
 
   export default exiftool;
 }
+
+declare module '@recogito/annotorious' {
+  export class Annotorious {
+    constructor(options: any);
+    addAnnotation(annotation: any): void;
+    addPlugin(plugin: any): void;
+    addSelector(selector: any): void;
+    destroy(): void;
+    getAnnotations(): any[];
+    getAvailableSelectors(): any[];
+    getMode(): string;
+    getSelected(): any;
+    getSelectedImage(): any;
+    hideAnnotations(): void;
+    hideSelectionWidget(): void;
+    makeAnnotatable(element: any): void;
+    off(event: string, callback: any): void;
+    on(event: string, callback: any): void;
+    removeAnnotation(annotation: any): void;
+    removePlugin(plugin: any): void;
+    removeSelector(selector: any): void;
+    setDrawingTool(tool: string): void;
+    setDrawingTools(tools: string[]): void;
+    setMode(mode: string): void;
+    showAnnotations(): void;
+    showSelectionWidget(): void;
+    stopSelection(): void;
+  }
+}

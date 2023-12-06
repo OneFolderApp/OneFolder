@@ -1,4 +1,4 @@
-import { Annotorious } from '@recogito/annotorious';
+import { Annotorious, AnnotoriousSelection } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 /**
@@ -16,9 +16,9 @@ class AnnotoriousWrapper {
       widgets: [{ widget: 'TAG', vocabulary: null }],
     });
 
-    this.annotorious.on('createSelection', function (selection) {
+    this.annotorious.on('createSelection', (selection: AnnotoriousSelection) => {
       console.log('createSelection', selection);
-      // annotations = anno.getAnnotations();
+      // this.annotorious.getAnnotations();
       // getPeople();
     });
   }

@@ -17,9 +17,6 @@ import { ContentRect } from '../utils';
 import { Vec2, createDimension, createTransform } from './utils';
 import AnnotoriousWrapper from './AnnotoriousWrapper';
 
-// import { Annotorious } from '@recogito/annotorious';
-// import '@recogito/annotorious/dist/annotorious.min.css';
-
 const SlideMode = observer(({ contentRect }: { contentRect: ContentRect }) => {
   const { uiStore } = useStore();
   const isInspectorOpen = uiStore.isInspectorOpen;
@@ -339,8 +336,6 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
         </ZoomPan>
       );
     }
-
-    // import AnnotoriousWrapper from './AnnotoriousWrapper';
 
     return (
       <ZoomPan

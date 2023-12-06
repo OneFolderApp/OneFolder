@@ -139,4 +139,18 @@ declare module '@recogito/annotorious' {
     showSelectionWidget(): void;
     stopSelection(): void;
   }
+
+  export class AnnotoriousSelection {
+    '@context': string;
+    'type': string;
+    'body': any[];
+    'target': {
+      source: string;
+      selector: {
+        type: string;
+        conformsTo: string;
+        value: string;
+      };
+    };
+  }
 }

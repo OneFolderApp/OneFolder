@@ -40,10 +40,6 @@ let mainConfig = {
         test: /\.(jpg|png|gif|ico|icns|eot|ttf|woff|woff2)$/,
         type: 'asset/resource',
       },
-      {
-        test: /fsevents\.node$/,
-        loader: 'ignore-loader'
-      }
     ],
   },
 };
@@ -116,10 +112,6 @@ let rendererConfig = {
           },
         ],
       },
-      {
-        test: /fsevents\.node$/,
-        loader: 'ignore-loader'
-      }
     ],
   },
   plugins: [

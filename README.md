@@ -3,7 +3,7 @@
 # File explorer made for pictures
 PhotoFolder uses file's metadata to give you the experience of Google Photos, but locally, no need to launch a server.
 
-- Website: https://photofolder.github.io/
+- Website: https://onefolder.app/
 - Presentation video (4:22 min): https://youtu.be/5VEm7qhPo2M
 
 > ⚠️ This project is not stable yet, backup your files before using it. [Get notified](https://forms.gle/UPmNKp9FncKYnvcW7) when we have a stable version.

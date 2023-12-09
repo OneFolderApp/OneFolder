@@ -96,6 +96,16 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    version: 9,
+    collections: [
+      {
+        name: 'files',
+        schema:
+          '++id, locationId, *tags, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated, annotations',
+      },
+    ],
+  },
 ];
 
 type DBVersioningConfig = {

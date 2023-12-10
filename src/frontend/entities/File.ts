@@ -5,6 +5,7 @@ import {
   observable,
   ObservableSet,
   reaction,
+  computed,
 } from 'mobx';
 import Path from 'path';
 
@@ -15,7 +16,6 @@ import { detectFaces } from '../image/aiModels';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
-import { ObservableObjectAdministration } from 'mobx/dist/internal';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -58,10 +58,9 @@ export class ClientFile {
   readonly extension: IMG_EXTENSIONS_TYPE;
   /** Same as "name", but without extension */
   readonly filename: string;
-  readonly annotations: ObservableObjectAdministration;
 
+  @observable annotations: string;
   @observable thumbnailPath: string = '';
-
   // Is undefined until existence check has been completed
   @observable isBroken?: boolean;
 
@@ -91,7 +90,7 @@ export class ClientFile {
     this.tags = observable(this.store.getTags(fileProps.tags));
 
     // string to object
-    this.annotations = observable.object(JSON.parse(fileProps.annotations));
+    this.annotations = fileProps.annotations;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -109,6 +108,10 @@ export class ClientFile {
     );
 
     makeObservable(this);
+  }
+
+  @computed get getAnnotations(): string {
+    return this.annotations;
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {
@@ -147,7 +150,7 @@ export class ClientFile {
   }
 
   @action.bound addAnnotation(annotation: object): void {
-    Object.assign(this.annotations, JSON.parse(JSON.stringify(annotation)));
+    this.annotations = JSON.stringify(annotation);
   }
 
   @action.bound setBroken(isBroken: boolean): void {
@@ -176,7 +179,7 @@ export class ClientFile {
       dateLastIndexed: this.dateLastIndexed,
       name: this.name,
       extension: this.extension,
-      annotations: JSON.stringify(this.annotations), // serialize annotations object to string
+      annotations: this.annotations, // serialize annotations object to string
     };
   }
 

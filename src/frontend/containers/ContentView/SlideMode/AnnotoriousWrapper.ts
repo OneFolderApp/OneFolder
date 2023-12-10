@@ -1,48 +1,51 @@
-import { Annotorious } from '@recogito/annotorious';
+import { Annotorious, AnnotoriousBody } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
-import { runInAction, toJS } from 'mobx';
 import { ClientFile } from 'src/frontend/entities/File';
+import TagStore from 'src/frontend/stores/TagStore';
 
 class AnnotoriousWrapper {
   annotorious: Annotorious;
-  file: ClientFile | undefined;
+  file: ClientFile;
+  tagStore: TagStore;
 
-  constructor(imgEl: HTMLImageElement) {
+  constructor(imgEl: HTMLImageElement, file: ClientFile, tagStore: TagStore) {
+    this.file = file;
+    this.tagStore = tagStore;
+    const allPeople = tagStore.getAllPeopleNames;
+
     this.annotorious = new Annotorious({
       image: imgEl,
-      widgets: [{ widget: 'TAG', vocabulary: null }],
+      widgets: [{ widget: 'TAG', vocabulary: allPeople }],
+    });
+
+    if (file.getAnnotations) {
+      const annotationsFromDB = JSON.parse(file.getAnnotations ?? '{}');
+      this.annotorious.setAnnotations(annotationsFromDB);
+    }
+
+    this.annotorious.on('createAnnotation', (annotation: object) => {
+      const allAnotations = this.annotorious.getAnnotations();
+      this.file.addAnnotation(allAnotations);
+      const tagsToAdd = this.getTagsFromAnnotation(annotation.body);
+      if (tagsToAdd[0]) {
+        // tagStore.addPeopleTag(tagsToAdd[0]);
+        this.file.addPeopleTag(tagsToAdd[0]);
+      }
     });
   }
 
-  init(file: ClientFile) {
-    this.file = file;
-    this.setAnnotationsFromFile();
-    this.annotorious.on('createAnnotation', (annotation: object) => {
-      if (this.file) {
-        console.log('annotation.getAnnotations()', this.annotorious.getAnnotations());
-        console.log('annotation', annotation);
-        this.file.addAnnotation(this.annotorious.getAnnotations());
+  getTagsFromAnnotation(annotationBody: AnnotoriousBody) {
+    const tags = annotationBody.map((body) => {
+      if (body.purpose === 'tagging') {
+        return body.value;
       }
+      return null;
     });
+    return tags;
   }
 
   getAnnotoriusInstance() {
     return this.annotorious;
-  }
-
-  setAnnotationsFromFile() {
-    if (!this.file) {
-      return;
-    }
-    let annotations: object = {};
-    runInAction(() => {
-      if (this.file) {
-        annotations = toJS(this.file.annotations);
-      }
-    });
-    if ((annotations as { body: string }).body) {
-      this.annotorious.setAnnotations([annotations]);
-    }
   }
 
   destroy() {

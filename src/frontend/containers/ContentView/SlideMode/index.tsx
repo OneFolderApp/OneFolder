@@ -223,7 +223,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   onClose,
   upscaleMode,
 }: ZoomableImageProps) => {
-  const { imageLoader } = useStore();
+  const { imageLoader, tagStore } = useStore();
   const { absolutePath, width: imgWidth, height: imgHeight } = file;
   // Image src can be set asynchronously: keep track of it in a state
   // Needed for image formats not natively supported by the browser (e.g. tiff): will be converted to another format
@@ -288,11 +288,10 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     let annotorious: AnnotoriousWrapper | undefined;
 
     if (imgEl.current) {
-      annotorious = new AnnotoriousWrapper(imgEl.current);
-      annotorious.init(file);
+      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
     }
     return () => annotorious?.destroy();
-  }, [imgEl]);
+  }, [imgEl, file, tagStore]);
 
   if (image.tag === 'ready' && 'err' in image.value) {
     console.log(image.value.err);

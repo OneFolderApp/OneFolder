@@ -190,8 +190,8 @@ class TagStore {
   // FACES
 
   @computed get getAllPeopleNames(): string[] {
-    this.tagList.map((tag) => console.log('tag', tag));
-    return this.tagList.map((tag) => tag.name);
+    const peopleTag = this.tagList.filter((tag) => tag.isPeopleTag);
+    return peopleTag.map((tag) => tag.name);
   }
 
   @computed get getPeopleTag(): ClientTag | undefined {

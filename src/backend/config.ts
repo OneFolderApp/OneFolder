@@ -109,7 +109,7 @@ const dbConfig: DBVersioningConfig[] = [
       tx.table('files')
         .toCollection()
         .modify((file: FileDTO) => {
-          file.annotations = JSON.stringify({});
+          file.annotations = '{}';
           return file;
         });
     },

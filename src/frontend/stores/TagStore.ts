@@ -207,7 +207,7 @@ class TagStore {
 
   @action.bound async addPeopleTag(personName: string): Promise<ClientTag> {
     const searchResult = this.tagList.filter((t) => {
-      return t.name.toLowerCase() === personName;
+      return t.name === personName;
     });
 
     if (searchResult[0] && searchResult[0].isPeopleTag) {

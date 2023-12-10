@@ -8,7 +8,7 @@ import MultiSplitPane, { MultiSplitPaneProps } from 'widgets/MultiSplit/MultiSpl
 import { useContextMenu } from 'widgets/menus';
 import { Toolbar, ToolbarButton } from 'widgets/toolbar';
 import { ITreeItem, TreeLabel, createBranchOnKeyDown, createLeafOnKeyDown } from 'widgets/tree';
-import { ROOT_TAG_ID } from '../../../../api/tag';
+import { PEOPLE_TAG_NAME, ROOT_TAG_ID } from '../../../../api/tag';
 import { TagRemoval } from '../../../components/RemovalAlert';
 import { TagMerge } from '../../../containers/Outliner/TagsPanel/TagMerge';
 import { useStore } from '../../../contexts/StoreContext';
@@ -304,6 +304,14 @@ const TagItem = observer((props: ITagItemProps) => {
     [dispatch],
   );
 
+  let icon = IconSet.TAG;
+  if (nodeData.isHidden) {
+    icon = IconSet.HIDDEN;
+  }
+  if (nodeData.name === PEOPLE_TAG_NAME) {
+    icon = IconSet.FACE_SMILING;
+  }
+
   return (
     <div
       className="tree-content-label"
@@ -316,9 +324,7 @@ const TagItem = observer((props: ITagItemProps) => {
       onClick={handleSelect}
       onDoubleClick={handleRename}
     >
-      <span style={{ color: nodeData.viewColor }}>
-        {nodeData.isHidden ? IconSet.HIDDEN : IconSet.TAG}
-      </span>
+      <span style={{ color: nodeData.viewColor }}>{icon}</span>
       <Label
         text={nodeData.name}
         setText={nodeData.rename}

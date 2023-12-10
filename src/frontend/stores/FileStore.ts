@@ -691,6 +691,15 @@ class FileStore {
   @action private incrementNumMissingFiles() {
     this.numMissingFiles++;
   }
+
+  // FACES
+  // FACES
+  // FACES
+  @action.bound async addPeopleTag(peopleName: string, file: ClientFile): Promise<ClientTag> {
+    const peopleTag = await this.rootStore.tagStore.addPeopleTag(peopleName);
+    file.addTag(peopleTag);
+    return peopleTag;
+  }
 }
 
 export default FileStore;

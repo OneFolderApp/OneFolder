@@ -127,10 +127,6 @@ export class ClientFile {
     }
   }
 
-  @action.bound detectFaces(img: HTMLImageElement): void {
-    detectFaces(img);
-  }
-
   @action.bound removeTag(tag: ClientTag): void {
     const hadTag = this.tags.delete(tag);
     if (hadTag) {
@@ -188,6 +184,17 @@ export class ClientFile {
     this.autoSave = false;
     // clean up the observer
     this.saveHandler();
+  }
+
+  // FACES
+  // FACES
+  // FACES
+  @action.bound detectFaces(img: HTMLImageElement): void {
+    detectFaces(img);
+  }
+
+  @action.bound async addPeopleTag(peopleName: string): Promise<ClientTag> {
+    return await this.store.addPeopleTag(peopleName, this);
   }
 }
 

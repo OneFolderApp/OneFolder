@@ -2,7 +2,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 
 import { DataStorage } from '../../api/data-storage';
 import { generateId, ID } from '../../api/id';
-import { ROOT_TAG_ID, TagDTO } from '../../api/tag';
+import { PEOPLE_TAG_NAME, ROOT_TAG_ID, TagDTO } from '../../api/tag';
 import { ClientFile } from '../entities/File';
 import { ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
@@ -183,6 +183,44 @@ class TagStore {
       }
     }
     this.root.setParent(this.root);
+  }
+
+  // FACES
+  // FACES
+  // FACES
+
+  @computed get getAllPeopleNames(): string[] {
+    this.tagList.map((tag) => console.log('tag', tag));
+    return this.tagList.map((tag) => tag.name);
+  }
+
+  @computed get getPeopleTag(): ClientTag | undefined {
+    const searchResult = this.tagList.filter((t) => {
+      return t.name === PEOPLE_TAG_NAME;
+    });
+    return searchResult[0];
+  }
+
+  @action.bound createPeopleTag(): Promise<ClientTag> {
+    return this.create(this.root, PEOPLE_TAG_NAME);
+  }
+
+  @action.bound async addPeopleTag(personName: string): Promise<ClientTag> {
+    const searchResult = this.tagList.filter((t) => {
+      return t.name.toLowerCase() === personName;
+    });
+
+    if (searchResult[0] && searchResult[0].isPeopleTag) {
+      return searchResult[0];
+    }
+    const peopleTag = this.getPeopleTag;
+    if (peopleTag) {
+      return await this.create(peopleTag, personName);
+    }
+
+    const newPeopleTag = await this.createPeopleTag();
+
+    return await this.create(newPeopleTag, personName);
   }
 }
 

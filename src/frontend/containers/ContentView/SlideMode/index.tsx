@@ -289,6 +289,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
 
     if (imgEl.current) {
       annotorious = new AnnotoriousWrapper(imgEl.current);
+      annotorious.init(file);
     }
     return () => annotorious?.destroy();
   }, [imgEl]);

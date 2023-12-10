@@ -15,6 +15,7 @@ import { detectFaces } from '../image/aiModels';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
+import { ObservableObjectAdministration } from 'mobx/dist/internal';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -57,6 +58,7 @@ export class ClientFile {
   readonly extension: IMG_EXTENSIONS_TYPE;
   /** Same as "name", but without extension */
   readonly filename: string;
+  readonly annotations: ObservableObjectAdministration;
 
   @observable thumbnailPath: string = '';
 
@@ -88,6 +90,9 @@ export class ClientFile {
 
     this.tags = observable(this.store.getTags(fileProps.tags));
 
+    // string to object
+    this.annotations = observable.object(JSON.parse(fileProps.annotations));
+
     // observe all changes to observable fields
     this.saveHandler = reaction(
       // We need to explicitly define which values this reaction should react to
@@ -96,6 +101,7 @@ export class ClientFile {
       (file) => {
         // Remove reactive properties, since observable props are not accepted in the backend
         if (this.autoSave) {
+          console.log('🌱', file);
           this.store.save(file);
         }
       },
@@ -144,6 +150,10 @@ export class ClientFile {
     }
   }
 
+  @action.bound addAnnotation(annotation: object): void {
+    Object.assign(this.annotations, JSON.parse(JSON.stringify(annotation)));
+  }
+
   @action.bound setBroken(isBroken: boolean): void {
     this.isBroken = isBroken;
     this.autoSave = !isBroken;
@@ -170,6 +180,7 @@ export class ClientFile {
       dateLastIndexed: this.dateLastIndexed,
       name: this.name,
       extension: this.extension,
+      annotations: JSON.stringify(this.annotations), // serialize annotations object to string
     };
   }
 

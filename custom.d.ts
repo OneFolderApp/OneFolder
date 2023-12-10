@@ -146,7 +146,7 @@ declare module '@recogito/annotorious' {
   export class AnnotoriousSelection {
     '@context': string;
     'type': string;
-    'body': any[];
+    'body': AnnotoriousBody;
     'target': {
       source: string;
       selector: {
@@ -155,5 +155,12 @@ declare module '@recogito/annotorious' {
         value: string;
       };
     };
+  }
+
+  type AnnotoriousBody = TextualBody[];
+  export class TextualBody {
+    purpose: string;
+    type: 'TextualBody';
+    value: string;
   }
 }

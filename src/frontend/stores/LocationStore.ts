@@ -564,6 +564,7 @@ export async function pathToIFile(
     dateAdded: now,
     dateModified: now,
     dateLastIndexed: now,
+    annotations: '{}',
     ...(await getMetaData(stats, imageLoader)),
   };
 }

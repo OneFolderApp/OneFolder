@@ -46,6 +46,7 @@ describe('Backend', () => {
         ino: index.toString(),
         id: index.toString(),
         tags: [],
+        annotations: '',
       });
     }
 

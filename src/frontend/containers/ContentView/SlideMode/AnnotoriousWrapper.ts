@@ -20,7 +20,7 @@ class AnnotoriousWrapper {
 
     if (file.getAnnotations) {
       const annotationsFromDB = JSON.parse(file.getAnnotations ?? '{}');
-      this.annotorious.setAnnotations(annotationsFromDB);
+      // this.annotorious.setAnnotations(annotationsFromDB);
     }
 
     this.annotorious.on('createAnnotation', (annotation: AnnotoriousSelection) => {

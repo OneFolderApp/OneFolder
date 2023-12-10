@@ -105,6 +105,14 @@ const dbConfig: DBVersioningConfig[] = [
           '++id, locationId, *tags, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated, annotations',
       },
     ],
+    upgrade: (tx: Transaction): void => {
+      tx.table('files')
+        .toCollection()
+        .modify((file: FileDTO) => {
+          file.annotations = JSON.stringify({});
+          return file;
+        });
+    },
   },
 ];
 

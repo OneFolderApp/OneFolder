@@ -1,4 +1,4 @@
-import { Annotorious, AnnotoriousBody } from '@recogito/annotorious';
+import { Annotorious, AnnotoriousBody, AnnotoriousSelection } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
 import { ClientFile } from 'src/frontend/entities/File';
 import TagStore from 'src/frontend/stores/TagStore';
@@ -23,7 +23,7 @@ class AnnotoriousWrapper {
       this.annotorious.setAnnotations(annotationsFromDB);
     }
 
-    this.annotorious.on('createAnnotation', (annotation: object) => {
+    this.annotorious.on('createAnnotation', (annotation: AnnotoriousSelection) => {
       const allAnotations = this.annotorious.getAnnotations();
       this.file.addAnnotation(allAnotations);
       const tagsToAdd = this.getTagsFromAnnotation(annotation.body);

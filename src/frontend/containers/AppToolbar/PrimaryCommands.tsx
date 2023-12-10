@@ -78,13 +78,6 @@ const PrimaryCommands = observer(() => {
             disabled={true}
             text="Map (WIP)"
           />
-          <MenuRadioItem
-            icon={IconSet.FACE_SMILING}
-            onClick={uiStore.setMethodCalendar}
-            checked={false}
-            disabled={true}
-            text="Faces (WIP)"
-          />
         </div>
         <SortCommand />
       </div>

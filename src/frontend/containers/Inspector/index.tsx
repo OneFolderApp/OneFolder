@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useStore } from '../../contexts/StoreContext';
@@ -10,6 +10,7 @@ import { IS_PREVIEW_WINDOW } from 'common/window';
 
 const Inspector = observer(() => {
   const { uiStore, fileStore } = useStore();
+  const imageThumbnail = useRef(null);
 
   if (uiStore.firstItem >= fileStore.fileList.length || !uiStore.isInspectorOpen) {
     return (
@@ -40,6 +41,23 @@ const Inspector = observer(() => {
           />
         </div>
       </section>
+
+      <button
+        onClick={() => {
+          console.log('imageThumbnail', imageThumbnail.current);
+
+          if (imageThumbnail.current) {
+            console.log('imageThumbnail', imageThumbnail.current);
+            first.detectFaces(imageThumbnail.current);
+          } else {
+            console.error('imageThumbnail is null');
+          }
+        }}
+      >
+        <img ref={imageThumbnail} src={first.absolutePath} alt="img" className="small-thumbnail" />
+        Detect Faces
+      </button>
+
       {/* Modifying state in preview window is not supported (not in sync updated in main window) */}
       {!IS_PREVIEW_WINDOW && (
         <section>

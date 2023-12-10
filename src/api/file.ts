@@ -29,6 +29,9 @@ export type FileDTO = {
   height: number;
   /** Date when this file was created (from the OS, not related to OneFolder) */
   dateCreated: Date;
+
+  /** file annotations in W3C WebAnnotation model. */
+  annotations: string;
 };
 
 export const IMG_EXTENSIONS = [

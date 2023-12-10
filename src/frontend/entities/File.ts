@@ -5,12 +5,14 @@ import {
   observable,
   ObservableSet,
   reaction,
+  computed,
 } from 'mobx';
 import Path from 'path';
 
 import { FileDTO, IMG_EXTENSIONS_TYPE } from '../../api/file';
 import { ID } from '../../api/id';
 import ImageLoader from '../image/ImageLoader';
+import { detectFaces } from '../image/aiModels';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
@@ -57,8 +59,8 @@ export class ClientFile {
   /** Same as "name", but without extension */
   readonly filename: string;
 
+  @observable annotations: string;
   @observable thumbnailPath: string = '';
-
   // Is undefined until existence check has been completed
   @observable isBroken?: boolean;
 
@@ -87,6 +89,9 @@ export class ClientFile {
 
     this.tags = observable(this.store.getTags(fileProps.tags));
 
+    // string to object
+    this.annotations = fileProps.annotations;
+
     // observe all changes to observable fields
     this.saveHandler = reaction(
       // We need to explicitly define which values this reaction should react to
@@ -95,6 +100,7 @@ export class ClientFile {
       (file) => {
         // Remove reactive properties, since observable props are not accepted in the backend
         if (this.autoSave) {
+          console.log('🌱', file);
           this.store.save(file);
         }
       },
@@ -102,6 +108,10 @@ export class ClientFile {
     );
 
     makeObservable(this);
+  }
+
+  @computed get getAnnotations(): string {
+    return this.annotations;
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {
@@ -139,6 +149,10 @@ export class ClientFile {
     }
   }
 
+  @action.bound addAnnotation(annotation: object): void {
+    this.annotations = JSON.stringify(annotation);
+  }
+
   @action.bound setBroken(isBroken: boolean): void {
     this.isBroken = isBroken;
     this.autoSave = !isBroken;
@@ -165,6 +179,7 @@ export class ClientFile {
       dateLastIndexed: this.dateLastIndexed,
       name: this.name,
       extension: this.extension,
+      annotations: this.annotations, // serialize annotations object to string
     };
   }
 
@@ -172,6 +187,17 @@ export class ClientFile {
     this.autoSave = false;
     // clean up the observer
     this.saveHandler();
+  }
+
+  // FACES
+  // FACES
+  // FACES
+  @action.bound detectFaces(img: HTMLImageElement): void {
+    detectFaces(img);
+  }
+
+  @action.bound async addPeopleTag(peopleName: string): Promise<ClientTag> {
+    return await this.store.addPeopleTag(peopleName, this);
   }
 }
 

@@ -96,6 +96,24 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    version: 9,
+    collections: [
+      {
+        name: 'files',
+        schema:
+          '++id, locationId, *tags, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated, annotations',
+      },
+    ],
+    upgrade: (tx: Transaction): void => {
+      tx.table('files')
+        .toCollection()
+        .modify((file: FileDTO) => {
+          file.annotations = '{}';
+          return file;
+        });
+    },
+  },
 ];
 
 type DBVersioningConfig = {

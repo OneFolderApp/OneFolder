@@ -140,6 +140,13 @@
   }
 }
 
+// Antoine 06/12/23: remove pan to make Annotorius
+.image_preview__wrapper {
+  .image_preview {
+    width: 100%;
+  }
+}
+
 .image-placeholder {
   mask-image: url(~resources/icons/media.svg);
   -webkit-mask-image: url(~resources/icons/media.svg);

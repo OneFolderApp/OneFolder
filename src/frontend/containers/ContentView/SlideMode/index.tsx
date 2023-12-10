@@ -2,7 +2,7 @@ import { shell } from 'electron';
 import { autorun, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import SysPath from 'path';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState, RefObject } from 'react';
 import { ClientFile } from 'src/frontend/entities/File';
 import { useStore } from 'src/frontend/contexts/StoreContext';
 import { useAction, useComputed } from 'src/frontend/hooks/mobx';
@@ -15,6 +15,7 @@ import { CommandDispatcher } from '../Commands';
 import ZoomPan, { CONTAINER_DEFAULT_STYLE, SlideTransform } from '../SlideMode/ZoomPan';
 import { ContentRect } from '../utils';
 import { Vec2, createDimension, createTransform } from './utils';
+import AnnotoriousWrapper from './AnnotoriousWrapper';
 
 const SlideMode = observer(({ contentRect }: { contentRect: ContentRect }) => {
   const { uiStore } = useStore();
@@ -222,7 +223,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   onClose,
   upscaleMode,
 }: ZoomableImageProps) => {
-  const { imageLoader } = useStore();
+  const { imageLoader, tagStore } = useStore();
   const { absolutePath, width: imgWidth, height: imgHeight } = file;
   // Image src can be set asynchronously: keep track of it in a state
   // Needed for image formats not natively supported by the browser (e.g. tiff): will be converted to another format
@@ -230,6 +231,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     const src = await imageLoader.getImageSrc(file);
     return src ?? thumbnailPath;
   });
+  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
 
   const image = usePromise(
     source,
@@ -282,6 +284,15 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     },
   );
 
+  useEffect(() => {
+    let annotorious: AnnotoriousWrapper | undefined;
+
+    if (imgEl.current) {
+      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
+    }
+    return () => annotorious?.destroy();
+  }, [imgEl, file, tagStore]);
+
   if (image.tag === 'ready' && 'err' in image.value) {
     console.log(image.value.err);
     return <ImageFallback error={image.value.err} absolutePath={absolutePath} />;
@@ -327,29 +338,34 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     }
 
     return (
-      <ZoomPan
-        position="center"
-        initialScale="auto"
-        doubleTapBehavior="zoomOrReset"
-        imageDimension={dimension}
-        containerDimension={createDimension(width, height)}
-        minScale={minScale}
-        maxScale={5}
-        transitionStart={transitionStart}
-        transitionEnd={transitionEnd}
-        onClose={onClose}
-        upscaleMode={upscaleMode}
-      >
-        {(props) => (
-          <img
-            {...props}
-            src={encodeFilePath(src)}
-            width={dimension[0]}
-            height={dimension[1]}
-            alt=""
-          />
-        )}
-      </ZoomPan>
+      // Antoine 06/12/23: remove pan to make Annotorius
+      // <ZoomPan
+      //   position="center"
+      //   initialScale="auto"
+      //   doubleTapBehavior="zoomOrReset"
+      //   imageDimension={dimension}
+      //   containerDimension={createDimension(width, height)}
+      //   minScale={minScale}
+      //   maxScale={5}
+      //   transitionStart={transitionStart}
+      //   transitionEnd={transitionEnd}
+      //   onClose={onClose}
+      //   upscaleMode={upscaleMode}
+      // >
+      //   {(props) => (
+      <div className="image_preview__wrapper">
+        <img
+          // {...props}
+          src={encodeFilePath(src)}
+          // width={dimension[0]}
+          // height={dimension[1]}
+          alt=""
+          ref={imgEl}
+          className="image_preview"
+        />
+      </div>
+      //   )}
+      // </ZoomPan>
     );
   }
 };

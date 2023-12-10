@@ -111,3 +111,56 @@ declare module 'node-exiftool' {
 
   export default exiftool;
 }
+
+declare module '@recogito/annotorious' {
+  export class Annotorious {
+    constructor(options: any);
+    //  .addAnnotation
+    // .addDrawingTool
+    // .cancelSelected
+    // .clearAnnotations
+    // .clearAuthInfo
+    destroy(): void;
+    // .getAnnotationById
+    getAnnotations(): AnnotoriousSelection[];
+    // .getImageSnippetById
+    // .getSelected
+    // .getSelectedImageSnippet
+    // .listDrawingTools
+    // .loadAnnotations
+    // .off
+    on(eventName: string, callback: (event: any) => void): void;
+    // .once
+    // .removeAnnotation
+    // .removeDrawingTool
+    // .saveSelected
+    // .selectAnnotation
+    setAnnotations(annotations: object): void;
+    // .setAuthInfo
+    // .setDrawingTool
+    // .setServerTime
+    // .setVisible
+    // .updateSelected
+  }
+
+  export class AnnotoriousSelection {
+    '@context': string;
+    'type': string;
+    'body': AnnotoriousBody;
+    'target': {
+      source: string;
+      selector: {
+        type: string;
+        conformsTo: string;
+        value: string;
+      };
+    };
+  }
+
+  type AnnotoriousBody = TextualBody[];
+  export class TextualBody {
+    purpose: string;
+    type: 'TextualBody';
+    value: string;
+  }
+}

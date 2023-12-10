@@ -2,7 +2,7 @@ import { IReactionDisposer, action, computed, makeObservable, observable, reacti
 
 import { MAX_TAG_DEPTH } from '../../../common/config';
 import { ID } from '../../api/id';
-import { ROOT_TAG_ID, TagDTO } from '../../api/tag';
+import { PEOPLE_TAG_NAME, ROOT_TAG_ID, TagDTO } from '../../api/tag';
 import TagStore from '../stores/TagStore';
 
 /**
@@ -67,6 +67,10 @@ export class ClientTag {
       return this.store.root;
     }
     return this._parent;
+  }
+
+  @computed get isPeopleTag(): boolean {
+    return this._parent?.name === PEOPLE_TAG_NAME;
   }
 
   /** Returns this tag and all of its sub-tags ordered depth-first */

@@ -18,9 +18,9 @@ class AnnotoriousWrapper {
       widgets: [{ widget: 'TAG', vocabulary: allPeople }],
     });
 
-    if (file.getAnnotations) {
-      const annotationsFromDB = JSON.parse(file.getAnnotations ?? '{}');
-      // this.annotorious.setAnnotations(annotationsFromDB);
+    if (file.getAnnotations && file.getAnnotations !== '{}') {
+      const annotationsFromDB = JSON.parse(file.getAnnotations);
+      this.annotorious.setAnnotations(annotationsFromDB);
     }
 
     this.annotorious.on('createAnnotation', (annotation: AnnotoriousSelection) => {

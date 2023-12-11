@@ -113,6 +113,7 @@ type PersistentPreferenceFields =
   | 'galleryVideoPlaybackMode'
   | 'hotkeyMap'
   | 'isThumbnailTagOverlayEnabled'
+  | 'isFaceModuleEnabled'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'outlinerWidth'
@@ -150,6 +151,7 @@ class UiStore {
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
   @observable isThumbnailTagOverlayEnabled: boolean = true;
+  @observable isFaceModuleEnabled: boolean = true;
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -327,6 +329,10 @@ class UiStore {
 
   @action.bound toggleThumbnailTagOverlay(): void {
     this.isThumbnailTagOverlayEnabled = !this.isThumbnailTagOverlayEnabled;
+  }
+
+  @action.bound toggleFaceModule(): void {
+    this.isFaceModuleEnabled = !this.isFaceModuleEnabled;
   }
 
   @action.bound toggleThumbnailFilenameOverlay(): void {
@@ -912,6 +918,7 @@ class UiStore {
           this.setUpscaleMode(prefs.upscaleMode);
         }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
+        this.isFaceModuleEnabled = Boolean(prefs.isFaceModuleEnabled ?? true);
         this.isThumbnailFilenameOverlayEnabled = Boolean(
           prefs.isThumbnailFilenameOverlayEnabled ?? false,
         ); // eslint-disable-line prettier/prettier
@@ -974,6 +981,7 @@ class UiStore {
       hotkeyMap: { ...this.hotkeyMap },
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
+      isFaceModuleEnabled: this.isFaceModuleEnabled,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerWidth: this.outlinerWidth,
       inspectorWidth: this.inspectorWidth,

@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
 import ImageInfo from '../../components/ImageInfo';
-import { IconButton, IconSet } from 'widgets';
+import { IconButton, IconSet, Toggle } from 'widgets';
 import { shell } from 'electron';
 import { IS_PREVIEW_WINDOW } from 'common/window';
 
@@ -28,7 +28,7 @@ const Inspector = observer(() => {
       <section>
         <ImageInfo file={first} />
       </section>
-      <section>
+      {/* <section>
         <header>
           <h2>Path to file</h2>
         </header>
@@ -40,23 +40,36 @@ const Inspector = observer(() => {
             text="Open in file explorer"
           />
         </div>
-      </section>
+      </section> */}
 
-      <button
-        onClick={() => {
-          console.log('imageThumbnail', imageThumbnail.current);
-
-          if (imageThumbnail.current) {
+      <section>
+        <header>
+          <h2>Faces</h2>
+        </header>
+        <Toggle checked={uiStore.isFaceModuleEnabled} onChange={uiStore.toggleFaceModule}>
+          Show faces
+        </Toggle>
+        {/* <button
+          onClick={() => {
             console.log('imageThumbnail', imageThumbnail.current);
-            first.detectFaces(imageThumbnail.current);
-          } else {
-            console.error('imageThumbnail is null');
-          }
-        }}
-      >
-        <img ref={imageThumbnail} src={first.absolutePath} alt="img" className="small-thumbnail" />
-        Detect Faces
-      </button>
+
+            if (imageThumbnail.current) {
+              console.log('imageThumbnail', imageThumbnail.current);
+              first.detectFaces(imageThumbnail.current);
+            } else {
+              console.error('imageThumbnail is null');
+            }
+          }}
+        >
+          <img
+            ref={imageThumbnail}
+            src={first.absolutePath}
+            alt="img"
+            className="small-thumbnail"
+          />
+          Detect Faces
+        </button> */}
+      </section>
 
       {/* Modifying state in preview window is not supported (not in sync updated in main window) */}
       {!IS_PREVIEW_WINDOW && (

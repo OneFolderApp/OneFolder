@@ -19,5 +19,6 @@ This project is a fork from [Allusion](https://github.com/allusion-app/Allusion)
 * [ElectronJS](https://www.electronjs.org/) - the framework for desktop development
 * [ReactJS](https://react.dev/) - Front-end library
 * [MobX](https://mobx.js.org/README.html) - State Manadgment
+* [ExifTool](https://exiftool.org/) - Edit image metadata
 * [Annotorious](https://annotorious.github.io/) - Face selection on images
 * [TenserFlowJS](https://www.tensorflow.org/js) - Face detection

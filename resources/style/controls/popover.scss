@@ -1,0 +1,172 @@
+dialog {
+  background-color: var(--background-color);
+  border: 0.0625rem solid var(--border-color);
+  border-radius: 0.25rem;
+  box-shadow: 3px 4px 6px 3px rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+  margin-top: 10vh;
+  padding: 1rem 1rem 0.5rem;
+  top: 0;
+  bottom: 0;
+  min-width: min(50ch, 80vw);
+  max-width: 120ch;
+  max-height: 80vh;
+
+  overflow: visible; // allows fly-outs to be visible outside of this dialog
+
+  &[open] {
+    @keyframes appear {
+      from {
+        transform: translateY(-3rem);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    animation: appear 0.1s linear;
+  }
+
+  &[data-flyout],
+  &[data-contextmenu] {
+    animation: none;
+    margin: 0;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+
+  > :first-child {
+    margin-right: 0.5rem;
+  }
+}
+
+.dialog-title {
+  font-size: medium;
+  font-weight: 700;
+  flex-grow: 1;
+}
+
+.dialog-icon {
+  flex-shrink: 0;
+}
+
+.dialog-close {
+  flex-shrink: 0;
+  height: 1.5rem;
+  width: 1.5rem;
+
+  .custom-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    margin-inline-start: 0.5rem;
+    min-width: 100px;
+
+    &:first-child {
+      margin-inline-start: 0;
+    }
+  }
+}
+
+dialog[role='alertdialog'] {
+  .alert-content {
+    display: grid;
+    grid-template-areas: 'dialog-icon dialog-title' 'dialog-icon alert-message' 'dialog-actions dialog-actions';
+    grid-template-columns: min-content 1fr;
+    max-height: 80vh;
+    gap: 0.5rem;
+  }
+
+  .dialog-icon {
+    grid-area: dialog-icon;
+
+    > .custom-icon {
+      width: max(40px, 5rem);
+      height: auto;
+    }
+  }
+
+  .dialog-title {
+    grid-area: dialog-title;
+  }
+
+  .alert-message {
+    grid-area: alert-message;
+    overflow: hidden auto;
+  }
+
+  .dialog-actions {
+    grid-area: dialog-actions;
+  }
+}
+
+// DIALOG UNTIL HERE
+
+[data-popover] {
+  z-index: 1;
+
+  color: var(--text-color);
+  background: var(--background-color-alt);
+  border: 0.0625rem solid var(--border-color);
+  border-radius: 0.25rem;
+  box-shadow: var(--box-shadow);
+
+  &[data-open='true'] {
+    visibility: visible;
+    pointer-events: initial;
+  }
+
+  &[data-open='false'] {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+[role='tooltip'] {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  margin: 0;
+  background: var(--accent-color);
+  color: white;
+  border-radius: 0.125rem;
+
+  &[data-open='true'] {
+    @keyframes show {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+    animation: show 0.1s linear;
+  }
+
+  &[data-open='false'] {
+    @keyframes hide {
+      from {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+    animation: hide 0.1s linear;
+  }
+}

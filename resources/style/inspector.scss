@@ -1,0 +1,121 @@
+///////////////////////////////// Inspector /////////////////////////////////
+#inspector {
+  background-color: var(--background-color);
+  overflow: hidden auto; // show a Y scrollbar if inspector is too small in height to fit min-height of its content
+
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    padding: 0.25rem 0.5rem;
+
+    // Tags section should shrink to fit its parent if the inspector is small in height
+    &:last-child {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      // so that the tags section remains visible when inspector is very small in height: inspector should overflow with a scrollbar
+      min-height: 6rem;
+    }
+  }
+
+  header {
+    text-align: center;
+    padding: 0.5rem 1rem;
+
+    // Similar behavior to toolbar in the outliner
+    [role='toolbar'] {
+      opacity: 0;
+
+      position: absolute;
+      top: 0;
+      right: 1rem;
+      height: 2rem;
+    }
+
+    [role='toolbar']:focus-within {
+      opacity: 1;
+    }
+
+    .toolbar-button {
+      min-height: 1.5rem;
+      min-width: 1.5rem;
+
+      &[aria-pressed='true'],
+      &[aria-checked='true'] {
+        color: var(--accent-color);
+      }
+    }
+  }
+
+  // Hovering over inspector should show toolbars
+  &:hover header [role='toolbar'] {
+    opacity: 1;
+  }
+}
+
+// File info
+table#file-info {
+  display: block;
+  border-spacing: 0 0.25rem;
+
+  tbody {
+    width: 100%;
+    display: table;
+  }
+
+  th {
+    color: var(--text-color-muted);
+    white-space: nowrap;
+    font-weight: unset;
+    text-align: unset;
+    vertical-align: baseline;
+  }
+
+  th,
+  td {
+    padding: 0;
+    user-select: text;
+  }
+
+  td {
+    padding-left: 1rem;
+    word-break: break-word;
+
+    line-height: normal;
+    display: block;
+
+    // for fields with loads of text (like descriptions), limit the height
+    max-height: 200px;
+    overflow-y: auto;
+    // resize: vertical; // would be nice to enable only when overflowing
+  }
+
+  a {
+    // Remove underline for links
+    text-decoration: none;
+
+    // Limit to 3 lines
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  input {
+    width: 100%;
+  }
+}
+
+// Antoine: this is tmp to test the face detector model
+.small-thumbnail {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.5rem;
+  border-radius: 0.25rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}

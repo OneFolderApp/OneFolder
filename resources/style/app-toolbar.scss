@@ -1,0 +1,88 @@
+#toolbar {
+  justify-content: stretch;
+
+  .toolbar-button {
+    &[aria-pressed='true'],
+    &[aria-checked='true'] {
+      color: var(--text-color-strong);
+    }
+  }
+
+  .spacer {
+    flex-grow: 1;
+  }
+}
+
+.searchbar {
+  padding: 0.25rem 0.2rem;
+  flex-grow: 1;
+  min-width: 3rem;
+
+  .btn-icon-large {
+    color: var(--text-color-muted);
+    &:hover {
+      color: var(--text-color);
+    }
+
+    .custom-icon {
+      height: 1.25em;
+      width: 1.25em;
+    }
+  }
+
+  // For indicating certain tags can be "system-tags" (for instance: Untagged images)
+  .italic {
+    font-style: italic;
+  }
+
+  // Overflow for many search terms: vertical scroll, no horizontal overflow
+  > .input {
+    overflow: hidden auto;
+
+    .input-wrapper {
+      overflow: hidden visible;
+    }
+  }
+
+  // TODO: Would be nice to make tags slightly shorter height as usual (1.25rem -> 1.1),
+  // so that the top edge of the tags below will be visible, indicating the user can scroll down
+  // But it doesn't look nice off-center if there are no tags below
+  // .tag .label {
+  // height: 1.1rem;
+  // }
+}
+
+.deletion-confirmation-list {
+  max-height: 5rem;
+  min-height: 2rem;
+  overflow: auto;
+  font-size: smaller;
+  > div {
+    white-space: nowrap;
+  }
+}
+
+.primary-commands {
+  width: 100%;
+  .primary-commands__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.1rem;
+    width: 100%;
+  }
+
+  .primary-commands__bottom {
+    display: flex;
+    justify-content: space-between;
+
+    .primary-commands__bottom__left {
+      display: flex;
+      gap: 0.4rem 0.7rem;
+
+      .menuitemradio {
+        width: 200px !important;
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+html,
+body,
+#app,
+#layout-container,
+#preview {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+
+  --toolbar-height: 4.6rem;
+}
+
+// Global specific styles for the main window
+#app {
+  --mac-system-buttons-width: 5rem;
+  --window-titlebar-height: 28px;
+  --treeitem-identation: 0.5rem;
+  --treeitem-offset: 0.75rem;
+}
+
+// Preview window layout definition
+// #preview {
+//   // No custom frame: Native title bar is currently enabled on all platforms
+//   --window-titlebar-height: 0;
+// }
+
+#window-splitter {
+  position: absolute;
+  top: var(--window-titlebar-height);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  contain: strict;
+}
+
+#main {
+  position: relative;
+}
+
+#toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--toolbar-height);
+  padding: 0 0.2rem;
+  // display: flex;
+  align-items: center;
+  background: var(--background-color);
+  border-bottom: 0.0625rem solid var(--border-color);
+}
+
+#outliner {
+  position: relative;
+  border-right: 0.0625rem solid var(--border-color);
+  background: var(--background-color-alt);
+
+  &[aria-expanded='false'] {
+    overflow: hidden;
+  }
+}
+
+#content-view {
+  position: absolute;
+  top: var(--toolbar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--background-color);
+}
+
+// Main window layout definition
+[data-fullscreen='true'] {
+  // Hide the system toolbar on fullscreen
+  --window-titlebar-height: 0;
+}
+
+#toast-container {
+  position: absolute;
+  right: 1rem;
+  bottom: 0rem;
+}

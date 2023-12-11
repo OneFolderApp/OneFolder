@@ -1,0 +1,19 @@
+[package]
+name = "masonry"
+version = "0.1.0"
+authors = ["Remi van der Laan <rrm-remi@hotmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasm-bindgen = "0.2.80"
+js-sys = "0.3.57"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"

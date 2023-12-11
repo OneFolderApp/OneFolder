@@ -1,0 +1,47 @@
+///////////////////////////////// Splash Screen /////////////////////////////////
+#splash-screen {
+  // The content that should be on top must a child element.
+  > * {
+    z-index: 2;
+  }
+
+  // Setting content property to '' will make the background visible.
+  &::after,
+  &::before {
+    content: '';
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  // Gradient overlay and noise texture
+  &::after {
+    background: url(~resources/images/noise.png);
+    opacity: 0.25;
+    z-index: 1;
+  }
+
+  // Background image
+  // &::before {
+  //   background: var(--background-color);
+  //   background: linear-gradient(-135deg,#23d5ab, #7af2a6, #51b4cf, #1473e6 ); /*  */
+  //   background-size: 400% 400%;
+  //   animation: gradient 2s ease infinite;
+  //   z-index: 0;
+  // }
+}
+
+// @keyframes gradient {
+//   0% {
+//     background-position: 0% 50%;
+//   }
+//   50% {
+//     background-position: 100% 50%;
+//   }
+//   100% {
+//     background-position: 0% 50%;
+//   }
+// }

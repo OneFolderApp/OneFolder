@@ -1,0 +1,14 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "prettier.configPath": ".prettierrc.json",
+  "search.exclude": {
+    "resources/exiftool/exiftool.pl": true,
+    "resources/exiftool/lib/**/*": true
+  },
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "cSpell.words": [
+    "outliner"
+  ]
+}

@@ -1,0 +1,197 @@
+///////////////////////////////// Default Styling /////////////////////////////////
+
+/* Prevent text selection in all HTML elements for more native feel */
+*,
+*::after,
+*::before {
+  user-select: none;
+}
+// Disable default outline on focused elements (e.g. clicked buttons)
+:focus {
+  outline: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Open Sans', 'Helvetica Neue', 'Icons16', sans-serif;
+  font-size: 0.8125rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Don't allow images to be dragged from within the app
+img {
+  -webkit-user-drag: none;
+}
+
+a {
+  color: var(--accent-color-blue);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+  transition: text-decoration-color 0.2s ease-in-out 0.1s;
+  word-break: break-word;
+
+  &:hover {
+    text-decoration-color: transparent;
+  }
+}
+
+header,
+header h2 {
+  font-size: 0.8125rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+input {
+  color: inherit;
+  padding: 0;
+  padding-left: 0.25rem;
+  line-height: 1.5rem;
+}
+
+table {
+  color: inherit;
+  font-size: inherit;
+}
+
+// By default select looks pretty bad on almost any OS.
+select {
+  background: var(--input-color);
+  color: var(--text-color);
+  border: 0.0625rem solid var(--border-color);
+  outline: none;
+  border-radius: 0.25rem;
+  line-height: 1.5rem;
+  min-height: 1.5rem;
+
+  &:hover {
+    background: var(--input-color-hover);
+  }
+
+  &:focus-within {
+    background: var(--input-color);
+    box-shadow: 0 0 0 0.125rem var(--accent-color);
+  }
+}
+
+summary {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  list-style: none;
+  padding: 0.5rem;
+
+  // If ::marker does not work, use ::before instead and set this to 'display: block'.
+  &::before {
+    display: block;
+    content: '';
+    height: 1rem;
+    width: 1rem;
+    transform: rotateZ(-90deg);
+    mask-image: url(~resources/icons/small-arrow-down.svg);
+    -webkit-mask-image: url(~resources/icons/small-arrow-down.svg);
+    background-color: currentColor;
+    background-repeat: no-repeat;
+  }
+
+  &::before,
+  .custom-icon {
+    margin-right: 0.5rem;
+  }
+}
+
+details[open] > summary::before {
+  transform: none;
+}
+
+// Custom scrollbar style
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0.125rem;
+}
+
+/////////// Scroll bar (Track and handle) ///////////
+::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track-color);
+  border: 0.0625rem solid var(--border-color);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color);
+  border: 0.0625rem solid var(--border-color);
+  border-radius: 0.125rem;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color);
+}
+::-webkit-scrollbar-corner {
+  background-color: var(--scrollbar-track-color);
+}
+
+///////////////////////////////// Media Queries /////////////////////////////////
+
+///////////////////////////////// Misc /////////////////////////////////
+// Error boundary (when app crashes)
+.error-boundary {
+  padding: 3rem;
+  min-width: 600px;
+  width: 80%;
+  margin: auto;
+
+  > .custom-icon-64 {
+    display: flex;
+    justify-content: center;
+  }
+
+  .message {
+    font-family: monospace;
+    max-width: 120ch;
+  }
+}
+
+// Change icon color (black/white) based on its intent (like Blueprint's built-in icons)
+.custom-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+
+  * {
+    fill: currentColor;
+  }
+}
+.custom-icon-128 > * {
+  // height: 8rem;
+  // width: 8rem;
+}
+.custom-icon-64 > * {
+  height: 4rem;
+  width: 4rem;
+}
+.custom-icon-48 > * {
+  height: 3rem;
+  width: 3rem;
+}
+.custom-icon-32 > * {
+  height: 2rem;
+  width: 2rem;
+}

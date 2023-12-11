@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "widgets/*": ["widgets/*"],
+      "resources/*": ["resources/*"],
+      "src/*": ["src/*"]
+    },
+    "downlevelIteration": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react",
+    "module": "ESNext",
+    "sourceMap": true,
+    "outDir": "dist",
+    "target": "ES2022",
+    "lib": ["dom", "esnext", "webworker"],
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "useUnknownInCatchVariables": false,
+    "strict": true, 
+    "isolatedModules": true
+  },
+  "include": ["widgets/**/*", "src/**/*", "custom.d.ts", "wasm/**/*", "common/**/*", "tests/**/*"],
+  "exclude": ["**/node_modules", "**/.*/*", "dist", "resources", "build"]
+}

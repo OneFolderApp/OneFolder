@@ -1,0 +1,62 @@
+#search-form {
+  display: flex;
+  flex-direction: column;
+  // changed from min-width since large tag names expand the dialog width which looks bad
+  width: min(85ch, 80vw);
+
+  .criteria-input,
+  [role='combobox'] {
+    height: 1.75rem;
+  }
+
+  .tag-selector {
+    // otherwise long nested tag names make the fly-out panel too wide
+    [role='grid'] {
+      max-width: 16rem;
+    }
+  }
+}
+
+#criteria-builder {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr min-content;
+  gap: 0.25rem 0.5rem;
+  align-items: center;
+
+  label {
+    text-transform: uppercase;
+    font-size: smaller;
+  }
+}
+
+#query-editor-container {
+  overflow: hidden auto;
+  padding: 2px 0;
+  // dialog height - height of basically everything except the container
+  max-height: calc(80vh - 17.25rem);
+}
+
+#query-editor {
+  width: 100%;
+  border-spacing: 0;
+
+  tr {
+    margin-bottom: 0.25rem;
+  }
+
+  td,
+  th {
+    padding: 0;
+    padding-bottom: 0.25rem;
+  }
+
+  td {
+    padding-inline-start: 0.5rem;
+  }
+
+  .criteria-input,
+  [role='combobox'] {
+    min-width: 175px;
+    width: 100%;
+  }
+}

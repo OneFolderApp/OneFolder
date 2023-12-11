@@ -1,0 +1,94 @@
+///////////////////////////////// Help Center /////////////////////////////////
+#help-center {
+  width: 100vw;
+  height: 100vh;
+  background: var(--background-color);
+  overflow: hidden;
+}
+
+.doc-overview {
+  overflow-y: auto;
+  height: 100vh;
+  background: var(--background-color-alt);
+
+  details {
+    padding: 0rem 0.5rem 0 1rem;
+
+    &:first-child {
+      margin-top: 0.5rem;
+    }
+
+    &:last-child {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  a {
+    display: inline-block;
+    padding: 0.25rem 2rem 0.5rem;
+    color: var(--text-color);
+    text-decoration-color: transparent;
+
+    &:hover,
+    &:active {
+      text-decoration-color: var(--text-color);
+    }
+  }
+}
+
+.doc-page {
+  overflow: hidden;
+  height: 100vh;
+  position: relative;
+
+  .btn-group {
+    justify-content: flex-end;
+
+    button {
+      min-width: 100px;
+    }
+  }
+}
+
+.doc-page-toolbar {
+  background: var(--background-color);
+  position: absolute;
+  top: 0;
+  padding: 0.5rem 2rem 0.5rem 1.25rem;
+  width: 100%;
+}
+
+.doc-page-content {
+  padding: 0 2rem 0.5rem 1.25rem;
+  position: absolute;
+  top: 3rem;
+  bottom: 0;
+  width: 100%;
+  overflow-y: auto;
+
+  h2 {
+    margin-top: 0;
+  }
+
+  section {
+    margin: auto;
+    max-width: 85ch;
+  }
+
+  img {
+    max-width: 55ch;
+    border-radius: 0.75rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+
+    &.centered {
+      margin: 2rem auto;
+      display: flex;
+    }
+  }
+
+  p {
+    margin-bottom: 1.2rem;
+    line-height: 1.4;
+  }
+}

@@ -1,0 +1,39 @@
+.split {
+  display: flex;
+
+  > :first-child {
+    flex-shrink: 0;
+  }
+
+  > [role='separator'] {
+    position: absolute;
+    z-index: 1;
+    transition: background-color 0.2s ease;
+
+    &:hover,
+    &.active {
+      transition-delay: 400ms;
+      background-color: var(--accent-color);
+    }
+
+    &[aria-orientation='vertical'] {
+      cursor: w-resize;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      transform: translate(-2px, 0);
+    }
+
+    &[aria-orientation='horizontal'] {
+      cursor: s-resize;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      transform: translate(0, -2px);
+    }
+  }
+
+  > :last-child {
+    flex-grow: 1;
+  }
+}

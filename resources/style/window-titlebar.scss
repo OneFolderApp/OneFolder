@@ -1,0 +1,90 @@
+#window-titlebar {
+  -webkit-app-region: drag; // Custom frame should be draggable for moving window around
+  height: var(--window-titlebar-height);
+  width: 100%;
+  display: flex;
+  line-height: initial;
+  background-color: var(--titlebar-background-color);
+  color: var(--titlebar-color);
+  &.inactive {
+    // Dim the titlebar, indicating the window is not focused anymore
+    filter: brightness(0.93);
+  }
+
+  border-bottom: 0.0625rem solid var(--border-color);
+
+  > span {
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    transition: margin 0.2s ease-in-out;
+
+    > span {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      min-width: 0;    
+    }
+
+    // Center the text
+    // Style for Windows+Linux: overwritten in block below for data-os='darwin':
+
+    // same width as the 3 system buttons on the right, so text is centered
+    margin-left: 108px;
+    max-width: calc(100% - 2 * 108px);
+
+    // But not for a narrow window, it would overlap with buttons, so position it off-center
+    @media only screen and (max-width: 320px) {
+      margin-left: 0;
+      max-width: calc(100% - 108px);
+      padding-left: 4px;
+    }
+  }
+}
+
+// Conditional based on OS:
+[data-os='darwin'] {
+  #window-titlebar {
+    > span {
+      // Opposite on OSX: buttons are on the left, but don't take up space in CSS: it's overlaid by the OS
+      margin-left: 108px;
+      max-width: calc(100% - 2 * 108px);
+
+      // So, only make it off-center when the window is narrow
+      @media only screen and (max-width: 320px) {
+        max-width: calc(100% - 108px);
+      }
+    }
+  }
+}
+
+#window-system-buttons {
+  button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    -webkit-app-region: none;
+    height: 100%;
+    width: 36px;
+
+    &:hover {
+      background-color: var(--titlebar-background-color-alt);
+    }
+
+    &:last-child:hover {
+      background-color: var(--accent-color-red);
+      color: white;
+    }
+  }
+}
+
+#window-resize-area {
+  -webkit-app-region: no-drag;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}

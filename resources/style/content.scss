@@ -1,0 +1,591 @@
+///////////////////////////////// Content area /////////////////////////////////
+#gallery-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  &.unmaximized {
+    // Ensure scrollbar isn't right up to the window edge when window is not fully maximized
+    // the cursor events of the window edge interfere with the narrow scrollbar
+    padding-right: 4px;
+  }
+}
+
+// WIP > better general thumbsize. See if we kind find better size ratio for different screensize.
+// We'll have less loss of space perhaps
+.thumbnail-small {
+  --thumbnail-size: 160px;
+}
+.thumbnail-medium {
+  --thumbnail-size: 240px;
+}
+.thumbnail-large {
+  --thumbnail-size: 320px;
+}
+
+/////////////////////// Thumbnail //////////////////////////////////
+// If selected, and any other selected image is a drop target: normal yellow border
+// (as an indication that dropping a tag will apply it to all selected files)
+#gallery-content[data-selected-file-dropping='true'] {
+  .masonry {
+    [aria-selected='true'] > .thumbnail {
+      background-color: var(--accent-color-yellow);
+    }
+  }
+
+  #list [aria-selected='true'] {
+    background-color: rgba(255, 193, 47, 0.3);
+  }
+}
+
+.thumbnail {
+  display: flex;
+  grid-area: image;
+  width: var(--thumbnail-size);
+  height: var(--thumbnail-size);
+  // Allow dragging of images to elsewhere (drag-export)
+  -webkit-user-drag: element;
+  background-color: var(--background-color-alt);
+  border: 0.0625rem solid var(--border-color);
+  border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
+
+  transition: background-color 0.2s $pt-transition-cubic2;
+
+  // This acts as the border-radius, but also for child elements
+  :first-child {
+    clip-path: inset(0 round 0.125rem);
+    transition: clip-path 0.2s $pt-transition-cubic2;
+    pointer-events: none;
+  }
+
+  > :is(img, video) {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    border-radius: 0rem; // 21/11/23 Antoine: gallery border radious
+  }
+
+  &[data-dnd-target='true'] {
+    background-color: var(--accent-color-yellow);
+
+    :is(img, video) {
+      clip-path: inset(0.5rem round 0.125rem);
+    }
+  }
+}
+
+[aria-selected='true'] > .thumbnail {
+  // If selected, show a blue border
+  background-color: var(--accent-color);
+  > :is(img, video) {
+    clip-path: inset(0.25rem round 0.125rem); // old design
+  }
+
+  // If selected AND drop target: big yellow border
+  &[data-dnd-target='true'] {
+    background-color: var(--accent-color-yellow);
+    > :is(img, video) {
+      clip-path: inset(0.5rem round 0.125rem);
+    }
+  }
+
+  > .image-error {
+    border: 0.25rem solid var(--accent-color-red); // new design
+  }
+}
+
+.thumbnail-broken > img {
+  filter: saturate(0) brightness(0.25);
+}
+
+.thumbnail-broken-overlay {
+  cursor: pointer;
+  position: absolute;
+  padding: 0.25rem;
+  width: 2rem;
+  height: 2rem;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: var(--accent-color-red) !important;
+
+  svg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+}
+
+// Fallback images
+.image-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-error,
+.image-placeholder {
+  height: 100%;
+  width: 100%;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+
+  * {
+    margin: auto;
+  }
+}
+
+// Antoine 06/12/23: remove pan to make Annotorius
+.image_preview__wrapper {
+  .image_preview {
+    width: 100%;
+    max-height: 85vh;
+  }
+}
+
+.image-placeholder {
+  mask-image: url(~resources/icons/media.svg);
+  -webkit-mask-image: url(~resources/icons/media.svg);
+}
+
+.image-error {
+  mask-image: url(~resources/icons/db-error.svg);
+  -webkit-mask-image: url(~resources/icons/db-error.svg);
+}
+
+.image-loading {
+  width: 2rem;
+  aspect-ratio: 1 / 1;
+  margin: auto;
+  border-radius: 50%;
+  border: 0.25rem solid var(--background-color);
+  border-top-color: var(--accent-color);
+  animation: 1.5s spin infinite linear;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/////////////////////// View methods //////////////////////////////////
+#list {
+  // stripe pattern
+  [aria-rowindex$='1'],
+  [aria-rowindex$='3'],
+  [aria-rowindex$='5'],
+  [aria-rowindex$='7'],
+  [aria-rowindex$='9'] {
+    background-color: var(--background-color-alt);
+  }
+
+  [role='row'] {
+    white-space: nowrap;
+    width: 100%;
+    height: var(--thumbnail-size);
+    contain: layout size;
+
+    &[aria-selected='true'] {
+      background-color: var(--accent-color);
+      color: white;
+    }
+
+    &[data-dnd-target='true'] {
+      // Yellow background when DnD target
+      background-color: rgba(255, 193, 47, 0.6) !important;
+    }
+  }
+
+  [role='gridcell'] {
+    height: var(--thumbnail-size);
+    contain: strict;
+  }
+
+  // cell container
+  [role='gridcell'],
+  [role='columnheader'] {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  [role='gridcell'],
+  .unsortable-header {
+    padding-inline-start: 0.5rem;
+  }
+
+  [role='columnheader'] {
+    position: relative;
+    overflow: unset;
+    height: 100%;
+    font-weight: 600;
+
+    &[aria-sort='ascending'] > .sort-button::after {
+      mask-image: url(~resources/icons/sort-ascending.svg);
+      -webkit-mask-image: url(~resources/icons/sort-ascending.svg);
+    }
+
+    &[aria-sort='descending'] > .sort-button::after {
+      mask-image: url(~resources/icons/sort-descending.svg);
+      -webkit-mask-image: url(~resources/icons/sort-descending.svg);
+    }
+  }
+
+  // header buttons
+  .sort-button {
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding: 0 0.5rem;
+
+    &::after {
+      content: '';
+      min-width: 1rem;
+      min-height: 1rem;
+      background-color: currentColor;
+      mask-image: url(~resources/icons/sort.svg);
+      -webkit-mask-image: url(~resources/icons/sort.svg);
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-position: center;
+    }
+  }
+
+  .column-resizer {
+    min-width: unset;
+    width: 4px;
+    cursor: w-resize;
+    margin-inline-start: auto;
+    position: absolute;
+    right: -2px;
+    background-color: var(--hover-color);
+
+    &:active,
+    &:hover {
+      background-color: var(--accent-color);
+    }
+  }
+
+  // thumbnail
+  [role='gridcell'].col-name > :first-child {
+    margin-inline-end: 0.5rem;
+    flex-shrink: 0;
+    height: var(--thumbnail-size);
+    width: var(--thumbnail-size);
+  }
+
+  .col-name > :is(img, video) {
+    object-fit: cover;
+    padding: 2px;
+  }
+
+  .image-loading {
+    margin: 0;
+  }
+
+  // column widths
+  --col-name-width: 200px;
+  --col-dimensions-width: 100px;
+  --col-date-added-width: 140px;
+  --col-size-width: 100px;
+  --col-tags-width: 200px;
+
+  .col-name {
+    width: var(--col-name-width);
+  }
+  .col-dimensions {
+    width: var(--col-dimensions-width);
+  }
+  .col-date-added {
+    width: var(--col-date-added-width);
+  }
+  .col-size {
+    width: var(--col-size-width);
+  }
+  .col-tags {
+    width: var(--col-tags-width);
+  }
+
+  .thumbnail-tags {
+    overflow-y: auto;
+    white-space: break-spaces;
+    height: var(--thumbnail-size);
+    width: 100%;
+  }
+}
+
+#list-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--background-color);
+  height: 1.5rem;
+}
+
+#list-body {
+  position: relative;
+}
+
+.thumbnail-square img,
+video {
+  background-position: center;
+  object-fit: cover;
+}
+.thumbnail-letterbox img,
+video {
+  object-fit: contain;
+}
+
+///////////////////////////
+// Slide mode:
+#slide-mode {
+  flex-direction: row-reverse;
+
+  overflow: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: var(--background-color);
+
+  @keyframes fade-in-bg {
+    from {
+      background: rgba(var(--background-color), 0);
+    }
+    to {
+      background: var(--background-color);
+    }
+  }
+
+  @keyframes fade-out-bg {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  &.fade-in {
+    animation: fade-in-bg 0.3s ease-in;
+  }
+  &.fade-out {
+    opacity: 0;
+    animation: fade-out-bg 0.3s cubic-bezier(0.65, 0.05, 0.36, 1);
+  }
+}
+.preview-window-initializing #slide-mode.fade-in {
+  // Preview window initializes with slide mode: fade-in is undesired
+  animation-duration: 0s;
+}
+
+#zoomable-image {
+  position: relative;
+  margin: auto;
+
+  [class^='side-button'] {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    opacity: 0.1;
+    width: 3rem;
+    transition: opacity 0.2s ease-in-out;
+
+    // Override default button style
+    border: none;
+    color: #ffffffc7;
+    background: transparent;
+    padding: 0;
+
+    > svg {
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .side-button-left {
+    left: 0;
+  }
+
+  .side-button-right {
+    right: 0;
+  }
+
+  img,
+  video {
+    // Let the compositor know that the image will transform for better performance
+    will-change: transform;
+
+    cursor: pointer;
+    transform-origin: 0 0;
+  }
+}
+
+#content-placeholder {
+  max-width: 480px;
+  margin: 10% auto auto auto;
+  text-align: center;
+
+  .divider {
+    margin: auto;
+    width: 60%;
+    border-bottom: 1px solid var(--text-color-muted);
+    margin: 1rem auto;
+  }
+}
+
+.masonry {
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  padding: 8px; // Note: keep in sync with MasonryRenderer PADDING
+
+  [data-masonrycell] {
+    contain: strict;
+    position: absolute;
+    transition: transform 0.2s ease;
+    .thumbnail {
+      // Inherit size from parent style={} attribute
+      max-width: inherit;
+      width: unset;
+      height: inherit;
+    }
+
+    // Note: this feature has an ugly exception, when filename is also shown. See the #gallery-item[data-show-overlay] rule below
+    &:hover .thumbnail-tags {
+      max-height: 100%;
+      overflow-y: overlay; // overlay scrollbar so it doesn't push tags away
+
+      // Hide scrollbar while tags transition upwards
+      // TODO: Would be nice to have an opacity transition on the scrollbar, but can't get it to work
+      animation: hide-scroll 0.25s backwards;
+      @keyframes hide-scroll {
+        from,
+        to {
+          overflow: hidden;
+        }
+      }
+    }
+
+    .thumbnail-tags {
+      grid-area: tags;
+      display: block;
+      position: absolute;
+      bottom: 0;
+      overflow: hidden;
+      transition: 0.25s $pt-transition-cubic2;
+      max-height: 2.8em;
+      max-width: 100%;
+
+      // Allow dragging of images to elsewhere here too, just like the .thumbnail itself (drag-export)
+      -webkit-user-drag: element;
+
+      > .tag {
+        margin: 0.25em;
+      }
+    }
+
+    .calendar-tag {
+      grid-area: tags;
+      display: block;
+      position: absolute;
+      top: 0 !important;
+      overflow: hidden;
+      transition: 0.25s $pt-transition-cubic2;
+      max-height: 2.8em;
+      max-width: 100%;
+
+      // Allow dragging of images to elsewhere here too, just like the .thumbnail itself (drag-export)
+      -webkit-user-drag: element;
+
+      > .tag {
+        margin: 0.25em;
+      }
+    }
+
+    .thumbnail-overlay {
+      display: flex;
+      justify-content: space-between;
+      column-gap: 0.25em;
+
+      background-color: rgba(0, 0, 0, 0.5);
+      color: rgb(
+        200,
+        200,
+        200
+      ); // can't use --text-color: black text on black background in light theme
+      width: 100%;
+      height: 1.5em;
+      position: absolute;
+      bottom: 0;
+      padding: 0.25rem;
+
+      opacity: 0.75;
+      transition: opacity 0.25s $pt-transition-cubic2, background-color 0.25s $pt-transition-cubic2;
+
+      // Resolution is always visible if enabled by truncating the filename
+      > :first-child {
+        white-space: nowrap;
+        overflow: hidden visible;
+        text-overflow: ellipsis;
+
+        // Only here to avoid vertical scrollbar due to overflow-x: hidden
+        // It won't take up more than 1 line due to no-wrap
+        height: 2em;
+      }
+    }
+
+    &:hover {
+      .thumbnail-overlay {
+        opacity: 1;
+        background-color: rgba(0, 0, 0, 0.75);
+
+        &:hover {
+          // Expand filename on hover if it was truncated
+          > :first-child {
+            overflow: inherit;
+            text-overflow: inherit;
+          }
+        }
+      }
+    }
+  }
+
+  #invis-last-selected-item-for-scroll {
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+// Exception when both showing filename and tags in thumbnail overlay:
+// move the tags up by the height of the filename element (23.59px)
+#gallery-content[data-show-overlay='true'] .masonry {
+  [data-masonrycell] {
+    &:hover .thumbnail-tags {
+      max-height: calc(100% - 1.5em - 0.25rem);
+    }
+  }
+  .thumbnail-tags {
+    margin-bottom: calc(1.5em + 0.25rem);
+  }
+}

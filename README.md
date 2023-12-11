@@ -13,3 +13,11 @@ Then run the following commands to get started:
 
 An installable executable can be built using `yarn package` for your platform in the `/dist` folder. The building is performed using the [electron-builder](https://www.electron.build/) package, and is configured by a section in the `package.json` file.
 Builds are automatically published to Github Releases when a tag is created in GitHub.
+
+### Tech Stack
+This project is a fork from [Allusion](https://github.com/allusion-app/Allusion).
+* [ElectronJS](https://www.electronjs.org/) - the framework for desktop development
+* [ReactJS](https://react.dev/) - Front-end library
+* [MobX](https://mobx.js.org/README.html) - State Manadgment
+* [Annotorious](https://annotorious.github.io/) - Face selection on images
+* [TenserFlowJS](https://www.tensorflow.org/js) - Face detection

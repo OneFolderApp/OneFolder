@@ -1,7 +1,7 @@
 {
   "name": "onefolder",
   "productName": "OneFolder",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -75,10 +75,10 @@
     ],
     "asar": true
   },
-  "repository": "https://github.com/PhotoFolder/OneFolder",
+  "repository": "https://github.com/OneFolderApp/OneFolder",
   "publish": {
     "provider": "github",
-    "owner": "PhotoFolder",
+    "owner": "OneFolderApp",
     "repo": "OneFolder",
     "releaseType": "release"
   },

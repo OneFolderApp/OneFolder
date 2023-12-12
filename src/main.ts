@@ -449,7 +449,7 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
   if (dialogResult.response === 0) {
     autoUpdater.downloadUpdate();
   } else if (dialogResult.response === 2) {
-    shell.openExternal('https://github.com/PhotoFolder/OneFolder/releases/latest');
+    shell.openExternal('https://github.com/OneFolderApp/OneFolder/releases/latest');
   }
 });
 

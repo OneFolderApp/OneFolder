@@ -3,7 +3,7 @@ import os from 'os';
 // Randomly chosen, hopefully no conflicts with other apps/services
 export const SERVER_PORT = 5454;
 
-export const githubUrl = 'https://github.com/PhotoFolder/OneFolder';
+export const githubUrl = 'https://github.com/OneFolderApp/OneFolder';
 
 export const chromeExtensionUrl = 'https://chrome.google.com/webstore/';
 

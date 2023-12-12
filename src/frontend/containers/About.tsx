@@ -31,8 +31,8 @@ const About = observer(() => {
           <li>General information</li>
           <li>Download the latest version</li>
         </ul>
-        <ExternalLink url="https://github.com/PhotoFolder/OneFolder">
-          github.com/PhotoFolder/OneFolder
+        <ExternalLink url="https://github.com/OneFolderApp/OneFolder">
+          github.com/OneFolderApp/OneFolder
         </ExternalLink>
         <ul>
           <li>🤓 View the source code</li>

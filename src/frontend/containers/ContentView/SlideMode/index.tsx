@@ -284,14 +284,14 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     },
   );
 
-  useEffect(() => {
-    let annotorious: AnnotoriousWrapper | undefined;
+  // useEffect(() => {
+  //   let annotorious: AnnotoriousWrapper | undefined;
 
-    if (imgEl.current) {
-      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
-    }
-    return () => annotorious?.destroy();
-  }, [imgEl, file, tagStore]);
+  //   if (imgEl.current) {
+  //     annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
+  //   }
+  //   return () => annotorious?.destroy();
+  // }, [imgEl, file, tagStore]);
 
   if (image.tag === 'ready' && 'err' in image.value) {
     console.log(image.value.err);
@@ -339,33 +339,33 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
 
     return (
       // Antoine 06/12/23: remove pan to make Annotorius
-      // <ZoomPan
-      //   position="center"
-      //   initialScale="auto"
-      //   doubleTapBehavior="zoomOrReset"
-      //   imageDimension={dimension}
-      //   containerDimension={createDimension(width, height)}
-      //   minScale={minScale}
-      //   maxScale={5}
-      //   transitionStart={transitionStart}
-      //   transitionEnd={transitionEnd}
-      //   onClose={onClose}
-      //   upscaleMode={upscaleMode}
-      // >
-      //   {(props) => (
-      <div className="image_preview__wrapper">
-        <img
-          // {...props}
-          src={encodeFilePath(src)}
-          // width={dimension[0]}
-          // height={dimension[1]}
-          alt=""
-          ref={imgEl}
-          className="image_preview"
-        />
-      </div>
-      //   )}
-      // </ZoomPan>
+      <ZoomPan
+        position="center"
+        initialScale="auto"
+        doubleTapBehavior="zoomOrReset"
+        imageDimension={dimension}
+        containerDimension={createDimension(width, height)}
+        minScale={minScale}
+        maxScale={5}
+        transitionStart={transitionStart}
+        transitionEnd={transitionEnd}
+        onClose={onClose}
+        upscaleMode={upscaleMode}
+      >
+        {(props) => (
+          // <div className="image_preview__wrapper">
+          <img
+            {...props}
+            src={encodeFilePath(src)}
+            width={dimension[0]}
+            height={dimension[1]}
+            alt=""
+            ref={imgEl}
+            // className="image_preview"
+          />
+          // </div>
+        )}
+      </ZoomPan>
     );
   }
 };

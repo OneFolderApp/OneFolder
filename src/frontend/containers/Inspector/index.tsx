@@ -43,12 +43,12 @@ const Inspector = observer(() => {
       </section> */}
 
       <section>
-        <header>
+        {/* <header>
           <h2>Faces</h2>
         </header>
         <Toggle checked={uiStore.isFaceModuleEnabled} onChange={uiStore.toggleFaceModule}>
           Show faces
-        </Toggle>
+        </Toggle> */}
         {/* <button
           onClick={() => {
             console.log('imageThumbnail', imageThumbnail.current);

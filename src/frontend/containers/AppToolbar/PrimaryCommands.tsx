@@ -72,6 +72,13 @@ const PrimaryCommands = observer(() => {
             text="Calendar"
           />
           <MenuRadioItem
+            icon={IconSet.FACE_SMILING}
+            onClick={uiStore.setMethodCalendar}
+            checked={false}
+            disabled={true}
+            text="Faces (WIP)"
+          />
+          <MenuRadioItem
             icon={IconSet.WORLD}
             onClick={uiStore.setMethodCalendar}
             checked={false}

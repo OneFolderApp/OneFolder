@@ -1,10 +1,13 @@
-import { W3CAnnotoriousSelection } from '@recogito/annotorious';
+import { W3CAnnotation } from '@recogito/annotorious';
 
-function transformJsonW3CToMWGRegion(
-  inputJson: W3CAnnotoriousSelection[],
+function transformW3CAnnotationToMWGRegionInfo(
+  inputJson: W3CAnnotation[],
   imgWidth: number,
   imgHeight: number,
-): MWGOutputJson {
+): MWGRegionInfo | null {
+  if (!inputJson.length) {
+    return null;
+  }
   const regionList: MWGRegion[] = inputJson.map((annotation) => {
     return {
       Area: {
@@ -19,18 +22,16 @@ function transformJsonW3CToMWGRegion(
     };
   });
 
-  const outputJson: MWGOutputJson = {
-    RegionInfo: {
-      AppliedToDimensions: {
-        H: imgWidth,
-        W: imgHeight,
-        Unit: 'pixel',
-      },
-      RegionList: regionList,
+  const outputRegionInfo: MWGRegionInfo = {
+    AppliedToDimensions: {
+      H: imgWidth,
+      W: imgHeight,
+      Unit: 'pixel',
     },
+    RegionList: regionList,
   };
 
-  return outputJson;
+  return outputRegionInfo;
 }
 
-export default transformJsonW3CToMWGRegion;
+export default transformW3CAnnotationToMWGRegionInfo;

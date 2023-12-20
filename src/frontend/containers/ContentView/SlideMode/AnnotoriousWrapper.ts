@@ -1,8 +1,10 @@
-import { Annotorious, AnnotoriousBody, W3CAnnotoriousSelection } from '@recogito/annotorious';
+import { Annotorious, BodyW3CAnnotation, W3CAnnotation } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
 import { action, runInAction } from 'mobx';
 import { ClientFile } from 'src/frontend/entities/File';
 import TagStore from 'src/frontend/stores/TagStore';
+import transformMWGRegionInfoToW3CAnnotation from 'src/frontend/utils/transformMWGRegionInfoToW3CAnnotation';
+import transformW3CAnnotationToMWGRegionInfo from 'src/frontend/utils/transformW3CAnnotationToMWGRegionInfo';
 
 class AnnotoriousWrapper {
   annotorious: Annotorious;
@@ -24,13 +26,23 @@ class AnnotoriousWrapper {
     runInAction(() => {
       if (this.file.getAnnotations && this.file.getAnnotations !== '{}') {
         const annotationsFromDB = JSON.parse(this.file.getAnnotations);
-        this.annotorious.setAnnotations(annotationsFromDB);
+        this.annotorious.setAnnotations(
+          transformMWGRegionInfoToW3CAnnotation(annotationsFromDB, this.file.absolutePath),
+        );
       }
     });
 
-    this.annotorious.on('createAnnotation', async (annotation: W3CAnnotoriousSelection) => {
+    this.annotorious.on('createAnnotation', async (annotation: W3CAnnotation) => {
       const allAnotations = this.annotorious.getAnnotations();
-      this.file.addFaceAnnotations(allAnotations);
+      const allMWGAnnotations = transformW3CAnnotationToMWGRegionInfo(
+        allAnotations,
+        imgEl.width,
+        imgEl.height,
+      );
+
+      if (allMWGAnnotations) {
+        this.file.addFaceAnnotations(allMWGAnnotations);
+      }
       const tagsToAdd = this.getTagsFromAnnotation(annotation.body);
       if (tagsToAdd[0]) {
         this.file.addPeopleTag(tagsToAdd[0]);
@@ -38,7 +50,7 @@ class AnnotoriousWrapper {
     });
   }
 
-  getTagsFromAnnotation(annotationBody: AnnotoriousBody) {
+  getTagsFromAnnotation(annotationBody: BodyW3CAnnotation) {
     const tags = annotationBody.map((body) => {
       if (body.purpose === 'tagging') {
         return body.value;

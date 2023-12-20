@@ -158,6 +158,22 @@ class ExifIO {
     );
   }
 
+  async readFacesAnnotations(filepath: string): Promise<MWGRegionInfo | undefined> {
+    const metadata = await ep.readMetadata(filepath, [
+      'struct',
+      'XMP:regionInfo',
+      ...this.extraArgs,
+    ]);
+    if (metadata.error || !metadata.data?.[0]) {
+      throw new Error(metadata.error || 'No metadata entry');
+    }
+    const entry = metadata.data[0];
+    if (!entry.RegionInfo) {
+      return undefined;
+    }
+    return entry.RegionInfo;
+  }
+
   async readExifTags(filepath: string, tags: string[]): Promise<(string | undefined)[]> {
     const metadata = await ep.readMetadata(filepath, [...tags, ...this.extraArgs]);
     if (metadata.error || !metadata.data?.[0]) {
@@ -225,12 +241,15 @@ class ExifIO {
 
   @action.bound async writeFacesAnnotations(
     filepath: string,
-    annotations: MWGOutputJson,
+    regionInfo: MWGRegionInfo | null,
   ): Promise<void> {
+    if (!regionInfo) {
+      return;
+    }
     const res = await ep.writeMetadata(
       filepath,
       {
-        RegionInfo: JSON.stringify(annotations.RegionInfo).replace(/"/g, '').replace(/:/g, '='),
+        RegionInfo: JSON.stringify(regionInfo).replace(/"/g, '').replace(/:/g, '='),
       },
       [...defaultWriteArgs, ...this.extraArgs],
     );

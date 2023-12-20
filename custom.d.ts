@@ -122,7 +122,7 @@ declare module '@recogito/annotorious' {
     // .clearAuthInfo
     destroy(): void;
     // .getAnnotationById
-    getAnnotations(): W3CAnnotoriousSelection[];
+    getAnnotations(): W3CAnnotation[];
     // .getImageSnippetById
     // .getSelected
     // .getSelectedImageSnippet
@@ -143,10 +143,10 @@ declare module '@recogito/annotorious' {
     // .updateSelected
   }
 
-  export class W3CAnnotoriousSelection {
+  export class W3CAnnotation {
     '@context': string;
     type: string;
-    body: AnnotoriousBody;
+    body: BodyW3CAnnotation;
     target: {
       source: string;
       selector: {
@@ -155,10 +155,10 @@ declare module '@recogito/annotorious' {
         value: string;
       };
     };
-    id: string;
+    id?: string;
   }
 
-  type AnnotoriousBody = TextualBody[];
+  type BodyW3CAnnotation = TextualBody[];
   export class TextualBody {
     type: string;
     value: string;
@@ -189,6 +189,6 @@ type MWGRegionInfo = {
   RegionList: MWGRegion[];
 };
 
-type MWGOutputJson = {
+type MWGJson = {
   RegionInfo: MWGRegionInfo;
 };

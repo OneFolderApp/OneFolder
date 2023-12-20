@@ -1,4 +1,4 @@
-import { Annotorious, AnnotoriousBody, AnnotoriousSelection } from '@recogito/annotorious';
+import { Annotorious, AnnotoriousBody, W3CAnnotoriousSelection } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
 import { action, runInAction } from 'mobx';
 import { ClientFile } from 'src/frontend/entities/File';
@@ -28,9 +28,9 @@ class AnnotoriousWrapper {
       }
     });
 
-    this.annotorious.on('createAnnotation', (annotation: AnnotoriousSelection) => {
+    this.annotorious.on('createAnnotation', async (annotation: W3CAnnotoriousSelection) => {
       const allAnotations = this.annotorious.getAnnotations();
-      this.file.addAnnotation(allAnotations);
+      this.file.addFaceAnnotations(allAnotations);
       const tagsToAdd = this.getTagsFromAnnotation(annotation.body);
       if (tagsToAdd[0]) {
         this.file.addPeopleTag(tagsToAdd[0]);

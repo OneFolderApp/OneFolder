@@ -149,7 +149,7 @@ export class ClientFile {
     }
   }
 
-  @action.bound addAnnotation(annotation: object): void {
+  @action.bound addFaceAnnotations(annotation: object): void {
     this.annotations = JSON.stringify(annotation);
   }
 

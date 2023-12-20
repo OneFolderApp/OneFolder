@@ -223,6 +223,23 @@ class ExifIO {
     }
   }
 
+  @action.bound async writeFacesAnnotations(
+    filepath: string,
+    annotations: MWGOutputJson,
+  ): Promise<void> {
+    const res = await ep.writeMetadata(
+      filepath,
+      {
+        RegionInfo: JSON.stringify(annotations.RegionInfo).replace(/"/g, '').replace(/:/g, '='),
+      },
+      [...defaultWriteArgs, ...this.extraArgs],
+    );
+    if (!res.error?.endsWith('1 image files updated')) {
+      console.error('Could not update file tags metadata', res);
+      throw new Error(res.error || 'Unknown error');
+    }
+  }
+
   /** Can be used to write arbitrary metadata. For "Subject" data (the "tags" in OneFolder), use writeTags! */
   @action.bound async writeData(
     filepath: string,

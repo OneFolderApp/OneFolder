@@ -14,6 +14,7 @@ import { ClientLocation } from '../entities/Location';
 import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
+import transformJsonW3CToMWGRegion from '../utils/w3cToMWG';
 
 export const FILE_STORAGE_KEY = 'OneFolder_File';
 
@@ -158,6 +159,14 @@ class FileStore {
         const { absolutePath, tagHierarchy } = tagFilePairs[i];
         try {
           await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy);
+          await this.rootStore.exifTool.writeFacesAnnotations(
+            absolutePath,
+            transformJsonW3CToMWGRegion(
+              JSON.parse(this.fileList[i].getAnnotations),
+              this.fileList[i].width,
+              this.fileList[i].height,
+            ),
+          );
         } catch (e) {
           console.error('Could not write tags to', absolutePath, tagHierarchy, e);
         }

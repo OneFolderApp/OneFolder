@@ -208,16 +208,16 @@ interface AnnotoriousImageProps {
 }
 
 const AnnotoriousImage = ({ file, src }: AnnotoriousImageProps) => {
-  const { tagStore } = useStore();
+  const { tagStore, exifTool } = useStore();
   const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     let annotorious: AnnotoriousWrapper | undefined;
     if (imgEl.current) {
-      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
+      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore, exifTool);
     }
     return () => annotorious?.destroy();
-  }, [imgEl, file, tagStore]);
+  }, [imgEl, file, tagStore, exifTool]);
 
   return (
     <div className="image_preview__wrapper">

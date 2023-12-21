@@ -158,6 +158,12 @@ class ExifIO {
     );
   }
 
+  /**
+   * Reads the faces annotations from the specified file path.
+   * @param filepath - The path of the file to read.
+   * @returns A promise that resolves to the MWGRegionInfo object representing the faces annotations, or undefined if no annotations are found.
+   * @throws An error if there is an error reading the metadata or if no metadata entry is found.
+   */
   async readFacesAnnotations(filepath: string): Promise<MWGRegionInfo | undefined> {
     const metadata = await ep.readMetadata(filepath, [
       'struct',
@@ -239,6 +245,12 @@ class ExifIO {
     }
   }
 
+  /**
+   * Writes faces annotations to the specified file.
+   * @param filepath - The path of the file to write the annotations to.
+   * @param regionInfo - The region information containing the faces annotations.
+   * @returns A promise that resolves when the annotations are successfully written.
+   */
   @action.bound async writeFacesAnnotations(
     filepath: string,
     regionInfo: MWGRegionInfo | null,

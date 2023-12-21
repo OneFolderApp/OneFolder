@@ -1,5 +1,6 @@
 import { Annotorious, BodyW3CAnnotation, W3CAnnotation } from '@recogito/annotorious';
 import '@recogito/annotorious/dist/annotorious.min.css';
+import ExifIO from 'common/ExifIO';
 import { action, runInAction } from 'mobx';
 import { ClientFile } from 'src/frontend/entities/File';
 import TagStore from 'src/frontend/stores/TagStore';
@@ -11,7 +12,7 @@ class AnnotoriousWrapper {
   file: ClientFile;
   tagStore: TagStore;
 
-  constructor(imgEl: HTMLImageElement, file: ClientFile, tagStore: TagStore) {
+  constructor(imgEl: HTMLImageElement, file: ClientFile, tagStore: TagStore, exifTool: ExifIO) {
     this.file = file;
     this.tagStore = tagStore;
     const allPeople = action(() => {
@@ -23,11 +24,13 @@ class AnnotoriousWrapper {
       widgets: [{ widget: 'TAG', vocabulary: allPeople }],
     });
 
-    runInAction(() => {
-      if (this.file.getAnnotations && this.file.getAnnotations !== '{}') {
-        const annotationsFromDB = JSON.parse(this.file.getAnnotations);
+    runInAction(async () => {
+      const faceAnnotationMWG: MWGRegionInfo | undefined = await exifTool.readFacesAnnotations(
+        this.file.absolutePath,
+      );
+      if (faceAnnotationMWG !== undefined) {
         this.annotorious.setAnnotations(
-          transformMWGRegionInfoToW3CAnnotation(annotationsFromDB, this.file.absolutePath),
+          transformMWGRegionInfoToW3CAnnotation(faceAnnotationMWG, this.file.absolutePath),
         );
       }
     });
@@ -39,10 +42,7 @@ class AnnotoriousWrapper {
         imgEl.width,
         imgEl.height,
       );
-
-      if (allMWGAnnotations) {
-        this.file.addFaceAnnotations(allMWGAnnotations);
-      }
+      await exifTool.writeFacesAnnotations(this.file.absolutePath, allMWGAnnotations);
       const tagsToAdd = this.getTagsFromAnnotation(annotation.body);
       if (tagsToAdd[0]) {
         this.file.addPeopleTag(tagsToAdd[0]);

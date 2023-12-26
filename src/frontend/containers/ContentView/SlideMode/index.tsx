@@ -202,6 +202,30 @@ const SlideView = observer(({ width, height }: SlideViewProps) => {
   );
 });
 
+interface AnnotoriousImageProps {
+  file: ClientFile;
+  src: string;
+}
+
+const AnnotoriousImage = ({ file, src }: AnnotoriousImageProps) => {
+  const { tagStore } = useStore();
+  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    let annotorious: AnnotoriousWrapper | undefined;
+    if (imgEl.current) {
+      annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
+    }
+    return () => annotorious?.destroy();
+  }, [imgEl, file, tagStore]);
+
+  return (
+    <div className="image_preview__wrapper">
+      <img src={encodeFilePath(src)} alt="" ref={imgEl} className="image_preview" />
+    </div>
+  );
+};
+
 interface ZoomableImageProps {
   file: ClientFile;
   thumbnailSrc: string;
@@ -213,101 +237,125 @@ interface ZoomableImageProps {
   upscaleMode: UpscaleMode;
 }
 
-const ZoomableImage: React.FC<ZoomableImageProps> = ({
-  file,
-  thumbnailSrc,
-  width,
-  height,
-  transitionStart,
-  transitionEnd,
-  onClose,
-  upscaleMode,
-}: ZoomableImageProps) => {
-  const { imageLoader, tagStore } = useStore();
-  const { absolutePath, width: imgWidth, height: imgHeight } = file;
-  // Image src can be set asynchronously: keep track of it in a state
-  // Needed for image formats not natively supported by the browser (e.g. tiff): will be converted to another format
-  const source = usePromise(file, thumbnailSrc, async (file, thumbnailPath) => {
-    const src = await imageLoader.getImageSrc(file);
-    return src ?? thumbnailPath;
-  });
-  const imgEl: RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
-
-  const image = usePromise(
-    source,
-    absolutePath,
+const ZoomableImage: React.FC<ZoomableImageProps> = observer(
+  ({
+    file,
     thumbnailSrc,
-    imgWidth,
-    imgHeight,
-    file.extension,
-    async (source, absolutePath, thumbnailSrc, imgWidth, imgHeight, fileExtension) => {
-      if (source.tag === 'ready') {
-        if ('ok' in source.value) {
-          const src = source.value.ok;
-          const dimension = await new Promise<{ src: string; dimension: Vec2 }>(
-            (resolve, reject) => {
-              let img;
-              if (isFileExtensionVideo(fileExtension)) {
-                img = document.createElement('video');
-                img.onload = function (this: any) {
-                  // TODO: would be better to resolve once transition is complete: for large resolution images, the transition freezes for ~.4s bc of a re-paint task when the image changes
-                  resolve({
-                    src,
-                    dimension: createDimension(this.videoWidth, this.videoHeight),
-                  });
-                };
-              } else {
-                img = new Image();
-                img.onload = function (this: any) {
-                  // TODO: would be better to resolve once transition is complete: for large resolution images, the transition freezes for ~.4s bc of a re-paint task when the image changes
-                  resolve({
-                    src,
-                    dimension: createDimension(this.naturalWidth, this.naturalHeight),
-                  });
-                };
-              }
+    width,
+    height,
+    transitionStart,
+    transitionEnd,
+    onClose,
+    upscaleMode,
+  }: ZoomableImageProps) => {
+    const { imageLoader, uiStore } = useStore();
+    const { absolutePath, width: imgWidth, height: imgHeight } = file;
+    // Image src can be set asynchronously: keep track of it in a state
+    // Needed for image formats not natively supported by the browser (e.g. tiff): will be converted to another format
+    const source = usePromise(file, thumbnailSrc, async (file, thumbnailPath) => {
+      const src = await imageLoader.getImageSrc(file);
+      return src ?? thumbnailPath;
+    });
 
-              img.onerror = reject;
-              img.src = encodeFilePath(src);
-            },
-          );
-          return dimension;
+    const image = usePromise(
+      source,
+      absolutePath,
+      thumbnailSrc,
+      imgWidth,
+      imgHeight,
+      file.extension,
+      async (source, absolutePath, thumbnailSrc, imgWidth, imgHeight, fileExtension) => {
+        if (source.tag === 'ready') {
+          if ('ok' in source.value) {
+            const src = source.value.ok;
+            const dimension = await new Promise<{ src: string; dimension: Vec2 }>(
+              (resolve, reject) => {
+                let img;
+                if (isFileExtensionVideo(fileExtension)) {
+                  img = document.createElement('video');
+                  img.onload = function (this: any) {
+                    // TODO: would be better to resolve once transition is complete: for large resolution images, the transition freezes for ~.4s bc of a re-paint task when the image changes
+                    resolve({
+                      src,
+                      dimension: createDimension(this.videoWidth, this.videoHeight),
+                    });
+                  };
+                } else {
+                  img = new Image();
+                  img.onload = function (this: any) {
+                    // TODO: would be better to resolve once transition is complete: for large resolution images, the transition freezes for ~.4s bc of a re-paint task when the image changes
+                    resolve({
+                      src,
+                      dimension: createDimension(this.naturalWidth, this.naturalHeight),
+                    });
+                  };
+                }
+
+                img.onerror = reject;
+                img.src = encodeFilePath(src);
+              },
+            );
+            return dimension;
+          } else {
+            throw source.value.err;
+          }
         } else {
-          throw source.value.err;
-        }
-      } else {
-        return {
-          src: thumbnailSrc || absolutePath,
-          dimension: createDimension(imgWidth, imgHeight),
-        };
-      }
-    },
-  );
-
-  // useEffect(() => {
-  //   let annotorious: AnnotoriousWrapper | undefined;
-
-  //   if (imgEl.current) {
-  //     annotorious = new AnnotoriousWrapper(imgEl.current, file, tagStore);
-  //   }
-  //   return () => annotorious?.destroy();
-  // }, [imgEl, file, tagStore]);
-
-  if (image.tag === 'ready' && 'err' in image.value) {
-    console.log(image.value.err);
-    return <ImageFallback error={image.value.err} absolutePath={absolutePath} />;
-  } else {
-    const { src, dimension } =
-      image.tag === 'ready' && 'ok' in image.value
-        ? image.value.ok
-        : {
+          return {
             src: thumbnailSrc || absolutePath,
             dimension: createDimension(imgWidth, imgHeight),
           };
-    const minScale = Math.min(0.1, Math.min(width / dimension[0], height / dimension[1]));
+        }
+      },
+    );
 
-    // Alternative case for videos
-    if (isFileExtensionVideo(file.extension)) {
+    if (image.tag === 'ready' && 'err' in image.value) {
+      console.log(image.value.err);
+      return <ImageFallback error={image.value.err} absolutePath={absolutePath} />;
+    } else {
+      const { src, dimension } =
+        image.tag === 'ready' && 'ok' in image.value
+          ? image.value.ok
+          : {
+              src: thumbnailSrc || absolutePath,
+              dimension: createDimension(imgWidth, imgHeight),
+            };
+      const minScale = Math.min(0.1, Math.min(width / dimension[0], height / dimension[1]));
+
+      // Alternative case for videos
+      if (isFileExtensionVideo(file.extension)) {
+        return (
+          <ZoomPan
+            position="center"
+            initialScale="auto"
+            doubleTapBehavior="zoomOrReset"
+            imageDimension={dimension}
+            containerDimension={createDimension(width, height)}
+            minScale={minScale}
+            maxScale={5}
+            transitionStart={transitionStart}
+            transitionEnd={transitionEnd}
+            onClose={onClose}
+            upscaleMode={upscaleMode}
+          >
+            {(props) => (
+              <video
+                {...props}
+                src={encodeFilePath(src)}
+                width={dimension[0]}
+                height={dimension[1]}
+                controls
+                autoPlay
+                loop
+              />
+            )}
+          </ZoomPan>
+        );
+      }
+
+      if (uiStore.isFaceModuleEnabled) {
+        return <AnnotoriousImage file={file} src={src} />;
+      }
+
       return (
         <ZoomPan
           position="center"
@@ -323,52 +371,19 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
           upscaleMode={upscaleMode}
         >
           {(props) => (
-            <video
+            <img
               {...props}
               src={encodeFilePath(src)}
               width={dimension[0]}
               height={dimension[1]}
-              controls
-              autoPlay
-              loop
+              alt=""
             />
           )}
         </ZoomPan>
       );
     }
-
-    return (
-      // Antoine 06/12/23: remove pan to make Annotorius
-      <ZoomPan
-        position="center"
-        initialScale="auto"
-        doubleTapBehavior="zoomOrReset"
-        imageDimension={dimension}
-        containerDimension={createDimension(width, height)}
-        minScale={minScale}
-        maxScale={5}
-        transitionStart={transitionStart}
-        transitionEnd={transitionEnd}
-        onClose={onClose}
-        upscaleMode={upscaleMode}
-      >
-        {(props) => (
-          // <div className="image_preview__wrapper">
-          <img
-            {...props}
-            src={encodeFilePath(src)}
-            width={dimension[0]}
-            height={dimension[1]}
-            alt=""
-            ref={imgEl}
-            // className="image_preview"
-          />
-          // </div>
-        )}
-      </ZoomPan>
-    );
-  }
-};
+  },
+);
 
 export default SlideMode;
 

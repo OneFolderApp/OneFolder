@@ -167,6 +167,14 @@ class ExifIO {
     return tags.map((t) => entry[t]?.toString() || undefined);
   }
 
+  async readAllExifTags(filepath: string): Promise<exiftool.IMetadata> {
+    const metadata = await ep.readMetadata(filepath, ['-File:all']);
+    if (metadata.error || !metadata.data?.[0]) {
+      throw new Error(metadata.error || 'No metadata entry');
+    }
+    return metadata.data[0];
+  }
+
   /** Reads file metadata for all files in a folder (and recursively for its subfolders) */
   // async readTagsRecursively(directory: string) {
   //   const metadata = await ep.readMetadata(directory, [

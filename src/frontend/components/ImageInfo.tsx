@@ -49,7 +49,7 @@ const exifFields: Record<string, ExifField> = {
       return <ExternalLink url={url}>{url}</ExternalLink>;
     },
   },
-  ImageDescription: { label: 'Description', modifiable: true },
+  // ImageDescription: { label: 'Description', modifiable: true },
   Parameters: { label: 'Parameters' },
   Copyright: { label: 'Copyright', modifiable: true },
   Make: { label: 'Camera Manufacturer', modifiable: true },

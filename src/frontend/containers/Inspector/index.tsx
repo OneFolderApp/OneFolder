@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
 import ImageInfo from '../../components/ImageInfo';
+import ImageDescription from '../../components/ImageDescription';
 import { IconButton, IconSet, Toggle } from 'widgets';
 import { shell } from 'electron';
 import { IS_PREVIEW_WINDOW } from 'common/window';
@@ -27,6 +28,9 @@ const Inspector = observer(() => {
     <aside id="inspector">
       <section>
         <ImageInfo file={first} />
+      </section>
+      <section>
+        <ImageDescription file={first} />
       </section>
       {/* <section>
         <header>

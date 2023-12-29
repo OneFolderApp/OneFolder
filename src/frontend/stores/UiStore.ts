@@ -310,14 +310,14 @@ class UiStore {
   @action.bound enableSlideMode(): void {
     analytics.event('enableSlideMode');
     analytics.set('engagement_time_msec', 10);
-
+    this.setIsOutlinerOpen(false);
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
     analytics.event('disableSlideMode');
     analytics.set('engagement_time_msec', 10);
-
+    this.setIsOutlinerOpen(true);
     this.isSlideMode = false;
   }
 

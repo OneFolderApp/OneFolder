@@ -99,6 +99,7 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
           name={descriptionKey}
           onKeyDown={stopPropagation}
           className="description-box"
+          rows={10}
         ></textarea>
         <table id="file-info">
           {/* <tbody>

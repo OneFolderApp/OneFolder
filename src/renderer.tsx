@@ -28,6 +28,7 @@ import BackupScheduler from './backend/backup-scheduler';
 import { DB_NAME, dbInit } from './backend/config';
 
 async function main(): Promise<void> {
+  console.groupCollapsed('Initializing OneFolder');
   // Render our react components in the div with id 'app' in the html file
   const container = document.getElementById('app');
 
@@ -46,6 +47,7 @@ async function main(): Promise<void> {
   } else {
     await runPreviewApp(db, root);
   }
+  console.groupEnd();
 }
 
 async function runMainApp(db: Dexie, root: Root): Promise<void> {

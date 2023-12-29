@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
 import ImageInfo from '../../components/ImageInfo';
+import ImageDescription from '../../components/ImageDescription';
 import { IconButton, IconSet, Toggle } from 'widgets';
 import { shell } from 'electron';
 import { IS_PREVIEW_WINDOW } from 'common/window';
@@ -28,6 +29,9 @@ const Inspector = observer(() => {
       <section>
         <ImageInfo file={first} />
       </section>
+      <section>
+        <ImageDescription file={first} />
+      </section>
       {/* <section>
         <header>
           <h2>Path to file</h2>
@@ -43,32 +47,34 @@ const Inspector = observer(() => {
       </section> */}
 
       <section>
-        {/* <header>
+        <header>
           <h2>Faces</h2>
         </header>
         <Toggle checked={uiStore.isFaceModuleEnabled} onChange={uiStore.toggleFaceModule}>
           Show faces
-        </Toggle> */}
-        {/* <button
-          onClick={() => {
-            console.log('imageThumbnail', imageThumbnail.current);
-
-            if (imageThumbnail.current) {
+        </Toggle>
+        <div className="faces_settings_container">
+          <button
+            onClick={() => {
               console.log('imageThumbnail', imageThumbnail.current);
-              first.detectFaces(imageThumbnail.current);
-            } else {
-              console.error('imageThumbnail is null');
-            }
-          }}
-        >
-          <img
-            ref={imageThumbnail}
-            src={first.absolutePath}
-            alt="img"
-            className="small-thumbnail"
-          />
-          Detect Faces
-        </button> */}
+
+              if (imageThumbnail.current) {
+                console.log('imageThumbnail', imageThumbnail.current);
+                first.detectFaces(imageThumbnail.current);
+              } else {
+                console.error('imageThumbnail is null');
+              }
+            }}
+          >
+            <img
+              ref={imageThumbnail}
+              src={first.absolutePath}
+              alt="img"
+              className="small-thumbnail"
+            />
+            Detect Faces
+          </button>
+        </div>
       </section>
 
       {/* Modifying state in preview window is not supported (not in sync updated in main window) */}

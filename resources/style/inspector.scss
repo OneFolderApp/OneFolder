@@ -53,6 +53,12 @@
   &:hover header [role='toolbar'] {
     opacity: 1;
   }
+
+  .faces_settings_container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
 // File info
@@ -118,4 +124,8 @@ table#file-info {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.description-box {
+  width: 100%;
 }

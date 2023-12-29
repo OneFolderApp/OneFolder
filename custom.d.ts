@@ -122,7 +122,7 @@ declare module '@recogito/annotorious' {
     // .clearAuthInfo
     destroy(): void;
     // .getAnnotationById
-    getAnnotations(): AnnotoriousSelection[];
+    getAnnotations(): W3CAnnotation[];
     // .getImageSnippetById
     // .getSelected
     // .getSelectedImageSnippet
@@ -143,11 +143,11 @@ declare module '@recogito/annotorious' {
     // .updateSelected
   }
 
-  export class AnnotoriousSelection {
+  export class W3CAnnotation {
     '@context': string;
-    'type': string;
-    'body': AnnotoriousBody;
-    'target': {
+    type: string;
+    body: BodyW3CAnnotation;
+    target: {
       source: string;
       selector: {
         type: string;
@@ -155,12 +155,40 @@ declare module '@recogito/annotorious' {
         value: string;
       };
     };
+    id?: string;
   }
 
-  type AnnotoriousBody = TextualBody[];
+  type BodyW3CAnnotation = TextualBody[];
   export class TextualBody {
-    purpose: string;
-    type: 'TextualBody';
+    type: string;
     value: string;
+    purpose: string;
   }
 }
+
+type MWGArea = {
+  H: number;
+  W: number;
+  X: number;
+  Y: number;
+  Unit: string;
+};
+
+type MWGRegion = {
+  Area: MWGArea;
+  Name: string;
+  Type: string;
+};
+
+type MWGRegionInfo = {
+  AppliedToDimensions: {
+    H: number;
+    Unit: string;
+    W: number;
+  };
+  RegionList: MWGRegion[];
+};
+
+type MWGJson = {
+  RegionInfo: MWGRegionInfo;
+};

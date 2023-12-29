@@ -116,31 +116,6 @@ class ExifIO {
 
   // ------------------
 
-  /** Merges the HierarchicalSubject, Subject and Keywords into one list of tags, removing any duplicates */
-  static convertMetadataToHierarchy(entry: exiftool.IMetadata, separator: string): string[][] {
-    const parseExifFieldAsString = (val: any) =>
-      Array.isArray(val) ? val : val?.toString() ? [val.toString()] : [];
-
-    const tagHierarchy = parseExifFieldAsString(entry.HierarchicalSubject);
-    const subject = parseExifFieldAsString(entry.Subject);
-    const keywords = parseExifFieldAsString(entry.Keywords);
-
-    // these toString() methods are here because they are automatically parsed to numbers if they could be numbers :/
-    const splitHierarchy = tagHierarchy.map((h) => h.toString().split(separator));
-    const allPlainTags = Array.from(
-      new Set([...subject.map((s) => s.toString()), ...keywords.map((s) => s.toString())]),
-    );
-
-    // Filter out duplicates of tagHierarchy and the other plain tags:
-    const filteredTags = allPlainTags.filter((tag) =>
-      splitHierarchy.every((h) => h[h.length - 1] !== tag),
-    );
-
-    if (tagHierarchy.length + filteredTags.length > 0) {
-      console.debug('Parsed tags', { tagHierarchy, subject, keywords });
-    }
-    return [...splitHierarchy, ...filteredTags.map((t) => [t])];
-  }
   async readTags(filepath: string): Promise<string[][]> {
     const metadata = await ep.readMetadata(filepath, [
       'HierarchicalSubject',
@@ -158,6 +133,28 @@ class ExifIO {
     );
   }
 
+  /**
+   * Reads the faces annotations from the specified file path.
+   * @param filepath - The path of the file to read.
+   * @returns A promise that resolves to the MWGRegionInfo object representing the faces annotations, or undefined if no annotations are found.
+   * @throws An error if there is an error reading the metadata or if no metadata entry is found.
+   */
+  async readFacesAnnotations(filepath: string): Promise<MWGRegionInfo | undefined> {
+    const metadata = await ep.readMetadata(filepath, [
+      'struct',
+      'XMP:regionInfo',
+      ...this.extraArgs,
+    ]);
+    if (metadata.error || !metadata.data?.[0]) {
+      throw new Error(metadata.error || 'No metadata entry');
+    }
+    const entry = metadata.data[0];
+    if (!entry.RegionInfo) {
+      return undefined;
+    }
+    return entry.RegionInfo;
+  }
+
   async readExifTags(filepath: string, tags: string[]): Promise<(string | undefined)[]> {
     const metadata = await ep.readMetadata(filepath, [...tags, ...this.extraArgs]);
     if (metadata.error || !metadata.data?.[0]) {
@@ -165,6 +162,40 @@ class ExifIO {
     }
     const entry = metadata.data[0];
     return tags.map((t) => entry[t]?.toString() || undefined);
+  }
+
+  /**
+   * Extracts the width and height resolution of an image file from its exif data.
+   * @param filepath The file to read the resolution from
+   * @returns The width and height of the image, or width and height as 0 if the resolution could not be determined.
+   */
+  async getDimensions(filepath: string): Promise<{ width: number; height: number }> {
+    let metadata: Awaited<ReturnType<typeof ep.readMetadata>> | undefined = undefined;
+    try {
+      metadata = await ep.readMetadata(filepath, [
+        's3',
+        'ImageWidth',
+        'ImageHeight',
+        ...this.extraArgs,
+      ]);
+      if (metadata.error || !metadata.data?.[0]) {
+        throw new Error(metadata.error || 'No metadata entry');
+      }
+      const entry = metadata.data[0];
+      const { ImageWidth, ImageHeight } = entry;
+      return { width: ImageWidth, height: ImageHeight };
+    } catch (e) {
+      console.error('Could not read image dimensions from ', filepath, e, metadata);
+      return { width: 0, height: 0 };
+    }
+  }
+
+  async readAllExifTags(filepath: string): Promise<exiftool.IMetadata> {
+    const metadata = await ep.readMetadata(filepath, ['-File:all']);
+    if (metadata.error || !metadata.data?.[0]) {
+      throw new Error(metadata.error || 'No metadata entry');
+    }
+    return metadata.data[0];
   }
 
   /** Reads file metadata for all files in a folder (and recursively for its subfolders) */
@@ -220,6 +251,43 @@ class ExifIO {
     if (!res.error?.endsWith('1 image files updated')) {
       console.error('Could not update file tags metadata', res);
       throw new Error(res.error || 'Unknown error');
+    }
+  }
+
+  /**
+   * Writes faces annotations to the specified file (if null, deletes the annotations).
+   * @param filepath - The path of the file to write the annotations to.
+   * @param regionInfo - The region information containing the faces annotations.
+   * @returns A promise that resolves when the annotations are successfully written.
+   */
+  @action.bound async writeFacesAnnotations(
+    filepath: string,
+    regionInfo: MWGRegionInfo | null,
+  ): Promise<void> {
+    if (regionInfo) {
+      const res = await ep.writeMetadata(
+        filepath,
+        {
+          RegionInfo: JSON.stringify(regionInfo).replace(/"/g, '').replace(/:/g, '='),
+        },
+        [...defaultWriteArgs, ...this.extraArgs],
+      );
+      if (!res.error?.endsWith('1 image files updated')) {
+        console.error('Could not update file tags metadata', res);
+        throw new Error(res.error || 'Unknown error');
+      }
+    } else {
+      const res = await ep.writeMetadata(
+        filepath,
+        {
+          RegionInfo: '',
+        },
+        [...defaultWriteArgs, ...this.extraArgs],
+      );
+      if (!res.error?.endsWith('1 image files updated')) {
+        console.error('Could not update file tags metadata', res);
+        throw new Error(res.error || 'Unknown error');
+      }
     }
   }
 
@@ -304,30 +372,30 @@ class ExifIO {
   //   }
   // }
 
-  /**
-   * Extracts the width and height resolution of an image file from its exif data.
-   * @param filepath The file to read the resolution from
-   * @returns The width and height of the image, or width and height as 0 if the resolution could not be determined.
-   */
-  async getDimensions(filepath: string): Promise<{ width: number; height: number }> {
-    let metadata: Awaited<ReturnType<typeof ep.readMetadata>> | undefined = undefined;
-    try {
-      metadata = await ep.readMetadata(filepath, [
-        's3',
-        'ImageWidth',
-        'ImageHeight',
-        ...this.extraArgs,
-      ]);
-      if (metadata.error || !metadata.data?.[0]) {
-        throw new Error(metadata.error || 'No metadata entry');
-      }
-      const entry = metadata.data[0];
-      const { ImageWidth, ImageHeight } = entry;
-      return { width: ImageWidth, height: ImageHeight };
-    } catch (e) {
-      console.error('Could not read image dimensions from ', filepath, e, metadata);
-      return { width: 0, height: 0 };
+  /** Merges the HierarchicalSubject, Subject and Keywords into one list of tags, removing any duplicates */
+  static convertMetadataToHierarchy(entry: exiftool.IMetadata, separator: string): string[][] {
+    const parseExifFieldAsString = (val: any) =>
+      Array.isArray(val) ? val : val?.toString() ? [val.toString()] : [];
+
+    const tagHierarchy = parseExifFieldAsString(entry.HierarchicalSubject);
+    const subject = parseExifFieldAsString(entry.Subject);
+    const keywords = parseExifFieldAsString(entry.Keywords);
+
+    // these toString() methods are here because they are automatically parsed to numbers if they could be numbers :/
+    const splitHierarchy = tagHierarchy.map((h) => h.toString().split(separator));
+    const allPlainTags = Array.from(
+      new Set([...subject.map((s) => s.toString()), ...keywords.map((s) => s.toString())]),
+    );
+
+    // Filter out duplicates of tagHierarchy and the other plain tags:
+    const filteredTags = allPlainTags.filter((tag) =>
+      splitHierarchy.every((h) => h[h.length - 1] !== tag),
+    );
+
+    if (tagHierarchy.length + filteredTags.length > 0) {
+      console.debug('Parsed tags', { tagHierarchy, subject, keywords });
     }
+    return [...splitHierarchy, ...filteredTags.map((t) => [t])];
   }
 
   /**

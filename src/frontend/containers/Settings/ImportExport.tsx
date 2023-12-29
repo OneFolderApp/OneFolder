@@ -94,7 +94,10 @@ export const ImportExport = observer(() => {
         <ButtonGroup>
           <Button
             text="Import tags from file metadata"
-            onClick={fileStore.readTagsFromFiles}
+            onClick={() => {
+              fileStore.readTagsFromFiles();
+              fileStore.readFacesAnnotationsFromFiles();
+            }}
             styling="outlined"
           />
           <Button

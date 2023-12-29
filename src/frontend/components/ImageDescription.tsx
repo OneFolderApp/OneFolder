@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { IconSet } from 'widgets/icons';
 import { Toolbar, ToolbarButton } from 'widgets/toolbar';
@@ -63,6 +63,9 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
 
         // Update data for in view, lil bit hacky
         newExifStats[descriptionKey] = value;
+      } else {
+        data[descriptionKey] = '';
+        newExifStats[descriptionKey] = '';
       }
 
       setIsEditing(false);

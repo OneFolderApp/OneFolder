@@ -7,14 +7,14 @@ import { useStore } from '../contexts/StoreContext';
 import { ClientFile } from '../entities/File';
 import { AppToaster } from './Toaster';
 
-type ExifField = { label: string; modifiable?: boolean; format?: (val: string) => ReactNode };
+// type ExifField = { label: string; modifiable?: boolean; format?: (val: string) => ReactNode };
 
 // Details: https://www.vcode.no/web/resource.nsf/ii2lnug/642.htm
-const exifFields: Record<string, ExifField> = {
-  ImageDescription: { label: 'Description', modifiable: true },
-};
+// const exifFields: Record<string, ExifField> = {
+//   'MWG:Description': { label: 'Description', modifiable: true },
+// };
 
-const exifTags = Object.keys(exifFields);
+// const exifTags = Object.keys(exifFields);
 
 const stopPropagation = (e: React.KeyboardEvent<HTMLTextAreaElement>) => e.stopPropagation();
 
@@ -27,7 +27,7 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [exifStats, setExifStats] = useState<Record<string, string>>({});
-  const descriptionKey = 'ImageDescription';
+  const descriptionKey = 'Description';
 
   useEffect(() => {
     // When the file changes, update the exif stats
@@ -39,13 +39,9 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
         {},
       ),
     );
-
-    exifTool.readExifTags(file.absolutePath, exifTags).then((tagValues) => {
+    exifTool.readDescription(file.absolutePath).then((description) => {
       const stats: Record<string, string> = {};
-      tagValues.forEach((val, i) => {
-        const key = exifTags[i];
-        stats[key] = val || '';
-      });
+      stats[descriptionKey] = description || '';
       setExifStats(stats);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

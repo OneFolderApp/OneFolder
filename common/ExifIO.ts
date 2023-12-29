@@ -164,6 +164,15 @@ class ExifIO {
     return tags.map((t) => entry[t]?.toString() || undefined);
   }
 
+  async readDescription(filepath: string): Promise<string | undefined> {
+    const metadata = await ep.readMetadata(filepath, ['MWG:Description', ...this.extraArgs]);
+    if (metadata.error || !metadata.data?.[0]) {
+      throw new Error(metadata.error || 'No metadata entry');
+    }
+    const entry = metadata.data[0];
+    return entry.Description?.toString();
+  }
+
   /**
    * Extracts the width and height resolution of an image file from its exif data.
    * @param filepath The file to read the resolution from

@@ -56,7 +56,7 @@ export interface IHotkeyMap {
   advancedSearch: string;
 
   // Other
-  openPreviewWindow: string;
+  // openPreviewWindow: string;
   openExternal: string;
 }
 
@@ -71,7 +71,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   openTagEditor: 't',
   selectAll: 'mod + a',
   deselectAll: 'mod + d',
-  viewSlide: 'enter', // TODO: backspace and escape are hardcoded hotkeys to exist slide mode
+  viewSlide: 'space', // TODO: backspace and escape are hardcoded hotkeys to exist slide mode
   viewList: 'alt + 1',
   viewGrid: 'alt + 2',
   viewMasonryVertical: 'alt + 3',
@@ -80,7 +80,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewMap: 'alt + 6',
   search: 'mod + f',
   advancedSearch: 'mod + shift + f',
-  openPreviewWindow: 'space',
+  // openPreviewWindow: 'space',
   openExternal: 'mod + enter',
 };
 
@@ -310,14 +310,14 @@ class UiStore {
   @action.bound enableSlideMode(): void {
     analytics.event('enableSlideMode');
     analytics.set('engagement_time_msec', 10);
-
+    this.setIsOutlinerOpen(false);
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
     analytics.event('disableSlideMode');
     analytics.set('engagement_time_msec', 10);
-
+    this.setIsOutlinerOpen(true);
     this.isSlideMode = false;
   }
 
@@ -325,7 +325,9 @@ class UiStore {
     analytics.event('toggleSlideMode');
     analytics.set('engagement_time_msec', 10);
 
-    this.isSlideMode = !this.isSlideMode;
+    const wasSlideMode = this.isSlideMode;
+    this.isOutlinerOpen = wasSlideMode;
+    this.isSlideMode = !wasSlideMode;
   }
 
   /** This does not actually set the window to full-screen, just for bookkeeping! Use RendererMessenger instead */
@@ -843,9 +845,9 @@ class UiStore {
       this.toggleSettings();
     } else if (matches(hotkeyMap.toggleHelpCenter)) {
       this.toggleHelpCenter();
-    } else if (matches(hotkeyMap.openPreviewWindow)) {
-      this.openPreviewWindow();
-      e.preventDefault(); // prevent scrolling with space when opening the preview window
+      // } else if (matches(hotkeyMap.openPreviewWindow)) {
+      //   this.openPreviewWindow();
+      //   e.preventDefault(); // prevent scrolling with space when opening the preview window
     } else if (matches(hotkeyMap.openExternal)) {
       this.openExternal();
       // Search

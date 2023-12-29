@@ -1,3 +1,6 @@
+## Roadmap
+We use GitHub projects as a project manager, you can view and comment here: https://github.com/OneFolderApp/OneFolder/milestones
+
 ## Development
 
 ### Quick Start

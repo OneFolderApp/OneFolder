@@ -44,7 +44,7 @@
 // Update: only doing an export/import for all images for now, not real-time updates
 import fse from 'fs-extra';
 import { action, makeObservable, observable, runInAction } from 'mobx';
-import exiftool from 'node-exiftool';
+import exiftool from '@logion/node-exiftool';
 import { IS_WIN } from './process';
 import { getExtraResourcePath } from './fs';
 

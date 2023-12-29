@@ -39,7 +39,7 @@ declare module 'worker-loader!*' {
   export default WebpackWorker;
 }
 
-declare module 'node-exiftool' {
+declare module '@logion/node-exiftool' {
   /**
    * Custom type definition based on https://www.npmjs.com/package/node-exiftool
    */

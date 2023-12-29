@@ -9,6 +9,7 @@ import { ClientFile } from '../../entities/File';
 import { ViewMethod } from '../../stores/UiStore';
 import { useCommandHandler } from './Commands';
 import ListGallery from './ListGallery';
+import MapView from './MapView';
 import MasonryRenderer from './Masonry/MasonryRenderer';
 import SlideMode from './SlideMode';
 import { ContentRect } from './utils';
@@ -157,6 +158,9 @@ const Layout = ({ contentRect }: LayoutProps) => {
           lastSelectionIndex={lastSelectionIndex}
         />
       );
+      break;
+    case ViewMethod.Map:
+      overviewElem = <MapView />;
       break;
     default:
       overviewElem = 'unknown view method';

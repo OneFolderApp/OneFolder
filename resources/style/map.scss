@@ -1,0 +1,19 @@
+.mapbox-container {
+  .map {
+    height: 1000px;
+  }
+
+  .sidebar {
+    background-color: rgb(35 55 75 / 80%);
+    color: #fff;
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 21px;
+    z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 12px;
+    border-radius: 4px;
+  }
+}

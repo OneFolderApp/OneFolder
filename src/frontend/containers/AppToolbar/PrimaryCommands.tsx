@@ -66,24 +66,25 @@ const PrimaryCommands = observer(() => {
             text="Grid"
           />
           <MenuRadioItem
+            icon={IconSet.WORLD}
+            onClick={uiStore.setMethodMap}
+            checked={uiStore.isMap}
+            text="Map (WIP)"
+          />
+          <MenuRadioItem
             icon={IconSet.FILTER_DATE}
             onClick={uiStore.setMethodCalendar}
             checked={uiStore.isCalendar}
-            text="Calendar"
+            disabled={true}
+            text="Calendar (WIP)"
           />
+
           <MenuRadioItem
             icon={IconSet.FACE_SMILING}
             onClick={uiStore.setMethodCalendar}
             checked={false}
             disabled={true}
             text="Faces (WIP)"
-          />
-          <MenuRadioItem
-            icon={IconSet.WORLD}
-            onClick={uiStore.setMethodCalendar}
-            checked={false}
-            disabled={true}
-            text="Map (WIP)"
           />
         </div>
         <SortCommand />

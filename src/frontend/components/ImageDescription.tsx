@@ -16,7 +16,7 @@ const exifFields: Record<string, ExifField> = {
 
 const exifTags = Object.keys(exifFields);
 
-const stopPropagation = (e: React.KeyboardEvent<HTMLInputElement>) => e.stopPropagation();
+const stopPropagation = (e: React.KeyboardEvent<HTMLTextAreaElement>) => e.stopPropagation();
 
 interface ImageInfoProps {
   file: ClientFile;
@@ -59,26 +59,19 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
 
       const data: Record<string, string> = {};
       const newExifStats = { ...exifStats };
-      console.log('exifStats', exifStats);
-      console.log('form', form.elements);
 
-      // const value = (form.elements.namedItem(descriptionKey) as HTMLInputElement).value;
-      // if (value) {
-      //   // Set value to store in exif data
-      //   data[descriptionKey] = value;
+      const value = (form.elements.namedItem(descriptionKey) as HTMLTextAreaElement).value;
+      if (value) {
+        // Set value to store in exif data
+        data[descriptionKey] = value;
 
-      //   // Update data for in view, lil bit hacky
-      //   newExifStats[descriptionKey] = value;
-      // }
-
-      console.log('newExifStats', newExifStats);
+        // Update data for in view, lil bit hacky
+        newExifStats[descriptionKey] = value;
+      }
 
       setIsEditing(false);
       setExifStats(newExifStats);
 
-      // TODO: also update filename here?
-
-      // TODO: this doesn't update the modified time of the file. Maybe it should? See ExifIO internals
       exifTool
         .writeData(file.absolutePath, data)
         .then(() => AppToaster.show({ message: 'Image description updated', timeout: 3000 }))
@@ -101,8 +94,14 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
           <h2>Description</h2>
         </header>
         {/* <textarea defaultValue={exifStats[descriptionKey] || ''} key={descriptionKey}></textarea> */}
+        <textarea
+          defaultValue={exifStats[descriptionKey] || ''}
+          name={descriptionKey}
+          onKeyDown={stopPropagation}
+          className="description-box"
+        ></textarea>
         <table id="file-info">
-          <tbody>
+          {/* <tbody>
             {Object.entries(exifFields).map(([key, field]) => {
               const value = exifStats[key];
               const isEditingMode = isEditing && field.modifiable;
@@ -111,22 +110,26 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
               }
               return (
                 <tr key={key}>
-                  <th scope="row">{field.label}</th>
-
                   <td>
                     {!isEditingMode ? (
                       field.format?.(value || '') || value
                     ) : (
-                      <input defaultValue={value || ''} name={key} onKeyDown={stopPropagation} />
+                      <textarea
+                        defaultValue={exifStats[descriptionKey] || ''}
+                        name={descriptionKey}
+                        onKeyDown={stopPropagation}
+                      ></textarea>
+
+                      // <input defaultValue={value || ''} name={key} onKeyDown={stopPropagation} />
                     )}
                   </td>
                 </tr>
               );
             })}
-          </tbody>
+          </tbody> */}
         </table>
         <Toolbar controls="file-info" isCompact>
-          {isEditing ? (
+          {!isEditing ? (
             <>
               <ToolbarButton
                 key="cancel"

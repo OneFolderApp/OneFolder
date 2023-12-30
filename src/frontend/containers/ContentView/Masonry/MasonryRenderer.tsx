@@ -37,8 +37,8 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
   const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
   const containerWidth = contentRect.width - SCROLL_BAR_WIDTH - MASONRY_PADDING;
 
-  // const viewMethod = uiStore.method as SupportedViewMethod;
-  const viewMethod = ViewMethod.Grid;
+  const viewMethod = uiStore.method as SupportedViewMethod;
+  // const viewMethod = ViewMethod.Grid;
   const numImages = fileStore.fileList.length;
 
   // Vertical keyboard navigation with lastSelectionIndex

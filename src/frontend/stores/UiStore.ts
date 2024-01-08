@@ -155,7 +155,7 @@ class UiStore {
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
   @observable isThumbnailTagOverlayEnabled: boolean = true;
-  @observable isFaceModuleEnabled: boolean = true;
+  @observable isFaceModuleEnabled: boolean = false;
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -876,7 +876,7 @@ class UiStore {
           this.setUpscaleMode(prefs.upscaleMode);
         }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
-        this.isFaceModuleEnabled = Boolean(prefs.isFaceModuleEnabled ?? true);
+        this.isFaceModuleEnabled = Boolean(prefs.isFaceModuleEnabled ?? false);
         this.isThumbnailFilenameOverlayEnabled = Boolean(
           prefs.isThumbnailFilenameOverlayEnabled ?? false,
         ); // eslint-disable-line prettier/prettier

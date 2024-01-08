@@ -190,12 +190,12 @@ class UiStore {
   @observable readonly hotkeyMap: IHotkeyMap = observable(defaultHotkeyMap);
 
   constructor(rootStore: RootStore) {
-    // if (!IS_DEV) {
-    posthog.init('phc_i7z5MEt8qhw2FfaTV0DH1B52Wwr9gFsFP8vsG5W8M8s', {
-      api_host: 'https://eu.posthog.com',
-    });
-    posthog.capture('my event', { property: 'value' });
-    // }
+    if (!IS_DEV) {
+      posthog.init('phc_i7z5MEt8qhw2FfaTV0DH1B52Wwr9gFsFP8vsG5W8M8s', {
+        api_host: 'https://eu.posthog.com',
+      });
+      posthog.capture('my event', { property: 'value' });
+    }
     this.rootStore = rootStore;
     makeObservable(this);
   }

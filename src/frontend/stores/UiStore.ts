@@ -1,6 +1,7 @@
 import { shell } from 'electron';
 import fse from 'fs-extra';
 import { action, computed, makeObservable, observable } from 'mobx';
+import { IS_DEV } from 'common/process';
 
 import { maxNumberOfExternalFilesBeforeWarning } from 'common/config';
 import { clamp, notEmpty } from 'common/core';
@@ -13,7 +14,7 @@ import { ClientTag } from '../entities/Tag';
 import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
 
-import { analytics } from '../../analytics';
+import posthog from 'posthog-js';
 
 export const enum ViewMethod {
   List,
@@ -189,6 +190,12 @@ class UiStore {
   @observable readonly hotkeyMap: IHotkeyMap = observable(defaultHotkeyMap);
 
   constructor(rootStore: RootStore) {
+    // if (!IS_DEV) {
+    posthog.init('phc_i7z5MEt8qhw2FfaTV0DH1B52Wwr9gFsFP8vsG5W8M8s', {
+      api_host: 'https://eu.posthog.com',
+    });
+    posthog.capture('my event', { property: 'value' });
+    // }
     this.rootStore = rootStore;
     makeObservable(this);
   }
@@ -265,66 +272,41 @@ class UiStore {
   }
 
   @action.bound setMethodList(): void {
-    analytics.event('setMethodList');
-    analytics.set('engagement_time_msec', 10);
-
     this.method = ViewMethod.List;
   }
 
   @action.bound setMethodGrid(): void {
-    analytics.event('setMethodGrid');
-    analytics.set('engagement_time_msec', 10);
-
     this.method = ViewMethod.Grid;
   }
 
   @action.bound setMethodMasonryVertical(): void {
-    analytics.event('setMethodMasonryVertical');
-    analytics.set('engagement_time_msec', 10);
-
     this.method = ViewMethod.MasonryVertical;
   }
 
   @action.bound setMethodMasonryHorizontal(): void {
-    analytics.event('setMethodMasonryHorizontal');
-    analytics.set('engagement_time_msec', 10);
-
     this.method = ViewMethod.MasonryHorizontal;
   }
 
   @action.bound setMethodCalendar(): void {
-    analytics.event('setMethodCalendar');
-    analytics.set('engagement_time_msec', 10);
-
     this.rootStore.fileStore.orderFilesBy('dateCreated');
     this.method = ViewMethod.Calendar;
   }
 
   @action.bound setMethodMap(): void {
-    analytics.event('setMethodMap');
-    analytics.set('engagement_time_msec', 10);
-
     this.method = ViewMethod.Map;
   }
 
   @action.bound enableSlideMode(): void {
-    analytics.event('enableSlideMode');
-    analytics.set('engagement_time_msec', 10);
     this.setIsOutlinerOpen(false);
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
-    analytics.event('disableSlideMode');
-    analytics.set('engagement_time_msec', 10);
     this.setIsOutlinerOpen(true);
     this.isSlideMode = false;
   }
 
   @action.bound toggleSlideMode(): void {
-    analytics.event('toggleSlideMode');
-    analytics.set('engagement_time_msec', 10);
-
     const wasSlideMode = this.isSlideMode;
     this.isOutlinerOpen = wasSlideMode;
     this.isSlideMode = !wasSlideMode;
@@ -372,9 +354,6 @@ class UiStore {
   }
 
   @action.bound openPreviewWindow(): void {
-    analytics.event('openPreviewWindow');
-    analytics.set('engagement_time_msec', 10);
-
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -402,9 +381,6 @@ class UiStore {
   }
 
   @action.bound openExternal(warnIfTooManyFiles: boolean = true): void {
-    analytics.event('openExternal');
-    analytics.set('engagement_time_msec', 10);
-
     // Don't open when no files have been selected
     if (this.fileSelection.size === 0) {
       return;
@@ -420,30 +396,18 @@ class UiStore {
   }
 
   @action.bound toggleInspector(): void {
-    analytics.event('toggleInspector');
-    analytics.set('engagement_time_msec', 10);
-
     this.isInspectorOpen = !this.isInspectorOpen;
   }
 
   @action.bound openInspector(): void {
-    analytics.event('openInspector');
-    analytics.set('engagement_time_msec', 10);
-
     this.isInspectorOpen = true;
   }
 
   @action.bound toggleSettings(): void {
-    analytics.event('toggleSettings');
-    analytics.set('engagement_time_msec', 10);
-
     this.isSettingsOpen = !this.isSettingsOpen;
   }
 
   @action.bound closeSettings(): void {
-    analytics.event('closeSettings');
-    analytics.set('engagement_time_msec', 10);
-
     this.isSettingsOpen = false;
   }
 
@@ -509,30 +473,18 @@ class UiStore {
   }
 
   @action.bound closePreviewWindow(): void {
-    analytics.event('closePreviewWindow');
-    analytics.set('engagement_time_msec', 10);
-
     this.isPreviewOpen = false;
   }
 
   @action.bound setThumbnailDirectory(dir: string = ''): void {
-    analytics.event('setThumbnailDirectory');
-    analytics.set('engagement_time_msec', 10);
-
     this.thumbnailDirectory = dir;
   }
 
   @action.bound setImportDirectory(dir: string): void {
-    analytics.event('setImportDirectory');
-    analytics.set('engagement_time_msec', 10);
-
     this.importDirectory = dir;
   }
 
   @action.bound setTheme(theme: 'light' | 'dark' = 'dark'): void {
-    analytics.event('setTheme');
-    analytics.set('engagement_time_msec', 10);
-
     this.theme = theme;
     RendererMessenger.setTheme({ theme });
   }
@@ -563,9 +515,6 @@ class UiStore {
   }
 
   @action.bound toggleFileSelection(file: ClientFile, clear?: boolean): void {
-    analytics.event('toggleFileSelection');
-    analytics.set('engagement_time_msec', 10);
-
     if (this.fileSelection.has(file)) {
       this.fileSelection.delete(file);
     } else {
@@ -594,9 +543,6 @@ class UiStore {
   }
 
   @action.bound selectTag(tag: ClientTag, clear?: boolean): void {
-    analytics.event('selectTag');
-    analytics.set('engagement_time_msec', 10);
-
     if (clear === true) {
       this.clearTagSelection();
     }
@@ -617,9 +563,6 @@ class UiStore {
 
   /** Selects a range of tags, where indices correspond to the flattened tag list. */
   @action.bound selectTagRange(start: number, end: number, additive?: boolean): void {
-    analytics.event('selectTagRange');
-    analytics.set('engagement_time_msec', 10);
-
     const tagTreeList = this.rootStore.tagStore.tagList;
     if (!additive) {
       this.tagSelection.replace(tagTreeList.slice(start, end + 1));
@@ -707,9 +650,6 @@ class UiStore {
 
   /////////////////// Search Actions ///////////////////
   @action.bound clearSearchCriteriaList(): void {
-    analytics.event('clearSearchCriteriaList');
-    analytics.set('engagement_time_msec', 10);
-
     if (this.searchCriteriaList.length > 0) {
       this.searchCriteriaList.forEach((c) => c.dispose());
       this.searchCriteriaList.clear();
@@ -1041,9 +981,6 @@ class UiStore {
   }
 
   @action private viewAllContent(): void {
-    analytics.event('viewAllContent');
-    analytics.set('engagement_time_msec', 10);
-
     this.rootStore.fileStore.fetchAllFiles();
   }
 

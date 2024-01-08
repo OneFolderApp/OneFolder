@@ -46,7 +46,7 @@ const Inspector = observer(() => {
         </div>
       </section> */}
 
-      <section>
+      {/* <section>
         <header>
           <h2>Faces</h2>
         </header>
@@ -75,7 +75,7 @@ const Inspector = observer(() => {
             Detect Faces
           </button>
         </div>
-      </section>
+      </section> */}
 
       {/* Modifying state in preview window is not supported (not in sync updated in main window) */}
       {!IS_PREVIEW_WINDOW && (

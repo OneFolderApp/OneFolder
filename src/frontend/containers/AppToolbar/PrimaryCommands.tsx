@@ -34,9 +34,6 @@ const PrimaryCommands = observer(() => {
   return (
     <>
       <OutlinerToggle />
-      {/* <FileSelectionCommand /> */}
-
-      <Searchbar />
 
       {/* TODO: Put back tag button (or just the T hotkey) */}
       {fileStore.showsMissingContent ? (
@@ -46,6 +43,9 @@ const PrimaryCommands = observer(() => {
         // Only show when not viewing missing files (so it is replaced by the Delete button)
         <FileTagEditor />
       )}
+      <FileSelectionCommand />
+
+      <Searchbar />
 
       {/* <ViewCommand /> */}
       <SortCommand />
@@ -70,8 +70,6 @@ export const SlideModeCommand = observer(() => {
 
       <div className="spacer" />
 
-      <FileTagEditor />
-
       <ToolbarButton
         icon={IconSet.INFO}
         onClick={uiStore.toggleInspector}
@@ -91,17 +89,17 @@ const FileSelectionCommand = observer(() => {
   const allFilesSelected = fileCount > 0 && selectionCount === fileCount;
   // If everything is selected, deselect all. Else, select all
   const handleToggleSelect = () => {
-    selectionCount === fileCount ? uiStore.clearFileSelection() : uiStore.selectAllFiles();
+    // selectionCount === fileCount ? uiStore.clearFileSelection() : uiStore.selectAllFiles();
   };
 
   return (
     <ToolbarButton
       isCollapsible={false}
-      icon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
+      icon={IconSet.SELECT_ALL_CHECKED}
       onClick={handleToggleSelect}
       pressed={allFilesSelected}
       text={selectionCount}
-      tooltip="Selects or deselects all images"
+      tooltip="Number of selected files"
       disabled={fileCount === 0}
     />
   );

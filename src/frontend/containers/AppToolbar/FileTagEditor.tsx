@@ -14,7 +14,7 @@ import { debounce } from 'common/timeout';
 import { Grid, Tag } from 'widgets';
 import { Row, RowSeparator, useGridFocus } from 'widgets/combobox/Grid';
 import { IconSet } from 'widgets/icons';
-import { ToolbarButton } from 'widgets/toolbar';
+import { TagButton } from './TagButton';
 import { TagOption } from '../../components/TagSelector';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
@@ -28,7 +28,7 @@ const FileTagEditor = observer(() => {
   const { uiStore } = useStore();
   return (
     <>
-      <ToolbarButton
+      <TagButton
         icon={IconSet.TAG_LINE}
         disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
         onClick={uiStore.toggleToolbarTagPopover}

@@ -120,6 +120,7 @@ interface LocationCreationDialogProps {
 
 const LocationCreationDialog = observer(({ location, onClose }: LocationCreationDialogProps) => {
   const { locationStore, uiStore } = useStore();
+  // const [sublocationsLoaded, setSublocationsLoaded] = useState(false);
   // const [importFolderHierarchyAsTags, setImportFolderHierarchyAsTags] = useState(false);
 
   const handleSubmit = useCallback(() => {

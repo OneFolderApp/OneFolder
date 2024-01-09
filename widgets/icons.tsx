@@ -105,8 +105,9 @@ import THUMB_SM from 'resources/icons/thumb-sm.svg';
 import THUMB_MD from 'resources/icons/thumb-md.svg';
 import THUMB_BG from 'resources/icons/thumb-bg.svg';
 import TREE_LIST from 'resources/icons/tree-list.svg';
-import VIEW_GRID from 'resources/icons/view-grid.svg';
-import VIEW_LIST from 'resources/icons/view-list.svg';
+import VIEW_GRID from 'resources/icons/grid-view.svg';
+// import VIEW_LIST from 'resources/icons/view-list.svg';
+import VIEW_LIST_FA from 'resources/icons/view-list-fa.svg';
 import VIEW_MASONRY_H from 'resources/icons/view-masonry-h.svg';
 import VIEW_MASONRY_V from 'resources/icons/view-masonry-v.svg';
 // import VIEW_PRESENT from 'resources/icons/view-present.svg';
@@ -213,7 +214,7 @@ const IconSet = {
   THUMB_BG: toSvg(THUMB_BG),
   TREE_LIST: toSvg(TREE_LIST),
   VIEW_GRID: toSvg(VIEW_GRID),
-  VIEW_LIST: toSvg(VIEW_LIST),
+  VIEW_LIST: toSvg(VIEW_LIST_FA),
   VIEW_MASONRY_V: toSvg(VIEW_MASONRY_V),
   VIEW_MASONRY_H: toSvg(VIEW_MASONRY_H),
   // VIEW_PRESENT: toSvg(VIEW_PRESENT),

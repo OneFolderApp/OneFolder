@@ -170,8 +170,8 @@ const LocationCreationDialog = observer(({ location, onClose }: LocationCreation
           )}
         </fieldset> */}
 
-        <div>
-          <label htmlFor="import-metadata">Import metadata from images:</label>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <label htmlFor="import-metadata">Import metadata from files:</label>
 
           <input
             type="checkbox"

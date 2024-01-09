@@ -156,6 +156,7 @@ class UiStore {
   /** Whether to show the tags on images in the content view */
   @observable isThumbnailTagOverlayEnabled: boolean = true;
   @observable isFaceModuleEnabled: boolean = false;
+  @observable importMetadataAtLocationLoading: boolean = true;
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -478,6 +479,9 @@ class UiStore {
 
   @action.bound setThumbnailDirectory(dir: string = ''): void {
     this.thumbnailDirectory = dir;
+  }
+  @action.bound setImportMetadataAtLocationLoading(val: boolean): void {
+    this.importMetadataAtLocationLoading = val;
   }
 
   @action.bound setImportDirectory(dir: string): void {

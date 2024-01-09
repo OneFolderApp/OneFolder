@@ -233,3 +233,46 @@
   font-size: 0.75rem;
   margin-top: 0.25rem;
 }
+
+.navigation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.2rem;
+  .navigation-button {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(216, 216, 216);
+    border-radius: 10px;
+    min-width: 50px;
+    max-width: 120px;
+
+    margin: 0.2rem;
+
+    &:hover {
+      background-color: rgb(200, 200, 200);
+    }
+
+    .navigation-button__icon {
+      .custom-icon {
+        width: 1.4rem;
+        height: 1.4rem;
+      }
+    }
+
+    .navigation-button__label {
+    }
+  }
+
+  .navigation-button--checked {
+    box-shadow: inset 0 0 0 2px var(--accent-color);
+    background-color: none;
+
+    .navigation-button__icon {
+      .custom-icon {
+        color: var(--accent-color);
+      }
+    }
+  }
+}

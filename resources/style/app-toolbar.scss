@@ -61,28 +61,3 @@
     white-space: nowrap;
   }
 }
-
-.primary-commands {
-  width: 100%;
-  .primary-commands__top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.1rem;
-    width: 100%;
-  }
-
-  .primary-commands__bottom {
-    display: flex;
-    justify-content: space-between;
-
-    .primary-commands__bottom__left {
-      display: flex;
-      gap: 0.4rem 0.7rem;
-
-      .menuitemradio {
-        width: 200px !important;
-      }
-    }
-  }
-}

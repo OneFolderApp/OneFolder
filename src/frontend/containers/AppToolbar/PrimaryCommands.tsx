@@ -32,64 +32,25 @@ const PrimaryCommands = observer(() => {
   const { uiStore } = useStore();
 
   return (
-    <div className="primary-commands">
-      <div className="primary-commands__top">
-        <OutlinerToggle />
-        <FileSelectionCommand />
+    <>
+      <OutlinerToggle />
+      {/* <FileSelectionCommand /> */}
 
-        <Searchbar />
+      <Searchbar />
 
-        {/* TODO: Put back tag button (or just the T hotkey) */}
-        {fileStore.showsMissingContent ? (
-          // Only show option to remove selected files in toolbar when viewing missing files */}
-          <RemoveFilesPopover />
-        ) : (
-          // Only show when not viewing missing files (so it is replaced by the Delete button)
-          <FileTagEditor />
-        )}
+      {/* TODO: Put back tag button (or just the T hotkey) */}
+      {fileStore.showsMissingContent ? (
+        // Only show option to remove selected files in toolbar when viewing missing files */}
+        <RemoveFilesPopover />
+      ) : (
+        // Only show when not viewing missing files (so it is replaced by the Delete button)
+        <FileTagEditor />
+      )}
 
-        {/* <ViewCommand /> */}
-        <SecondaryCommands />
-      </div>
-      <div className="primary-commands__bottom">
-        <div className="primary-commands__bottom__left">
-          <MenuRadioItem
-            icon={IconSet.VIEW_LIST}
-            onClick={uiStore.setMethodList}
-            checked={uiStore.isList}
-            text="List"
-          />
-          <MenuRadioItem
-            icon={IconSet.VIEW_GRID}
-            onClick={uiStore.setMethodGrid}
-            checked={uiStore.isGrid}
-            text="Grid"
-          />
-          <MenuRadioItem
-            icon={IconSet.WORLD}
-            onClick={uiStore.setMethodMap}
-            checked={uiStore.isMap}
-            text="Map (WIP)"
-          />
-          <MenuRadioItem
-            icon={IconSet.FILTER_DATE}
-            onClick={uiStore.setMethodCalendar}
-            checked={uiStore.isCalendar}
-            disabled={true}
-            text="Calendar (WIP)"
-          />
-
-          <MenuRadioItem
-            icon={IconSet.FACE_SMILING}
-            onClick={uiStore.setMethodCalendar}
-            checked={false}
-            disabled={true}
-            text="Faces (WIP)"
-          />
-        </div>
-        <SortCommand />
-      </div>
-    </div>
+      {/* <ViewCommand /> */}
+      <SortCommand />
+      <SecondaryCommands />
+    </>
   );
 });
 

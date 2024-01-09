@@ -61,3 +61,19 @@
     white-space: nowrap;
   }
 }
+
+.tag-editor-button {
+  padding: 0 0.6rem;
+  background-color: var(--accent-color);
+  color: var(--accent-color-text);
+  border-radius: 15px;
+  margin: 0.4rem;
+
+  &:hover {
+    background-color: var(--accent-color-variation);
+  }
+
+  .tag-editor-button__label {
+    font-size: 0.8rem;
+  }
+}

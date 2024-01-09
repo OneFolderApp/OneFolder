@@ -480,6 +480,7 @@ class UiStore {
   @action.bound setThumbnailDirectory(dir: string = ''): void {
     this.thumbnailDirectory = dir;
   }
+
   @action.bound setImportMetadataAtLocationLoading(val: boolean): void {
     this.importMetadataAtLocationLoading = val;
   }

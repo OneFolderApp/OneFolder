@@ -423,8 +423,12 @@ class LocationStore {
     await this.backend.createFilesFromPath(location.path, files);
 
     AppToaster.show({ message: `Location "${location.name}" is ready!`, timeout: 5000 }, toastKey);
-    this.rootStore.fileStore.refetch();
-    this.rootStore.fileStore.refetchFileCounts();
+    await this.rootStore.fileStore.refetch();
+    await this.rootStore.fileStore.refetchFileCounts();
+
+    if (this.rootStore.uiStore.importMetadataAtLocationLoading) {
+      await this.rootStore.fileStore.readTagsFromFiles();
+    }
   }
 
   @action.bound async delete(location: ClientLocation): Promise<void> {

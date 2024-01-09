@@ -70,6 +70,8 @@ export const SlideModeCommand = observer(() => {
 
       <div className="spacer" />
 
+      <FileTagEditor />
+
       <ToolbarButton
         icon={IconSet.INFO}
         onClick={uiStore.toggleInspector}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-// Note: this is a brotal copy paste of toolbar.tsx just to change the background color, should be refactored
+// Note: this is a brutal copy paste of toolbar.tsx just to change the background color, should be refactored
 interface ToolbarProps {
   children: React.ReactNode;
   controls: string;

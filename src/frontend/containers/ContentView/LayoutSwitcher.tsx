@@ -10,6 +10,7 @@ import { ViewMethod } from '../../stores/UiStore';
 import { useCommandHandler } from './Commands';
 import ListGallery from './ListGallery';
 import FaceGallery from './FaceGallery';
+import CalendarGallery from './CalendarGallery';
 import MapView from './MapView';
 import MasonryRenderer from './Masonry/MasonryRenderer';
 import SlideMode from './SlideMode';
@@ -153,7 +154,7 @@ const Layout = ({ contentRect }: LayoutProps) => {
       break;
     case ViewMethod.Calendar:
       overviewElem = (
-        <MasonryRenderer
+        <CalendarGallery
           contentRect={contentRect}
           select={handleFileSelect}
           lastSelectionIndex={lastSelectionIndex}

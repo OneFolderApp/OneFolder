@@ -504,24 +504,6 @@ video {
       }
     }
 
-    .calendar-tag {
-      grid-area: tags;
-      display: block;
-      position: absolute;
-      top: 0 !important;
-      overflow: hidden;
-      transition: 0.25s $pt-transition-cubic2;
-      max-height: 2.8em;
-      max-width: 100%;
-
-      // Allow dragging of images to elsewhere here too, just like the .thumbnail itself (drag-export)
-      -webkit-user-drag: element;
-
-      > .tag {
-        margin: 0.25em;
-      }
-    }
-
     .thumbnail-overlay {
       display: flex;
       justify-content: space-between;

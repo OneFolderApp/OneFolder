@@ -1,0 +1,20 @@
+.calendar-gallery {
+  .calendar-gallery__month-container {
+    display: flex;
+    gap: 0.2rem;
+    padding: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .calendar-gallery__profile-picture {
+    width: 170px;
+    opacity: 0.4;
+  }
+
+  h1 {
+    padding: 0.4rem;
+    font-size: 2rem;
+    opacity: 0.4;
+    margin-bottom: 0;
+  }
+}

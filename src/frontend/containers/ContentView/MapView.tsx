@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { shell } from 'electron';
 
 const in1 = 'pk';
 const in2 = 'eyJ1IjoiYW50b2luZS1sYiIsImEiOiJjbHFxdjNoM2UzcG93MmtubXR0eXg1dmhuIn0';
@@ -30,9 +31,24 @@ export default function App() {
 
   return (
     <div className="mapbox-container">
-      <div className="sidebar">
-        The map is still in development, we will <br />
-        notify the mailing list when is ready
+      <div className="wip-container">
+        The map is not ready yet.
+        <br />
+        <br />
+        If you want to speed up the development you <br /> can vote on our roadmap:
+        <br />
+        <button
+          className="wip-link"
+          onClick={() => {
+            shell.openExternal('https://onefolder.canny.io/feedback/p/map-view');
+          }}
+        >
+          onefolder.canny.io/feedback/p/map-view
+        </button>
+        <br />
+        <br />
+        <br />
+        Comments and ideas are welcome 🙏
       </div>
       <div ref={mapContainer} className="map" />
     </div>

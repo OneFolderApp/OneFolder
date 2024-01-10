@@ -47,8 +47,8 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
       />
       <NavigationButton
         icon={IconSet.VIEW_GRID}
-        onClick={uiStore.setMethodGrid}
-        checked={uiStore.isGrid}
+        onClick={uiStore.setMethodMasonry}
+        checked={uiStore.isMasonry}
         text="Grid"
       />
       <br />

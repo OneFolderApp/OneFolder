@@ -7,6 +7,7 @@ import { FileRemoval } from '../../components/RemovalAlert';
 import FileTagEditor from '../../containers/AppToolbar/FileTagEditor';
 import { useStore } from '../../contexts/StoreContext';
 import { SortCommand } from './Menus';
+import { ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
 import { MenuRadioItem } from 'widgets/menus';
 import SecondaryCommands from './SecondaryCommands';
@@ -48,6 +49,8 @@ const PrimaryCommands = observer(() => {
       <Searchbar />
 
       {/* <ViewCommand /> */}
+      {uiStore.isMasonry && <ViewCommand />}
+
       <SortCommand />
       <SecondaryCommands />
     </>

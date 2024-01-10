@@ -66,27 +66,6 @@ export const OutlinerActionBar = observer(() => {
           />
         )}
       </div>
-      <hr className="footer-separator" />
-      <div className="footer-buttons">
-        <button
-          className="footer-link"
-          onClick={() => {
-            shell.openExternal('https://onefolder.canny.io/feedback');
-          }}
-        >
-          → 💡ideas + 🐞bugs
-        </button>
-        <button
-          className="footer-link"
-          onClick={() => {
-            shell.openExternal(
-              'https://foul-channel-e2c.notion.site/Photo-Folder-71473f9595304d4fb7832237a787c56b?pvs=4',
-            );
-          }}
-        >
-          → help center
-        </button>
-      </div>
     </Toolbar>
   );
 });

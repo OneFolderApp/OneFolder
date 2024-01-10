@@ -6,6 +6,7 @@ import { MenuButton, MenuItem } from 'widgets/menus';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { useStore } from 'src/frontend/contexts/StoreContext';
 import { ThumbnailSizeSliderMenuItem } from './Menus';
+import { shell } from 'electron';
 
 const SecondaryCommands = observer(() => {
   const { uiStore } = useStore();
@@ -35,6 +36,23 @@ const SecondaryCommands = observer(() => {
         text="Settings"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.toggleSettings} />}
       />
+      <MenuItem
+        icon={IconSet.THUMB_BG}
+        onClick={() => {
+          shell.openExternal('https://onefolder.canny.io/feedback');
+        }}
+        text="💡ideas + 🐞bugs"
+      />
+      <MenuItem
+        icon={IconSet.HELPCENTER}
+        onClick={() => {
+          shell.openExternal(
+            'https://foul-channel-e2c.notion.site/Photo-Folder-71473f9595304d4fb7832237a787c56b?pvs=4',
+          );
+        }}
+        text="help center"
+      />
+
       <MenuItem
         icon={IconSet.RELOAD}
         onClick={RendererMessenger.checkForUpdates}

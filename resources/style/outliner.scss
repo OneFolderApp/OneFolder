@@ -178,10 +178,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 8rem;
+  height: 2rem;
   justify-content: center;
   display: flex;
-  flex-direction: column;
 
   .toolbar-button {
     margin: 0.25rem;
@@ -196,30 +195,11 @@
     }
   }
 
-  .footer-separator {
-    border: 0.5px solid #6666664f;
-    width: 90px;
-    margin: 0;
-    margin-top: 0.2rem;
-  }
-  .footer-buttons {
-    display: flex;
-    flex-direction: column;
-    justify-content: left;
-    margin-top: 0.5rem;
-  }
-
   span {
     margin: 0 0.125rem;
     font-size: 0.6875rem;
     font-weight: bold;
   }
-}
-
-.footer-link {
-  display: flex;
-  justify-content: flex-start;
-  padding: 5px;
 }
 
 #new-location {

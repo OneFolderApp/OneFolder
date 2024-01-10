@@ -13,7 +13,6 @@ import { usePromise } from '../../hooks/usePromise';
 import { CommandDispatcher, MousePointerEvent } from './Commands';
 import { ITransform } from './Masonry/layout-helpers';
 import { GalleryVideoPlaybackMode } from 'src/frontend/stores/UiStore';
-import { CalendarTag } from './CalendarTag';
 
 interface ItemProps {
   file: ClientFile;
@@ -103,13 +102,6 @@ export const MasonryCell = observer(
             showResolution={uiStore.isThumbnailResolutionOverlayEnabled}
           />
         )}
-
-        {uiStore.isCalendar &&
-          (!mounted ? (
-            <span className="calendar-tag thumbnail-tags" />
-          ) : (
-            <CalendarTag file={file} isSelected={uiStore.fileSelection.has(file)} />
-          ))}
 
         {/* Show tags when the option is enabled, or when the file is selected */}
         {(uiStore.isThumbnailTagOverlayEnabled || uiStore.fileSelection.has(file)) &&

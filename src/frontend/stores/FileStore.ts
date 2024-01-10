@@ -128,53 +128,53 @@ class FileStore {
     }
   }
 
-  @action.bound async readFacesAnnotationsFromFiles(): Promise<void> {
-    const toastKey = 'read-faces-annotations-from-file';
-    try {
-      const numFiles = this.fileList.length;
-      for (let i = 0; i < numFiles; i++) {
-        AppToaster.show(
-          {
-            message: `Reading faces annotations from files ${((100 * i) / numFiles).toFixed(
-              0,
-            )}%...`,
-            timeout: 0,
-          },
-          toastKey,
-        );
-        const file = runInAction(() => this.fileList[i]);
+  // @action.bound async readFacesAnnotationsFromFiles(): Promise<void> {
+  //   const toastKey = 'read-faces-annotations-from-file';
+  //   try {
+  //     const numFiles = this.fileList.length;
+  //     for (let i = 0; i < numFiles; i++) {
+  //       AppToaster.show(
+  //         {
+  //           message: `Reading faces annotations from files ${((100 * i) / numFiles).toFixed(
+  //             0,
+  //           )}%...`,
+  //           timeout: 0,
+  //         },
+  //         toastKey,
+  //       );
+  //       const file = runInAction(() => this.fileList[i]);
 
-        const absolutePath = file.absolutePath;
+  //       const absolutePath = file.absolutePath;
 
-        try {
-          const facesAnnotations = await this.rootStore.exifTool.readFacesAnnotations(absolutePath);
-          if (facesAnnotations !== undefined) {
-            console.log('👍 facesAnnotations', facesAnnotations);
-            file.addFaceAnnotations(facesAnnotations);
-          }
-        } catch (e) {
-          console.error('Could not import faces annotations for', absolutePath, e);
-        }
-      }
-      AppToaster.show(
-        {
-          message: 'Reading faces annotations from files... Done!',
-          timeout: 5000,
-        },
-        toastKey,
-      );
-    } catch (e) {
-      console.error('Could not read faces annotations', e);
-      AppToaster.show(
-        {
-          message:
-            'Reading faces annotations from files failed. Check the dev console for more details',
-          timeout: 5000,
-        },
-        toastKey,
-      );
-    }
-  }
+  //       try {
+  //         const facesAnnotations = await this.rootStore.exifTool.readFacesAnnotations(absolutePath);
+  //         if (facesAnnotations !== undefined) {
+  //           console.log('👍 facesAnnotations', facesAnnotations);
+  //           file.addFaceAnnotations(facesAnnotations);
+  //         }
+  //       } catch (e) {
+  //         console.error('Could not import faces annotations for', absolutePath, e);
+  //       }
+  //     }
+  //     AppToaster.show(
+  //       {
+  //         message: 'Reading faces annotations from files... Done!',
+  //         timeout: 5000,
+  //       },
+  //       toastKey,
+  //     );
+  //   } catch (e) {
+  //     console.error('Could not read faces annotations', e);
+  //     AppToaster.show(
+  //       {
+  //         message:
+  //           'Reading faces annotations from files failed. Check the dev console for more details',
+  //         timeout: 5000,
+  //       },
+  //       toastKey,
+  //     );
+  //   }
+  // }
 
   @action.bound async writeTagsToFiles(): Promise<void> {
     const toastKey = 'write-tags-to-file';
@@ -313,7 +313,7 @@ class FileStore {
       const newThumbPath = getThumbnailPath(newData.absolutePath, thumbnailDirectory);
       fse.move(oldThumbnailPath, newThumbPath).catch(() => {});
 
-      const newClientFile = new ClientFile(this, newIFile);
+      const newClientFile = new ClientFile(this, newIFile, this.rootStore.exifTool);
       newClientFile.thumbnailPath = newThumbPath;
       this.fileList[index] = newClientFile;
       this.save(newClientFile.serialize());
@@ -680,7 +680,7 @@ class FileStore {
       // and just replacing their properties instead of creating new objects
       // But that's micro optimization...
 
-      const file = new ClientFile(this, f);
+      const file = new ClientFile(this, f, this.rootStore.exifTool);
       // Initialize the thumbnail path so the image can be loaded immediately when it mounts.
       // To ensure the thumbnail actually exists, the `ensureThumbnail` function should be called
       file.thumbnailPath = this.rootStore.imageLoader.needsThumbnail(f)

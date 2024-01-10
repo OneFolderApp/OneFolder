@@ -114,6 +114,7 @@ type PersistentPreferenceFields =
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
+  | 'lastMasonryMethod'
   | 'thumbnailSize'
   | 'thumbnailShape'
   | 'upscaleMode'
@@ -152,6 +153,7 @@ class UiStore {
   @observable isAdvancedSearchOpen: boolean = false;
   @observable searchMatchAny = false;
   @observable method: ViewMethod = ViewMethod.Grid;
+  @observable lastMasonryMethod: ViewMethod = ViewMethod.Grid;
   @observable isSlideMode: boolean = false;
   @observable isFullScreen: boolean = false;
   @observable outlinerWidth: number = UiStore.MIN_OUTLINER_WIDTH;
@@ -207,6 +209,17 @@ class UiStore {
   /////////////////// UI Actions ///////////////////
   @computed get isList(): boolean {
     return this.method === ViewMethod.List;
+  }
+
+  @computed get isMasonry(): boolean {
+    if (
+      this.method === ViewMethod.Grid ||
+      this.method === ViewMethod.MasonryVertical ||
+      this.method === ViewMethod.MasonryHorizontal
+    ) {
+      return true;
+    }
+    return false;
   }
 
   @computed get isGrid(): boolean {
@@ -283,15 +296,26 @@ class UiStore {
     this.method = ViewMethod.List;
   }
 
+  @action.bound setMethodMasonry(): void {
+    if (this.lastMasonryMethod) {
+      this.method = this.lastMasonryMethod;
+    } else {
+      this.method = ViewMethod.Grid;
+    }
+  }
+
   @action.bound setMethodGrid(): void {
+    this.lastMasonryMethod = ViewMethod.Grid;
     this.method = ViewMethod.Grid;
   }
 
   @action.bound setMethodMasonryVertical(): void {
+    this.lastMasonryMethod = ViewMethod.MasonryVertical;
     this.method = ViewMethod.MasonryVertical;
   }
 
   @action.bound setMethodMasonryHorizontal(): void {
+    this.lastMasonryMethod = ViewMethod.MasonryHorizontal;
     this.method = ViewMethod.MasonryHorizontal;
   }
 
@@ -950,6 +974,7 @@ class UiStore {
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,
+      lastMasonryMethod: this.lastMasonryMethod,
       thumbnailSize: this.thumbnailSize,
       thumbnailShape: this.thumbnailShape,
       upscaleMode: this.upscaleMode,

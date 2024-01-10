@@ -100,18 +100,10 @@ export const LayoutMenuItems = observer(() => {
   return (
     <MenuRadioGroup>
       <MenuRadioItem
-        icon={IconSet.VIEW_LIST}
-        onClick={uiStore.setMethodList}
-        checked={uiStore.isList}
-        text="List"
-        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewList} />}
-      />
-      <MenuRadioItem
         icon={IconSet.VIEW_GRID}
         onClick={uiStore.setMethodGrid}
         checked={uiStore.isGrid}
         text="Grid"
-        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewGrid} />}
       />
       <MenuRadioItem
         icon={IconSet.VIEW_MASONRY_V}
@@ -119,21 +111,12 @@ export const LayoutMenuItems = observer(() => {
         checked={uiStore.isMasonryVertical}
         // TODO: "masonry" might not ring a bell to some people. Suggestions for a better name? "Flow", "Stream"?
         text="Vertical Masonry"
-        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewMasonryVertical} />}
       />
       <MenuRadioItem
         icon={IconSet.VIEW_MASONRY_H}
         onClick={uiStore.setMethodMasonryHorizontal}
         checked={uiStore.isMasonryHorizontal}
         text="Horizontal Masonry"
-        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewMasonryHorizontal} />}
-      />
-      <MenuRadioItem
-        icon={IconSet.FILTER_DATE}
-        onClick={uiStore.setMethodCalendar}
-        checked={uiStore.isCalendar}
-        text="Calendar"
-        accelerator={<KeyCombo combo={uiStore.hotkeyMap.viewCalendar} />}
       />
     </MenuRadioGroup>
   );

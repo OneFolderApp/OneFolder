@@ -5,7 +5,6 @@ import { IconSet, KeyCombo } from 'widgets';
 import { MenuButton, MenuItem } from 'widgets/menus';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { useStore } from 'src/frontend/contexts/StoreContext';
-import { ThumbnailSizeSliderMenuItem } from './Menus';
 import { shell } from 'electron';
 
 const SecondaryCommands = observer(() => {
@@ -33,7 +32,7 @@ const SecondaryCommands = observer(() => {
       <MenuItem
         icon={IconSet.SETTINGS}
         onClick={uiStore.toggleSettings}
-        text="Settings"
+        text="settings"
         accelerator={<KeyCombo combo={uiStore.hotkeyMap.toggleSettings} />}
       />
       <MenuItem
@@ -56,10 +55,9 @@ const SecondaryCommands = observer(() => {
       <MenuItem
         icon={IconSet.RELOAD}
         onClick={RendererMessenger.checkForUpdates}
-        text="Check for updates"
+        text="check for updates"
       />
       {/* <MenuItem icon={IconSet.LOGO} onClick={uiStore.toggleAbout} text="About" /> */}
-      <ThumbnailSizeSliderMenuItem />
     </MenuButton>
   );
 });

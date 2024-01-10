@@ -4,17 +4,6 @@
   padding: 1.2rem;
   flex-wrap: wrap;
 
-  .face-gallery__message {
-    position: absolute;
-    font-size: 20px;
-    background-color: var(--background-color);
-    border: 3px solid var(--accent-color-yellow);
-    opacity: 1;
-    z-index: 1;
-    padding: 0.5rem;
-    border-radius: 10px;
-  }
-
   .face-gallery__profile {
     display: flex;
     flex-direction: column;
@@ -23,8 +12,8 @@
 
     .face-gallery__profile-picture {
       border-radius: 50%;
-      width: 90px;
-      border: 4px solid var(--accent-color);
+      width: 140px;
+      border: 5px solid var(--accent-color);
     }
   }
 }

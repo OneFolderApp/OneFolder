@@ -16,6 +16,7 @@ import { detectFaces } from '../image/aiModels';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
+import ExifIO from 'common/ExifIO';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -40,6 +41,7 @@ export class ClientFile {
   private store: FileStore;
   private saveHandler: IReactionDisposer;
   private autoSave: boolean = true;
+  private exifTool: ExifIO;
 
   readonly ino: string;
   readonly id: ID;
@@ -64,8 +66,9 @@ export class ClientFile {
   // Is undefined until existence check has been completed
   @observable isBroken?: boolean;
 
-  constructor(store: FileStore, fileProps: FileDTO) {
+  constructor(store: FileStore, fileProps: FileDTO, exifTool: ExifIO) {
     this.store = store;
+    this.exifTool = exifTool;
 
     this.ino = fileProps.ino;
     this.id = fileProps.id;
@@ -122,6 +125,13 @@ export class ClientFile {
     const hasTag = this.tags.has(tag);
     if (!hasTag) {
       this.tags.add(tag);
+
+      const tagHierarchy = Array.from(
+        this.tags,
+        action((t) => t.path),
+      );
+      this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+
       tag.incrementFileCount();
 
       if (this.tags.size === 1) {
@@ -133,6 +143,12 @@ export class ClientFile {
   @action.bound removeTag(tag: ClientTag): void {
     const hadTag = this.tags.delete(tag);
     if (hadTag) {
+      const tagHierarchy = Array.from(
+        this.tags,
+        action((t) => t.path),
+      );
+      this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+
       tag.decrementFileCount();
 
       if (this.tags.size === 0) {
@@ -149,9 +165,9 @@ export class ClientFile {
     }
   }
 
-  @action.bound addFaceAnnotations(annotation: object): void {
-    this.annotations = JSON.stringify(annotation);
-  }
+  // @action.bound addFaceAnnotations(annotation: object): void {
+  //   this.annotations = JSON.stringify(annotation);
+  // }
 
   @action.bound setBroken(isBroken: boolean): void {
     this.isBroken = isBroken;

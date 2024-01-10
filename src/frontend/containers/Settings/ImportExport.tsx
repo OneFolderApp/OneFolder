@@ -96,7 +96,7 @@ export const ImportExport = observer(() => {
             text="Import tags from file metadata"
             onClick={() => {
               fileStore.readTagsFromFiles();
-              fileStore.readFacesAnnotationsFromFiles();
+              // fileStore.readFacesAnnotationsFromFiles();
             }}
             styling="outlined"
           />

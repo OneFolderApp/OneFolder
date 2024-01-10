@@ -23,6 +23,7 @@ export const enum ViewMethod {
   MasonryHorizontal,
   Calendar,
   Map,
+  Faces,
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
@@ -51,6 +52,7 @@ export interface IHotkeyMap {
   viewMasonryVertical: string;
   viewMasonryHorizontal: string;
   viewCalendar: string;
+  viewFaces: string;
   viewMap: string;
   viewSlide: string;
   search: string;
@@ -78,7 +80,8 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewMasonryVertical: 'alt + 3',
   viewMasonryHorizontal: 'alt + 4',
   viewCalendar: 'alt + 5',
-  viewMap: 'alt + 6',
+  viewFaces: 'alt + 6',
+  viewMap: 'alt + 7',
   search: 'mod + f',
   advancedSearch: 'mod + shift + f',
   // openPreviewWindow: 'space',
@@ -222,6 +225,10 @@ class UiStore {
     return this.method === ViewMethod.Calendar;
   }
 
+  @computed get isFaces(): boolean {
+    return this.method === ViewMethod.Faces;
+  }
+
   @computed get isMap(): boolean {
     return this.method === ViewMethod.Map;
   }
@@ -291,6 +298,10 @@ class UiStore {
   @action.bound setMethodCalendar(): void {
     this.rootStore.fileStore.orderFilesBy('dateCreated');
     this.method = ViewMethod.Calendar;
+  }
+
+  @action.bound setMethodFaces(): void {
+    this.method = ViewMethod.Faces;
   }
 
   @action.bound setMethodMap(): void {
@@ -811,6 +822,8 @@ class UiStore {
       this.setMethodMasonryHorizontal();
     } else if (matches(hotkeyMap.viewCalendar)) {
       this.setMethodCalendar();
+    } else if (matches(hotkeyMap.viewFaces)) {
+      this.setMethodFaces();
     } else if (matches(hotkeyMap.viewMap)) {
       this.setMethodMap();
     } else if (matches(hotkeyMap.viewSlide)) {

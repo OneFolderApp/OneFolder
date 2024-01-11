@@ -347,11 +347,33 @@ video {
 
 ///////////////////////////
 // Slide mode:
+
+.preview__nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.7rem;
+  z-index: 10;
+
+  .toolbar-button {
+    padding: 0.5rem;
+    border-radius: 0.325rem;
+    background: var(--background-color-alt);
+    opacity: 0.6;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
 #slide-mode {
   flex-direction: row-reverse;
 
   overflow: none;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -378,11 +400,11 @@ video {
   }
 
   &.fade-in {
-    animation: fade-in-bg 0.3s ease-in;
+    animation: fade-in-bg 0s ease-in;
   }
   &.fade-out {
     opacity: 0;
-    animation: fade-out-bg 0.3s cubic-bezier(0.65, 0.05, 0.36, 1);
+    animation: fade-out-bg 0s cubic-bezier(0.65, 0.05, 0.36, 1);
   }
 }
 .preview-window-initializing #slide-mode.fade-in {

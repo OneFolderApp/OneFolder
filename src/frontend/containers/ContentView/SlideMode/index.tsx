@@ -16,12 +16,16 @@ import ZoomPan, { CONTAINER_DEFAULT_STYLE, SlideTransform } from '../SlideMode/Z
 import { ContentRect } from '../utils';
 import { Vec2, createDimension, createTransform } from './utils';
 import AnnotoriousWrapper from './AnnotoriousWrapper';
+import { ToolbarButton } from 'widgets/toolbar';
 
 const SlideMode = observer(({ contentRect }: { contentRect: ContentRect }) => {
   const { uiStore } = useStore();
   const isInspectorOpen = uiStore.isInspectorOpen;
   const inspectorWidth = uiStore.inspectorWidth;
-  const contentWidth = contentRect.width - (isInspectorOpen ? inspectorWidth : 0);
+  const isOutlineOpen = uiStore.isOutlinerOpen;
+  const outlineWidth = uiStore.outlinerWidth;
+  const contentWidth =
+    contentRect.width - (isInspectorOpen ? inspectorWidth : 0) + (isOutlineOpen ? outlineWidth : 0);
   const contentHeight = contentRect.height;
 
   return (
@@ -154,21 +158,22 @@ const SlideView = observer(({ width, height }: SlideViewProps) => {
   }, [fileStore, isFirst, isLast, uiStore, imageLoader]);
 
   const transitionStart: SlideTransform | undefined = useMemo(() => {
-    if (!file) {
-      return undefined;
-    }
-    const thumbEl = document.querySelector(`[data-file-id="${file.id}"]`);
-    const container = document.querySelector('#gallery-content');
-    if (thumbEl && container) {
-      const thumbElRect = thumbEl.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      return createTransform(
-        thumbElRect.top - containerRect.top,
-        thumbElRect.left - containerRect.left,
-        thumbElRect.height / file.height,
-      );
-    }
     return undefined;
+    // if (!file) {
+    //   return undefined;
+    // }
+    // const thumbEl = document.querySelector(`[data-file-id="${file.id}"]`);
+    // const container = document.querySelector('#gallery-content');
+    // if (thumbEl && container) {
+    //   const thumbElRect = thumbEl.getBoundingClientRect();
+    //   const containerRect = container.getBoundingClientRect();
+    //   return createTransform(
+    //     thumbElRect.top - containerRect.top,
+    //     thumbElRect.left - containerRect.left,
+    //     thumbElRect.height / file.height,
+    //   );
+    // }
+    // return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file?.id]);
 
@@ -180,6 +185,23 @@ const SlideView = observer(({ width, height }: SlideViewProps) => {
       onDrop={eventManager?.drop}
       tabIndex={-1}
     >
+      <nav className="preview__nav">
+        <ToolbarButton
+          isCollapsible={false}
+          icon={IconSet.ARROW_LEFT}
+          onClick={uiStore.disableSlideMode}
+          text="Back"
+          tooltip="Back (space bar)"
+        />
+        <ToolbarButton
+          icon={IconSet.EDIT}
+          onClick={uiStore.toggleInspector}
+          checked={uiStore.isInspectorOpen}
+          tooltip="Toggle the inspector panel"
+          text=""
+        />
+      </nav>
+
       {file && (
         <ZoomableImage
           file={file}

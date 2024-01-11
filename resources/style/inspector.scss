@@ -1,6 +1,7 @@
 ///////////////////////////////// Inspector /////////////////////////////////
 #inspector {
-  background-color: var(--background-color);
+  background-color: var(--background-color-alt);
+  border-left: 1px solid var(--border-color);
   overflow: hidden auto; // show a Y scrollbar if inspector is too small in height to fit min-height of its content
 
   display: flex;

@@ -118,7 +118,7 @@ const Layout = ({ contentRect }: LayoutProps) => {
     if (isSlideMode) {
       setDelayedSlideMode(true);
     } else {
-      handle = window.setTimeout(() => setDelayedSlideMode(false), 300);
+      handle = window.setTimeout(() => setDelayedSlideMode(false), 0);
     }
 
     return () => window.clearTimeout(handle);

@@ -22,16 +22,30 @@ const Inspector = observer(() => {
   }
 
   const first = fileStore.fileList[uiStore.firstItem];
-  const path = first.absolutePath;
+  // const path = first.absolutePath;
 
   return (
     <aside id="inspector">
+      <br />
+      <br />
+      <br />
       <section>
-        <ImageInfo file={first} />
+        {/* inspectorIsDescriptionVisible */}
+        <button
+          className="inspector-section-toggle"
+          onClick={() => uiStore.toggleInspectorDescriptionVisibility()}
+        >
+          <header>
+            <span>{IconSet.EDIT}</span>
+
+            <h2>Description</h2>
+          </header>
+          {uiStore.inspectorIsDescriptionVisible ? IconSet.ARROW_DOWN : IconSet.ARROW_UP}
+        </button>
+
+        {uiStore.inspectorIsDescriptionVisible && <ImageDescription file={first} />}
       </section>
-      <section>
-        <ImageDescription file={first} />
-      </section>
+
       {/* <section>
         <header>
           <h2>Path to file</h2>
@@ -86,6 +100,10 @@ const Inspector = observer(() => {
           <FileTags file={first} />
         </section>
       )}
+
+      <section>
+        <ImageInfo file={first} />
+      </section>
     </aside>
   );
 });

@@ -23,27 +23,28 @@ interface ImageInfoProps {
 }
 
 const ImageInfo = ({ file }: ImageInfoProps) => {
+  const descriptionKey = 'Description';
   const { exifTool } = useStore();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [exifStats, setExifStats] = useState<Record<string, string>>({});
-  const descriptionKey = 'Description';
+  const [descriptionValue, setDescriptionValue] = useState('');
+  const [descriptionOriginalValue, setDescriptionOriginalValue] = useState('');
 
   useEffect(() => {
-    // When the file changes, update the exif stats
-    setIsEditing(false);
-    // Reset previous fields to empty string, so the re-render doesn't flicker as when setting it to {}
-    setExifStats(
-      Object.entries(exifStats).reduce(
-        (acc, [key, val]) => ({ ...acc, [key]: val ? ' ' : '' }),
-        {},
-      ),
-    );
-    exifTool.readDescription(file.absolutePath).then((description) => {
-      const stats: Record<string, string> = {};
-      stats[descriptionKey] = description || '';
-      setExifStats(stats);
-    });
+    exifTool
+      .readDescription(file.absolutePath)
+      .then((description) => {
+        setDescriptionValue(description || '');
+        setDescriptionOriginalValue(description || '');
+      })
+      .catch((err) => {
+        AppToaster.show({
+          message: 'Error reading EXIF data',
+          clickAction: { label: 'View', onClick: RendererMessenger.toggleDevTools },
+          timeout: 6000,
+        });
+        setDescriptionValue('');
+        console.error(err);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file.absolutePath]);
 
@@ -51,29 +52,15 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
     (e: React.FormEvent) => {
       e.preventDefault();
 
-      const form = e.currentTarget as HTMLFormElement;
-
       const data: Record<string, string> = {};
-      const newExifStats = { ...exifStats };
-
-      const value = (form.elements.namedItem(descriptionKey) as HTMLTextAreaElement).value;
-      if (value) {
-        // Set value to store in exif data
-        data[descriptionKey] = value;
-
-        // Update data for in view, lil bit hacky
-        newExifStats[descriptionKey] = value;
-      } else {
-        data[descriptionKey] = '';
-        newExifStats[descriptionKey] = '';
-      }
-
-      setIsEditing(false);
-      setExifStats(newExifStats);
+      data[descriptionKey] = descriptionValue;
 
       exifTool
         .writeData(file.absolutePath, data)
-        .then(() => AppToaster.show({ message: 'Image description updated', timeout: 3000 }))
+        .then(() => {
+          AppToaster.show({ message: 'Image description updated', timeout: 3000 });
+          setDescriptionOriginalValue(descriptionValue);
+        })
         .catch((err) => {
           AppToaster.show({
             message: 'Could not updated image description',
@@ -83,81 +70,49 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
           console.error('Could not update image description', err);
         });
     },
-    [exifStats, exifTool, file.absolutePath],
+    [descriptionValue, exifTool, file.absolutePath],
   );
 
   return (
-    <div>
-      <form onSubmit={handleEditSubmit} onReset={() => setIsEditing(false)}>
-        <header>
-          <h2>Description</h2>
-        </header>
-        {/* <textarea defaultValue={exifStats[descriptionKey] || ''} key={descriptionKey}></textarea> */}
-        <textarea
-          defaultValue={exifStats[descriptionKey] || ''}
-          name={descriptionKey}
-          onKeyDown={stopPropagation}
-          className="description-box"
-          rows={10}
-        ></textarea>
-        <table id="file-info">
-          {/* <tbody>
-            {Object.entries(exifFields).map(([key, field]) => {
-              const value = exifStats[key];
-              const isEditingMode = isEditing && field.modifiable;
-              if (!value && !isEditingMode) {
-                return null;
-              }
-              return (
-                <tr key={key}>
-                  <td>
-                    {!isEditingMode ? (
-                      field.format?.(value || '') || value
-                    ) : (
-                      <textarea
-                        defaultValue={exifStats[descriptionKey] || ''}
-                        name={descriptionKey}
-                        onKeyDown={stopPropagation}
-                      ></textarea>
-
-                      // <input defaultValue={value || ''} name={key} onKeyDown={stopPropagation} />
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody> */}
-        </table>
-        <Toolbar controls="file-info" isCompact>
-          {!isEditing ? (
-            <>
-              <ToolbarButton
-                key="cancel"
-                icon={IconSet.CLOSE}
-                text="Cancel"
-                tooltip="Cancel changes"
-                type="reset"
-              />
-              <ToolbarButton
-                key="submit"
-                icon={IconSet.SELECT_CHECKED}
-                text="Save"
-                tooltip="Save changes"
-                type="submit"
-              />
-            </>
-          ) : (
-            <ToolbarButton
-              key="edit"
-              icon={IconSet.EDIT}
-              text="Edit"
-              onClick={() => setIsEditing(true)}
-              tooltip="Edit Exif data"
-              type="button"
-            />
-          )}
-        </Toolbar>
-      </form>
+    <div className="inspector-description">
+      {/* <textarea defaultValue={exifStats[descriptionKey] || ''} key={descriptionKey}></textarea> */}
+      <textarea
+        name={descriptionKey}
+        onKeyDown={stopPropagation}
+        className="description-box"
+        rows={10}
+        value={descriptionValue}
+        onChange={(e) => setDescriptionValue(e.target.value)}
+      ></textarea>
+      <div
+        className={`inspector-description__action-buttons ${
+          descriptionOriginalValue === descriptionValue ? 'low-opacity' : ''
+        }`}
+      >
+        <button onClick={() => setDescriptionValue(descriptionOriginalValue)}>cancel</button>
+        <button
+          className={`${descriptionOriginalValue !== descriptionValue ? 'highlight-save' : ''}`}
+          onClick={handleEditSubmit}
+        >
+          save
+        </button>
+      </div>
+      {/* <Toolbar controls="file-info" isCompact>
+        <ToolbarButton
+          key="cancel"
+          icon={IconSet.CLOSE}
+          text="Cancel"
+          tooltip="Cancel changes"
+          type="reset"
+        />
+        <ToolbarButton
+          key="submit"
+          icon={IconSet.SELECT_CHECKED}
+          text="Save"
+          tooltip="Save changes"
+          type="submit"
+        />
+      </Toolbar> */}
     </div>
   );
 };

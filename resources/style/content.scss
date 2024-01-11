@@ -354,7 +354,9 @@ video {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  padding: 0.7rem;
+  padding-top: 0.7rem;
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
   z-index: 10;
 
   .toolbar-button {

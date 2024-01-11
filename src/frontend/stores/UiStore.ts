@@ -333,19 +333,15 @@ class UiStore {
   }
 
   @action.bound enableSlideMode(): void {
-    this.setIsOutlinerOpen(false);
     this.isSlideMode = true;
   }
 
   @action.bound disableSlideMode(): void {
-    this.setIsOutlinerOpen(true);
     this.isSlideMode = false;
   }
 
   @action.bound toggleSlideMode(): void {
-    const wasSlideMode = this.isSlideMode;
-    this.isOutlinerOpen = wasSlideMode;
-    this.isSlideMode = !wasSlideMode;
+    this.isSlideMode = !this.isSlideMode;
   }
 
   /** This does not actually set the window to full-screen, just for bookkeeping! Use RendererMessenger instead */

@@ -35,6 +35,7 @@ import DELETE from 'resources/icons/delete.svg';
 // import DESELECT_ALL_FILL from 'resources/icons/deselect-all-fill.svg';
 // import DESELECT_ALL_ROUND from 'resources/icons/deselect-all-round.svg';
 import DOUBLE_CARET from 'resources/icons/double-caret.svg';
+import DUPLICATE from 'resources/icons/duplicate.svg';
 import EDIT from 'resources/icons/edit.svg';
 // import FILTER from 'resources/icons/filter.svg';
 import FACE_SMILING from 'resources/icons/face-smiling.svg';
@@ -104,6 +105,7 @@ import TAG_LINE from 'resources/icons/tag-line.svg';
 import THUMB_SM from 'resources/icons/thumb-sm.svg';
 import THUMB_MD from 'resources/icons/thumb-md.svg';
 import THUMB_BG from 'resources/icons/thumb-bg.svg';
+import TOOLS from 'resources/icons/tools.svg';
 import TREE_LIST from 'resources/icons/tree-list.svg';
 import VIEW_GRID from 'resources/icons/grid-view.svg';
 // import VIEW_LIST from 'resources/icons/view-list.svg';
@@ -142,6 +144,7 @@ const IconSet = {
   // DESELECT_ALL_FILL: toSvg(DESELECT_ALL_FILL),
   // DESELECT_ALL_ROUND: toSvg(DESELECT_ALL_ROUND),
   DOUBLE_CARET: toSvg(DOUBLE_CARET),
+  DUPLICATE: toSvg(DUPLICATE),
   EDIT: toSvg(EDIT),
   // FILTER: toSvg(FILTER),
   FACE_SMILING: toSvg(FACE_SMILING),
@@ -212,6 +215,7 @@ const IconSet = {
   THUMB_SM: toSvg(THUMB_SM),
   THUMB_MD: toSvg(THUMB_MD),
   THUMB_BG: toSvg(THUMB_BG),
+  TOOLS: toSvg(TOOLS),
   TREE_LIST: toSvg(TREE_LIST),
   VIEW_GRID: toSvg(VIEW_GRID),
   VIEW_LIST: toSvg(VIEW_LIST_FA),

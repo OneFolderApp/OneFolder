@@ -6,9 +6,10 @@
 
   display: flex;
   flex-direction: column;
+  // padding: 0.25rem 0.5rem;
 
   > * {
-    padding: 0.25rem 0.5rem;
+    padding: 0rem 0.5rem;
 
     // Tags section should shrink to fit its parent if the inspector is small in height
     &:last-child {
@@ -27,16 +28,8 @@
 
     // Similar behavior to toolbar in the outliner
     [role='toolbar'] {
-      opacity: 0;
-
-      position: absolute;
-      top: 0;
       right: 1rem;
       height: 2rem;
-    }
-
-    [role='toolbar']:focus-within {
-      opacity: 1;
     }
 
     .toolbar-button {
@@ -53,6 +46,72 @@
   // Hovering over inspector should show toolbars
   &:hover header [role='toolbar'] {
     opacity: 1;
+  }
+
+  .inspector-section-toggle__body {
+    padding-top: 0.2rem;
+    padding-bottom: 0.9rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .inspector-section-toggle {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0rem 0rem;
+    margin-top: 0;
+    margin-bottom: 0.2rem;
+    cursor: pointer;
+    color: var(--text-color-muted);
+
+    header {
+      display: flex;
+      padding: 0;
+      align-items: center;
+
+      span {
+        padding-right: 0.3rem;
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    &:hover {
+      color: var(--text-color);
+      background: transparent;
+      color: var(--text-color);
+      .custom-icon * {
+        opacity: 1;
+        fill: var(--text-color);
+      }
+    }
+    &:focus {
+      color: var(--text-color);
+      background: transparent;
+    }
+    &:active {
+      color: var(--text-color);
+      background: transparent;
+    }
+
+    .chevron {
+      .custom-icon {
+        width: 0.8rem;
+        height: 0.8rem;
+      }
+      .custom-icon * {
+        opacity: 0.9;
+      }
+    }
+
+    .custom-icon * {
+      fill: var(--text-color-muted);
+    }
+    // .custom-icon {
+    //   width: 1rem;
+    //   height: 1rem;
+    // }
   }
 
   .faces_settings_container {
@@ -127,6 +186,49 @@ table#file-info {
   background-repeat: no-repeat;
 }
 
-.description-box {
-  width: 100%;
+.inspector-section {
+  .description-box {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background-color: var(--input-color);
+    color: var(--text-color);
+    padding: 0.4rem;
+  }
+
+  .inspector-section__action-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.1rem;
+
+    button {
+      padding: 0.3rem 0.5rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+
+    .edit-button {
+      // border-bottom: 1px solid var(--border-color);
+      padding: 0;
+      border-radius: 0;
+      text-decoration: underline;
+      color: var(--text-color-muted);
+    }
+  }
+  .show-exiftool {
+    // border-bottom: 1px solid var(--border-color);
+    padding: 0;
+    border-radius: 0;
+    text-decoration: underline;
+    color: var(--text-color-muted);
+  }
+
+  .low-opacity {
+    opacity: 0.4;
+  }
+
+  .highlight-save {
+    background-color: var(--accent-color);
+    color: var(--accent-color-text);
+  }
 }

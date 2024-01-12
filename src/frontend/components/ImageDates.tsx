@@ -1,53 +1,37 @@
+import fse from 'fs-extra';
 import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { humanFileSize } from 'common/fmt';
+import { formatDateTime, humanFileSize } from 'common/fmt';
+import { IconSet } from 'widgets/icons';
+import { Toolbar, ToolbarButton } from 'widgets/toolbar';
 import { RendererMessenger } from '../../ipc/renderer';
 import { useStore } from '../contexts/StoreContext';
 import { ClientFile } from '../entities/File';
+import { usePromise } from '../hooks/usePromise';
 import ExternalLink from './ExternalLink';
 import { AppToaster } from './Toaster';
+import { div } from '@tensorflow/tfjs';
 
 type CommonMetadata = {
-  name: string;
-  dimensions: string;
-  size: string;
+  imported: string;
+  created: string;
+  modified: string;
 };
 
 const commonMetadataLabels: Record<keyof CommonMetadata, string> = {
-  name: 'Filename',
-  dimensions: 'Dimensions',
-  size: 'Size',
+  imported: 'Imported',
+  // TODO: modified in OneFolder vs modified in system?
+  created: 'Created',
+  modified: 'Modified',
 };
 
 type ExifField = { label: string; modifiable?: boolean; format?: (val: string) => ReactNode };
 
 // Details: https://www.vcode.no/web/resource.nsf/ii2lnug/642.htm
 const exifFields: Record<string, ExifField> = {
-  // PhotometricInterpretation: { label: 'Color Mode' },
-  // BitsPerSample: { label: 'Bit Depth' },
-  Software: { label: 'Creation Software', modifiable: true },
-  Artist: { label: 'Creator', modifiable: true },
-  CreatorWorkURL: {
-    label: 'Creator URL',
-    modifiable: true,
-    format: function CreatorURL(url?: string) {
-      if (!url) {
-        return ' ';
-      }
-      return <ExternalLink url={url}>{url}</ExternalLink>;
-    },
-  },
-  // ImageDescription: { label: 'Description', modifiable: true },
-  Parameters: { label: 'Parameters' },
-  Copyright: { label: 'Copyright', modifiable: true },
-  Make: { label: 'Camera Manufacturer' },
-  Model: { label: 'Camera Model' },
-  // Megapixels: { label: 'Megapixels'  },
-  // ExposureTime: { label: 'Exposure Time'  },
-  // FNumber: { label: 'F-stop'  },
-  // FocalLength: { label: 'Focal Length'  },
-  GPSLatitude: { label: 'GPS Latitude' },
-  GPSLongitude: { label: 'GPS Longitude' },
+  DateCreated: { label: 'DateCreated', modifiable: true },
+  CreateDate: { label: 'CreateDate', modifiable: true },
+  ModifyDate: { label: 'ModifyDate', modifiable: true },
 };
 
 const exifTags = Object.keys(exifFields);
@@ -66,10 +50,15 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
   const [exifStats, setExifStats] = useState<Record<string, string>>({});
   const [exifAll, setExifAll] = useState<string>('');
 
+  const modified = usePromise(file.absolutePath, async (filePath) => {
+    const stats = await fse.stat(filePath);
+    return formatDateTime(stats.ctime);
+  });
+
   const fileStats: CommonMetadata = {
-    name: file.name,
-    dimensions: `${file.width || '?'} x ${file.height || '?'}`,
-    size: humanFileSize(file.size),
+    imported: formatDateTime(file.dateAdded),
+    created: formatDateTime(file.dateCreated),
+    modified: modified.tag === 'ready' && 'ok' in modified.value ? modified.value.ok : '...',
   };
 
   useEffect(() => {
@@ -175,28 +164,6 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
             })}
           </tbody>
         </table>
-        <button
-          className="show-exiftool"
-          onClick={(e) => {
-            e.preventDefault();
-            setViewAllExifTool(!viewAllExifTool);
-          }}
-        >
-          {viewAllExifTool ? 'hide' : 'show'} exiftool values ...
-        </button>
-        {viewAllExifTool && (
-          <>
-            <textarea
-              name="exifToolAllFile"
-              id=""
-              cols={30}
-              rows={10}
-              value={exifAll}
-              readOnly
-            ></textarea>
-            <br />
-          </>
-        )}
         <div className={'inspector-section__action-buttons '}>
           {isEditing ? (
             <>

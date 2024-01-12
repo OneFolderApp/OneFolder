@@ -1,17 +1,16 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
 import ImageInfo from '../../components/ImageInfo';
+import ImageDates from '../../components/ImageDates';
 import ImageDescription from '../../components/ImageDescription';
-import { IconButton, IconSet, Toggle } from 'widgets';
-import { shell } from 'electron';
+import { IconSet } from 'widgets';
 import { IS_PREVIEW_WINDOW } from 'common/window';
 
 const Inspector = observer(() => {
   const { uiStore, fileStore } = useStore();
-  const imageThumbnail = useRef(null);
 
   if (uiStore.firstItem >= fileStore.fileList.length || !uiStore.isInspectorOpen) {
     return (
@@ -22,16 +21,47 @@ const Inspector = observer(() => {
   }
 
   const first = fileStore.fileList[uiStore.firstItem];
-  const path = first.absolutePath;
-
   return (
     <aside id="inspector">
-      <section>
-        <ImageInfo file={first} />
-      </section>
-      <section>
-        <ImageDescription file={first} />
-      </section>
+      <br />
+      <br />
+      <br />
+
+      <InspectorToggleSection
+        title="Description"
+        icon={IconSet.EDIT}
+        isOpen={uiStore.inspectorIsDescriptionVisible}
+        toggleVisibility={uiStore.toggleInspectorDescriptionVisibility}
+        bodyComponent={<ImageDescription file={first} />}
+      />
+
+      {/* Modifying state in preview window is not supported (not in sync updated in main window) */}
+      {!IS_PREVIEW_WINDOW && (
+        <InspectorToggleSection
+          title="Tags"
+          icon={IconSet.TAG_GROUP}
+          isOpen={uiStore.inspectorIsTagVisible}
+          toggleVisibility={uiStore.toggleInspectorTagVisibility}
+          bodyComponent={<FileTags file={first} />}
+        />
+      )}
+
+      <InspectorToggleSection
+        title="Dates"
+        icon={IconSet.FILTER_DATE}
+        isOpen={uiStore.inspectorIsDatesVisible}
+        toggleVisibility={uiStore.toggleInspectorDatesVisibility}
+        bodyComponent={<ImageDates file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="Other"
+        icon={IconSet.INFO}
+        isOpen={uiStore.inspectorIsInformationVisible}
+        toggleVisibility={uiStore.toggleInspectorInformationVisibility}
+        bodyComponent={<ImageInfo file={first} />}
+      />
+
       {/* <section>
         <header>
           <h2>Path to file</h2>
@@ -76,21 +106,44 @@ const Inspector = observer(() => {
           </button>
         </div>
       </section> */}
-
-      {/* Modifying state in preview window is not supported (not in sync updated in main window) */}
-      {!IS_PREVIEW_WINDOW && (
-        <section>
-          <header>
-            <h2>Tags</h2>
-          </header>
-          <FileTags file={first} />
-        </section>
-      )}
     </aside>
   );
 });
 
 export default Inspector;
+
+type InspectorSectionProps = {
+  title: string;
+  icon: JSX.Element;
+  isOpen: boolean;
+  toggleVisibility: () => void;
+  bodyComponent: React.ReactElement;
+};
+
+const InspectorToggleSection = ({
+  title,
+  icon,
+  isOpen,
+  toggleVisibility,
+  bodyComponent,
+}: InspectorSectionProps) => {
+  return (
+    <section>
+      <button
+        className={`inspector-section-toggle ${isOpen ? 'inspector-section-toggle__open' : ''}`}
+        onClick={toggleVisibility}
+      >
+        <header>
+          <span>{icon}</span>
+
+          <h2>{title}</h2>
+        </header>
+        <div className="chevron">{isOpen ? IconSet.ARROW_DOWN : IconSet.ARROW_UP}</div>
+      </button>
+      {isOpen && <div className="inspector-section-toggle__body">{bodyComponent}</div>}
+    </section>
+  );
+};
 
 const Placeholder = () => {
   return (

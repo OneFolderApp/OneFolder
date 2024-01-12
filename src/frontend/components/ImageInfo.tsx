@@ -1,34 +1,22 @@
-import fse from 'fs-extra';
 import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { formatDateTime, humanFileSize } from 'common/fmt';
-import { IconSet } from 'widgets/icons';
-import { Toolbar, ToolbarButton } from 'widgets/toolbar';
+import { humanFileSize } from 'common/fmt';
 import { RendererMessenger } from '../../ipc/renderer';
 import { useStore } from '../contexts/StoreContext';
 import { ClientFile } from '../entities/File';
-import { usePromise } from '../hooks/usePromise';
 import ExternalLink from './ExternalLink';
 import { AppToaster } from './Toaster';
-import { div } from '@tensorflow/tfjs';
 
 type CommonMetadata = {
   name: string;
   dimensions: string;
   size: string;
-  imported: string;
-  created: string;
-  modified: string;
 };
 
 const commonMetadataLabels: Record<keyof CommonMetadata, string> = {
   name: 'Filename',
   dimensions: 'Dimensions',
   size: 'Size',
-  imported: 'Imported',
-  // TODO: modified in OneFolder vs modified in system?
-  created: 'Created',
-  modified: 'Modified',
 };
 
 type ExifField = { label: string; modifiable?: boolean; format?: (val: string) => ReactNode };
@@ -52,32 +40,14 @@ const exifFields: Record<string, ExifField> = {
   // ImageDescription: { label: 'Description', modifiable: true },
   Parameters: { label: 'Parameters' },
   Copyright: { label: 'Copyright', modifiable: true },
-  Make: { label: 'Camera Manufacturer', modifiable: true },
-  Model: { label: 'Camera Model', modifiable: true },
-  // Megapixels: { label: 'Megapixels', modifiable: true  },
-  // ExposureTime: { label: 'Exposure Time', modifiable: true  },
-  // FNumber: { label: 'F-stop', modifiable: true  },
-  // FocalLength: { label: 'Focal Length', modifiable: true  },
-  GPSLatitude: { label: 'GPS Latitude', modifiable: true },
-  GPSLongitude: { label: 'GPS Longitude', modifiable: true },
-
-  // ORIGINAL DATE/TIME
-  DateTimeOriginal: { label: 'DateTimeOriginal (EXIF)', modifiable: true },
-  SubSecTimeOriginal: { label: 'SubSecTimeOriginal (EXIF)', modifiable: true },
-  DateCreated: { label: 'DateCreated (IPTC or XMP)', modifiable: true },
-  TimeCreated: { label: 'TimeCreated (IPTC)', modifiable: true },
-
-  // DIGITIZED DATE/TIME
-  DateTimeDigitized: { label: 'DateTimeDigitized (EXIF)', modifiable: true },
-  SubSecTimeDigitized: { label: 'SubSecTimeDigitized (EXIF)', modifiable: true },
-  DigitalCreationDate: { label: 'DigitalCreationDate (IPTC)', modifiable: true },
-  DigitalCreationTime: { label: 'DigitalCreationTime (IPTC)', modifiable: true },
-  CreateDate: { label: 'CreateDate (XMP)', modifiable: true },
-
-  // MODIFICATION DATE/TIME
-  DateTime: { label: 'DateTime (EXIF)', modifiable: true },
-  SubSecTime: { label: 'SubSecTime (EXIF)', modifiable: true },
-  ModifyDate: { label: 'ModifyDate (XMP)', modifiable: true },
+  Make: { label: 'Camera Manufacturer' },
+  Model: { label: 'Camera Model' },
+  // Megapixels: { label: 'Megapixels'  },
+  // ExposureTime: { label: 'Exposure Time'  },
+  // FNumber: { label: 'F-stop'  },
+  // FocalLength: { label: 'Focal Length'  },
+  GPSLatitude: { label: 'GPS Latitude' },
+  GPSLongitude: { label: 'GPS Longitude' },
 };
 
 const exifTags = Object.keys(exifFields);
@@ -96,18 +66,10 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
   const [exifStats, setExifStats] = useState<Record<string, string>>({});
   const [exifAll, setExifAll] = useState<string>('');
 
-  const modified = usePromise(file.absolutePath, async (filePath) => {
-    const stats = await fse.stat(filePath);
-    return formatDateTime(stats.ctime);
-  });
-
   const fileStats: CommonMetadata = {
     name: file.name,
     dimensions: `${file.width || '?'} x ${file.height || '?'}`,
     size: humanFileSize(file.size),
-    imported: formatDateTime(file.dateAdded),
-    created: formatDateTime(file.dateCreated),
-    modified: modified.tag === 'ready' && 'ok' in modified.value ? modified.value.ok : '...',
   };
 
   useEffect(() => {
@@ -181,40 +143,8 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
   // Todo: Would be nice to also add tooltips explaining what these mean (e.g. diff between dimensions & resolution)
   // Or add the units: pixels vs DPI
   return (
-    <div>
+    <div className="inspector-section">
       <form onSubmit={handleEditSubmit} onReset={() => setIsEditing(false)}>
-        <header>
-          <h2>Information</h2>
-          <Toolbar controls="file-info" isCompact>
-            {isEditing ? (
-              <>
-                <ToolbarButton
-                  key="cancel"
-                  icon={IconSet.CLOSE}
-                  text="Cancel"
-                  tooltip="Cancel changes"
-                  type="reset"
-                />
-                <ToolbarButton
-                  key="submit"
-                  icon={IconSet.SELECT_CHECKED}
-                  text="Save"
-                  tooltip="Save changes"
-                  type="submit"
-                />
-              </>
-            ) : (
-              <ToolbarButton
-                key="edit"
-                icon={IconSet.EDIT}
-                text="Edit"
-                onClick={() => setIsEditing(true)}
-                tooltip="Edit Exif data"
-                type="button"
-              />
-            )}
-          </Toolbar>
-        </header>
         <table id="file-info">
           <tbody>
             {Object.entries(commonMetadataLabels).map(([field, label]) => (
@@ -245,21 +175,49 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
             })}
           </tbody>
         </table>
+        <button
+          className="show-exiftool"
+          onClick={(e) => {
+            e.preventDefault();
+            setViewAllExifTool(!viewAllExifTool);
+          }}
+        >
+          {viewAllExifTool ? 'hide' : 'show'} exiftool values ...
+        </button>
+        {viewAllExifTool && (
+          <>
+            <textarea
+              name="exifToolAllFile"
+              id=""
+              cols={30}
+              rows={10}
+              value={exifAll}
+              readOnly
+            ></textarea>
+            <br />
+          </>
+        )}
+        <div className={'inspector-section__action-buttons '}>
+          {isEditing ? (
+            <>
+              <button type="reset">cancel</button>
+              <button className="highlight-save" type="submit">
+                save
+              </button>
+            </>
+          ) : (
+            <button
+              className="edit-button"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsEditing(true);
+              }}
+            >
+              edit
+            </button>
+          )}
+        </div>
       </form>
-      <button onClick={() => setViewAllExifTool(!viewAllExifTool)}>
-        {viewAllExifTool ? 'hide' : 'show'} exiftool values ...
-      </button>
-      <br />
-      {viewAllExifTool && (
-        <textarea
-          name="exifToolAllFile"
-          id=""
-          cols={30}
-          rows={10}
-          value={exifAll}
-          readOnly
-        ></textarea>
-      )}
     </div>
   );
 };

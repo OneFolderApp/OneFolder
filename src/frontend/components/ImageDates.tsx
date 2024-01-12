@@ -1,16 +1,12 @@
 import fse from 'fs-extra';
 import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { formatDateTime, humanFileSize } from 'common/fmt';
-import { IconSet } from 'widgets/icons';
-import { Toolbar, ToolbarButton } from 'widgets/toolbar';
+import { formatDateTime } from 'common/fmt';
 import { RendererMessenger } from '../../ipc/renderer';
 import { useStore } from '../contexts/StoreContext';
 import { ClientFile } from '../entities/File';
 import { usePromise } from '../hooks/usePromise';
-import ExternalLink from './ExternalLink';
 import { AppToaster } from './Toaster';
-import { div } from '@tensorflow/tfjs';
 
 type CommonMetadata = {
   imported: string;
@@ -46,9 +42,7 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
   const { exifTool } = useStore();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [viewAllExifTool, setViewAllExifTool] = useState(false);
   const [exifStats, setExifStats] = useState<Record<string, string>>({});
-  const [exifAll, setExifAll] = useState<string>('');
 
   const modified = usePromise(file.absolutePath, async (filePath) => {
     const stats = await fse.stat(filePath);
@@ -71,10 +65,6 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
         {},
       ),
     );
-
-    exifTool.readAllExifTags(file.absolutePath).then((values) => {
-      setExifAll(JSON.stringify(values, null, 2));
-    });
 
     exifTool.readExifTags(file.absolutePath, exifTags).then((tagValues) => {
       const stats: Record<string, string> = {};

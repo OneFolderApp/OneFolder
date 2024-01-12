@@ -3,9 +3,10 @@ import { observer } from 'mobx-react-lite';
 
 import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
-import ImageInfo from '../../components/ImageInfo';
-import ImageDates from '../../components/ImageDates';
 import ImageDescription from '../../components/ImageDescription';
+import ImageDates from '../../components/ImageDates';
+import ImageDuplicates from '../../components/ImageDuplicates';
+import ImageInfo from '../../components/ImageInfo';
 import { IconSet } from 'widgets';
 import { IS_PREVIEW_WINDOW } from 'common/window';
 
@@ -51,6 +52,30 @@ const Inspector = observer(() => {
         icon={IconSet.FILTER_DATE}
         isOpen={uiStore.inspectorIsDatesVisible}
         toggleVisibility={uiStore.toggleInspectorDatesVisibility}
+        bodyComponent={<ImageDates file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="Map"
+        icon={IconSet.WORLD}
+        isOpen={uiStore.inspectorIsMapVisible}
+        toggleVisibility={uiStore.toggleInspectorMapVisibility}
+        bodyComponent={<ImageDates file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="Find Duplicates"
+        icon={IconSet.DUPLICATE}
+        isOpen={uiStore.inspectorIsDuplicatesVisible}
+        toggleVisibility={uiStore.toggleInspectorDuplicateVisibility}
+        bodyComponent={<ImageDuplicates file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="Tools"
+        icon={IconSet.TOOLS}
+        isOpen={uiStore.inspectorIsToolsVisible}
+        toggleVisibility={uiStore.toggleInspectorToolsVisibility}
         bodyComponent={<ImageDates file={first} />}
       />
 

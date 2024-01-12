@@ -127,6 +127,9 @@ type PersistentPreferenceFields =
   | 'inspectorIsDescriptionVisible'
   | 'inspectorIsTagVisible'
   | 'inspectorIsDatesVisible'
+  | 'inspectorIsMapVisible'
+  | 'inspectorIsDuplicatesVisible'
+  | 'inspectorIsToolsVisible'
   | 'inspectorIsInformationVisible'
   | 'outlinerWidth'
   | 'inspectorWidth'
@@ -171,6 +174,9 @@ class UiStore {
   @observable inspectorIsDescriptionVisible: boolean = true;
   @observable inspectorIsTagVisible: boolean = true;
   @observable inspectorIsDatesVisible: boolean = false;
+  @observable inspectorIsMapVisible: boolean = false;
+  @observable inspectorIsDuplicatesVisible: boolean = false;
+  @observable inspectorIsToolsVisible: boolean = false;
   @observable inspectorIsInformationVisible: boolean = false;
   /** Whether to restore the last search query on start-up */
   @observable isRememberSearchEnabled: boolean = true;
@@ -391,6 +397,18 @@ class UiStore {
 
   @action.bound toggleInspectorDatesVisibility(): void {
     this.inspectorIsDatesVisible = !this.inspectorIsDatesVisible;
+  }
+
+  @action.bound toggleInspectorMapVisibility(): void {
+    this.inspectorIsMapVisible = !this.inspectorIsMapVisible;
+  }
+
+  @action.bound toggleInspectorDuplicateVisibility(): void {
+    this.inspectorIsDuplicatesVisible = !this.inspectorIsDuplicatesVisible;
+  }
+
+  @action.bound toggleInspectorToolsVisibility(): void {
+    this.inspectorIsToolsVisible = !this.inspectorIsToolsVisible;
   }
 
   @action.bound toggleInspectorInformationVisibility(): void {
@@ -948,6 +966,9 @@ class UiStore {
         this.inspectorIsDescriptionVisible = Boolean(prefs.inspectorIsDescriptionVisible ?? true);
         this.inspectorIsTagVisible = Boolean(prefs.inspectorIsTagVisible ?? true);
         this.inspectorIsDatesVisible = Boolean(prefs.inspectorIsDatesVisible ?? false);
+        this.inspectorIsMapVisible = Boolean(prefs.inspectorIsMapVisible ?? false);
+        this.inspectorIsDuplicatesVisible = Boolean(prefs.inspectorIsDuplicatesVisible ?? false);
+        this.inspectorIsToolsVisible = Boolean(prefs.inspectorIsToolsVisible ?? false);
         this.inspectorIsInformationVisible = Boolean(prefs.inspectorIsInformationVisible ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
@@ -1009,6 +1030,9 @@ class UiStore {
       inspectorIsDescriptionVisible: this.inspectorIsDescriptionVisible,
       inspectorIsTagVisible: this.inspectorIsTagVisible,
       inspectorIsDatesVisible: this.inspectorIsDatesVisible,
+      inspectorIsMapVisible: this.inspectorIsMapVisible,
+      inspectorIsDuplicatesVisible: this.inspectorIsDuplicatesVisible,
+      inspectorIsToolsVisible: this.inspectorIsToolsVisible,
       inspectorIsInformationVisible: this.inspectorIsInformationVisible,
       isFaceModuleEnabled: this.isFaceModuleEnabled,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,

@@ -125,6 +125,9 @@ type PersistentPreferenceFields =
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'inspectorIsDescriptionVisible'
+  | 'inspectorIsTagVisible'
+  | 'inspectorIsDatesVisible'
+  | 'inspectorIsInformationVisible'
   | 'outlinerWidth'
   | 'inspectorWidth'
   | 'isRememberSearchEnabled'
@@ -166,6 +169,9 @@ class UiStore {
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   @observable inspectorIsDescriptionVisible: boolean = true;
+  @observable inspectorIsTagVisible: boolean = true;
+  @observable inspectorIsDatesVisible: boolean = false;
+  @observable inspectorIsInformationVisible: boolean = false;
   /** Whether to restore the last search query on start-up */
   @observable isRememberSearchEnabled: boolean = true;
   /** Index of the first item in the viewport. Also acts as the current item shown in slide mode */
@@ -374,8 +380,21 @@ class UiStore {
   @action.bound toggleThumbnailResolutionOverlay(): void {
     this.isThumbnailResolutionOverlayEnabled = !this.isThumbnailResolutionOverlayEnabled;
   }
+
   @action.bound toggleInspectorDescriptionVisibility(): void {
     this.inspectorIsDescriptionVisible = !this.inspectorIsDescriptionVisible;
+  }
+
+  @action.bound toggleInspectorTagVisibility(): void {
+    this.inspectorIsTagVisible = !this.inspectorIsTagVisible;
+  }
+
+  @action.bound toggleInspectorDatesVisibility(): void {
+    this.inspectorIsDatesVisible = !this.inspectorIsDatesVisible;
+  }
+
+  @action.bound toggleInspectorInformationVisibility(): void {
+    this.inspectorIsInformationVisible = !this.inspectorIsInformationVisible;
   }
 
   @action.bound toggleRememberSearchQuery(): void {
@@ -927,6 +946,9 @@ class UiStore {
           prefs.isThumbnailResolutionOverlayEnabled ?? false,
         );
         this.inspectorIsDescriptionVisible = Boolean(prefs.inspectorIsDescriptionVisible ?? true);
+        this.inspectorIsTagVisible = Boolean(prefs.inspectorIsTagVisible ?? true);
+        this.inspectorIsDatesVisible = Boolean(prefs.inspectorIsDatesVisible ?? false);
+        this.inspectorIsInformationVisible = Boolean(prefs.inspectorIsInformationVisible ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -985,6 +1007,9 @@ class UiStore {
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
       inspectorIsDescriptionVisible: this.inspectorIsDescriptionVisible,
+      inspectorIsTagVisible: this.inspectorIsTagVisible,
+      inspectorIsDatesVisible: this.inspectorIsDatesVisible,
+      inspectorIsInformationVisible: this.inspectorIsInformationVisible,
       isFaceModuleEnabled: this.isFaceModuleEnabled,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerWidth: this.outlinerWidth,

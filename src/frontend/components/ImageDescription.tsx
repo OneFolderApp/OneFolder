@@ -74,8 +74,7 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
   );
 
   return (
-    <div className="inspector-description">
-      {/* <textarea defaultValue={exifStats[descriptionKey] || ''} key={descriptionKey}></textarea> */}
+    <div className="inspector-section">
       <textarea
         name={descriptionKey}
         onKeyDown={stopPropagation}
@@ -85,14 +84,20 @@ const ImageInfo = ({ file }: ImageInfoProps) => {
         onChange={(e) => setDescriptionValue(e.target.value)}
       ></textarea>
       <div
-        className={`inspector-description__action-buttons ${
+        className={`inspector-section__action-buttons ${
           descriptionOriginalValue === descriptionValue ? 'low-opacity' : ''
         }`}
       >
-        <button onClick={() => setDescriptionValue(descriptionOriginalValue)}>cancel</button>
+        <button
+          onClick={() => setDescriptionValue(descriptionOriginalValue)}
+          disabled={descriptionOriginalValue === descriptionValue}
+        >
+          cancel
+        </button>
         <button
           className={`${descriptionOriginalValue !== descriptionValue ? 'highlight-save' : ''}`}
           onClick={handleEditSubmit}
+          disabled={descriptionOriginalValue === descriptionValue}
         >
           save
         </button>

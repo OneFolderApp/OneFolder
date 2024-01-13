@@ -6,6 +6,7 @@ import FileTags from '../../components/FileTag';
 import ImageDescription from '../../components/ImageDescription';
 import ImageDates from '../../components/ImageDates';
 import ImageDuplicates from '../../components/ImageDuplicates';
+import ImageTools from '../../components/ImageTools';
 import ImageInfo from '../../components/ImageInfo';
 import { IconSet } from 'widgets';
 import { IS_PREVIEW_WINDOW } from 'common/window';
@@ -76,7 +77,7 @@ const Inspector = observer(() => {
         icon={IconSet.TOOLS}
         isOpen={uiStore.inspectorIsToolsVisible}
         toggleVisibility={uiStore.toggleInspectorToolsVisibility}
-        bodyComponent={<ImageDates file={first} />}
+        bodyComponent={<ImageTools file={first} />}
       />
 
       <InspectorToggleSection

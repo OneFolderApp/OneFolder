@@ -194,7 +194,7 @@ const SlideView = observer(({ width, height }: SlideViewProps) => {
           tooltip="Back (space bar)"
         />
         <ToolbarButton
-          icon={IconSet.EDIT}
+          icon={IconSet.EYE}
           onClick={uiStore.toggleInspector}
           checked={uiStore.isInspectorOpen}
           tooltip="Toggle the inspector panel"

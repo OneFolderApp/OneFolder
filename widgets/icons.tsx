@@ -22,6 +22,8 @@ import ARROW_LEFT from 'resources/icons/arrow-left.svg';
 import ARROW_RIGHT from 'resources/icons/arrow-right.svg';
 import ARROW_UP from 'resources/icons/arrow-up.svg';
 // import CHECKMARK from 'resources/icons/checkmark.svg';
+import CARROT from 'resources/icons/carrot.svg';
+import CART_FLATBED from 'resources/icons/cart-flatbed.svg';
 import CHROME_DEVTOOLS from 'resources/icons/chrome-devtools.svg';
 import CLEAR_DATABASE from 'resources/icons/clear-database.svg';
 import CLOSE from 'resources/icons/close.svg';
@@ -37,6 +39,8 @@ import DELETE from 'resources/icons/delete.svg';
 import DOUBLE_CARET from 'resources/icons/double-caret.svg';
 import DUPLICATE from 'resources/icons/duplicate.svg';
 import EDIT from 'resources/icons/edit.svg';
+import EYE_LOW_VISION from 'resources/icons/eye-low-vision.svg';
+import EYE from 'resources/icons/eye.svg';
 // import FILTER from 'resources/icons/filter.svg';
 import FACE_SMILING from 'resources/icons/face-smiling.svg';
 import FILTER_DATE from 'resources/icons/filter-date.svg';
@@ -69,6 +73,7 @@ import MENU_HAMBURGER from 'resources/icons/menu-hamburger.svg';
 import META_INFO from 'resources/icons/meta-info.svg';
 // import META_INFO_2 from 'resources/icons/meta-info-2.svg';
 import MORE from 'resources/icons/more.svg';
+import PALETTE from 'resources/icons/palette.svg';
 import OPEN_EXTERNAL from 'resources/icons/open-external.svg';
 // import OUTLINER from 'resources/icons/outliner.svg';
 import PLUS from 'resources/icons/plus.svg';
@@ -131,6 +136,8 @@ const IconSet = {
   ARROW_RIGHT: toSvg(ARROW_RIGHT),
   ARROW_UP: toSvg(ARROW_UP),
   // CHECKMARK: toSvg(CHECKMARK),
+  CARROT: toSvg(CARROT),
+  CART_FLATBED: toSvg(CART_FLATBED),
   CHROME_DEVTOOLS: toSvg(CHROME_DEVTOOLS),
   CLEAR_DATABASE: toSvg(CLEAR_DATABASE),
   CLOSE: toSvg(CLOSE),
@@ -146,6 +153,8 @@ const IconSet = {
   DOUBLE_CARET: toSvg(DOUBLE_CARET),
   DUPLICATE: toSvg(DUPLICATE),
   EDIT: toSvg(EDIT),
+  EYE_LOW_VISION: toSvg(EYE_LOW_VISION),
+  EYE: toSvg(EYE),
   // FILTER: toSvg(FILTER),
   FACE_SMILING: toSvg(FACE_SMILING),
   FILTER_DATE: toSvg(FILTER_DATE),
@@ -179,6 +188,7 @@ const IconSet = {
   META_INFO: toSvg(META_INFO),
   // META_INFO_2: toSvg(META_INFO_2),
   MORE: toSvg(MORE),
+  PALETTE: toSvg(PALETTE),
   OPEN_EXTERNAL: toSvg(OPEN_EXTERNAL),
   PLUS: toSvg(PLUS),
   PREVIEW: toSvg(PREVIEW),

@@ -5,6 +5,7 @@ import { useStore } from '../../contexts/StoreContext';
 import FileTags from '../../components/FileTag';
 import ImageDescription from '../../components/ImageDescription';
 import ImageDates from '../../components/ImageDates';
+import ImageMap from '../../components/ImageMap';
 import ImageDuplicates from '../../components/ImageDuplicates';
 import ImageTools from '../../components/ImageTools';
 import ImageInfo from '../../components/ImageInfo';
@@ -61,7 +62,7 @@ const Inspector = observer(() => {
         icon={IconSet.WORLD}
         isOpen={uiStore.inspectorIsMapVisible}
         toggleVisibility={uiStore.toggleInspectorMapVisibility}
-        bodyComponent={<ImageDates file={first} />}
+        bodyComponent={<ImageMap file={first} />}
       />
 
       <InspectorToggleSection

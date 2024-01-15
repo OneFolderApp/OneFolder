@@ -207,6 +207,27 @@ table#file-info {
     }
   }
 
+  .map {
+    height: 200px;
+    // position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+
+    .mapboxgl-canvas {
+      border-radius: 0.25rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .marker {
+      background-image: url('/resources/logo/favicon.webp');
+      background-size: cover;
+      width: 35px;
+      height: 35px;
+      cursor: pointer;
+    }
+  }
+
   .inspector-section__action-buttons {
     display: flex;
     justify-content: space-between;

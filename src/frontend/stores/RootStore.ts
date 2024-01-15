@@ -62,7 +62,10 @@ class RootStore {
     const rootStore = new RootStore(backend, backup, (fileStore, uiStore) => {
       if (uiStore.isSlideMode && fileStore.fileList.length > 0) {
         const activeFile = fileStore.fileList[uiStore.firstItem];
-        return `${activeFile.filename}.${activeFile.extension} - OneFolder`;
+        if (activeFile) {
+          return `${activeFile.filename}.${activeFile.extension} - OneFolder`;
+        }
+        return 'OneFolder';
       } else {
         return 'OneFolder';
       }

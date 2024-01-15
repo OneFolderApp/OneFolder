@@ -192,6 +192,21 @@ table#file-info {
     padding: 0.4rem;
   }
 
+  .tools {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: start;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--border-color);
+
+    button {
+      border-radius: 0.25rem;
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
+    }
+  }
+
   .inspector-section__action-buttons {
     display: flex;
     justify-content: space-between;

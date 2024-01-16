@@ -97,9 +97,11 @@ const ImageInfo = observer(({ file }: ImageInfoProps) => {
     }
 
     try {
-      const converted = convert(`${gpsLatitude}, ${gpsLongitude}}`);
+      const converted = convert(`${gpsLatitude}, ${gpsLongitude}}`, 5);
       if (converted) {
+        //@ts-ignore
         setLat(converted.decimalLatitude);
+        //@ts-ignore
         setLon(converted.decimalLongitude);
       }
     } catch (error) {

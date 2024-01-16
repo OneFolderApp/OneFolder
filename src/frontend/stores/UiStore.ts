@@ -312,8 +312,10 @@ class UiStore {
 
   @action.bound setMethodMasonry(): void {
     if (this.lastMasonryMethod) {
+      console.log('this.lastMasonryMethod', this.lastMasonryMethod);
       this.method = this.lastMasonryMethod;
     } else {
+      console.log('this.lastMasonryMethod', this.lastMasonryMethod);
       this.method = ViewMethod.Grid;
     }
   }

@@ -39,37 +39,40 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
 
   return (
     <div className="navigation-buttons">
-      <NavigationButton
-        icon={IconSet.VIEW_LIST}
-        onClick={uiStore.setMethodList}
-        checked={uiStore.isList}
-        text="List"
-      />
-      <NavigationButton
-        icon={IconSet.VIEW_GRID}
-        onClick={uiStore.setMethodMasonry}
-        checked={uiStore.isMasonry}
-        text="Grid"
-      />
-      <br />
-      <NavigationButton
-        icon={IconSet.FACE_SMILING}
-        onClick={uiStore.setMethodFaces}
-        checked={uiStore.isFaces}
-        text="Faces"
-      />
-      <NavigationButton
-        icon={IconSet.WORLD}
-        onClick={uiStore.setMethodMap}
-        checked={uiStore.isMap}
-        text="Map"
-      />
-      <NavigationButton
-        icon={IconSet.FILTER_DATE}
-        onClick={uiStore.setMethodCalendar}
-        checked={uiStore.isCalendar}
-        text="Calendar"
-      />
+      <div className="navigation-buttons-raw">
+        <NavigationButton
+          icon={IconSet.VIEW_LIST}
+          onClick={uiStore.setMethodList}
+          checked={uiStore.isList}
+          text="List"
+        />
+        <NavigationButton
+          icon={IconSet.VIEW_GRID}
+          onClick={uiStore.setMethodMasonry}
+          checked={uiStore.isMasonry}
+          text="Grid"
+        />
+      </div>
+      <div className="navigation-buttons-raw">
+        <NavigationButton
+          icon={IconSet.FACE_SMILING}
+          onClick={uiStore.setMethodFaces}
+          checked={uiStore.isFaces}
+          text="Faces"
+        />
+        <NavigationButton
+          icon={IconSet.WORLD}
+          onClick={uiStore.setMethodMap}
+          checked={uiStore.isMap}
+          text="Map"
+        />
+        <NavigationButton
+          icon={IconSet.FILTER_DATE}
+          onClick={uiStore.setMethodCalendar}
+          checked={uiStore.isCalendar}
+          text="Calendar"
+        />
+      </div>
     </div>
   );
 });

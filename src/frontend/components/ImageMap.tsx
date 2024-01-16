@@ -97,9 +97,11 @@ const ImageInfo = observer(({ file }: ImageInfoProps) => {
     }
 
     try {
-      const converted = convert(`${gpsLatitude}, ${gpsLongitude}}`);
+      const converted = convert(`${gpsLatitude}, ${gpsLongitude}}`, 5);
       if (converted) {
+        //@ts-ignore
         setLat(converted.decimalLatitude);
+        //@ts-ignore
         setLon(converted.decimalLongitude);
       }
     } catch (error) {
@@ -124,6 +126,8 @@ const ImageInfo = observer(({ file }: ImageInfoProps) => {
   useEffect(() => {
     // When the file changes, update the exif stats
     setIsEditing(false);
+    setLat(0);
+    setLon(0);
     // Reset previous fields to empty string, so the re-render doesn't flicker as when setting it to {}
     setExifStats(
       Object.entries(exifStats).reduce(

@@ -4392,9 +4392,9 @@ gensync@^1.0.0-beta.2:
   integrity sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==
 
 geo-coordinates-parser@^1.6.3:
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/geo-coordinates-parser/-/geo-coordinates-parser-1.6.3.tgz#c50e5b1334190c67d04168355b0d1aeb0cbffc00"
-  integrity sha512-HalJ+bkY8vNy0+JbpdTpc0bxinJgkPtjdmS3ssqGt9wi22133377yt1IQZKnFubg9KkZKJk+x989qtm9ntj8Sw==
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/geo-coordinates-parser/-/geo-coordinates-parser-1.6.4.tgz#dcb27e9cd14980b27b8aa29056650ec8be82ab95"
+  integrity sha512-WAXujzfgNL9EhjAQzi+u1muiRgwbVJc/V7ViiHeF/MN8B+DQkeeUfH8yFbP8/tfHqQgeoE3NkdLs6iA16o3TwA==
 
 geojson-vt@^3.2.1:
   version "3.2.1"

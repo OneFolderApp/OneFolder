@@ -192,3 +192,5 @@ type MWGRegionInfo = {
 type MWGJson = {
   RegionInfo: MWGRegionInfo;
 };
+
+declare module 'geo-coordinates-parser';

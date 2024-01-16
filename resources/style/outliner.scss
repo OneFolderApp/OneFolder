@@ -215,33 +215,40 @@
 }
 
 .navigation-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  // display: flex;
+  // flex-wrap: wrap;
   padding: 0.2rem;
-  .navigation-button {
-    flex: 1;
 
+  .navigation-buttons-raw {
     display: flex;
-    flex-direction: column;
-    background-color: rgb(216, 216, 216);
-    border-radius: 10px;
-    min-width: 50px;
-    max-width: 120px;
 
-    margin: 0.2rem;
+    .navigation-button {
+      // flex: 1;
 
-    &:hover {
-      background-color: rgb(200, 200, 200);
-    }
+      display: inline-block;
+      flex-direction: column;
+      background-color: var(--background-color);
+      border-radius: 10px;
+      width: 100%;
+      min-width: 50px;
+      cursor: pointer;
+      // max-width: 120px;
 
-    .navigation-button__icon {
-      .custom-icon {
-        width: 1.4rem;
-        height: 1.4rem;
+      margin: 0.2rem;
+
+      &:hover {
+        background-color: var(--text-color-alt);
       }
-    }
 
-    .navigation-button__label {
+      .navigation-button__icon {
+        .custom-icon {
+          width: 1.4rem;
+          height: 1.4rem;
+        }
+      }
+
+      .navigation-button__label {
+      }
     }
   }
 

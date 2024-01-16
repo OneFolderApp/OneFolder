@@ -68,6 +68,9 @@
   color: var(--accent-color-text);
   border-radius: 15px;
   margin: 0.4rem;
+  flex-basis: 90px;
+  flex-grow: 0;
+  flex-shrink: 0;
 
   &:hover {
     background-color: var(--accent-color-variation);

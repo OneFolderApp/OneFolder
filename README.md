@@ -1,3 +1,7 @@
+![Readme-Clear](https://github.com/OneFolderApp/OneFolder/assets/27826950/1da3a7a4-359d-43df-86c3-694db4fff30c#gh-light-mode-only)
+![Readme-Dark](https://github.com/OneFolderApp/OneFolder/assets/27826950/b785747c-499f-4044-ba86-58bc733f9298#gh-dark-mode-only)
+
+
 ## Roadmap
 We use GitHub projects as a project manager, you can view and comment here: https://github.com/OneFolderApp/OneFolder/milestones
 

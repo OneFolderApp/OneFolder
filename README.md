@@ -1,7 +1,7 @@
-
+https://github.com/OneFolderApp/OneFolder/assets/27826950/f0f17d41-d0c2-4c28-82f7-7114b17b56a5
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/OneFolderApp/OneFolder/assets/27826950/f0f17d41-d0c2-4c28-82f7-7114b17b56a5">
-  <img alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="https://github.com/OneFolderApp/OneFolder/assets/27826950/91e1c746-6f0e-4139-8fea-241b7a0c0c2a">
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/OneFolderApp/OneFolder/assets/27826950/91e1c746-6f0e-4139-8fea-241b7a0c0c2a">
+  <img alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="https://github.com/OneFolderApp/OneFolder/assets/27826950/f0f17d41-d0c2-4c28-82f7-7114b17b56a5">
 </picture>
 
 

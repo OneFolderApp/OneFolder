@@ -3,10 +3,11 @@
   <img alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="https://github.com/OneFolderApp/OneFolder/assets/27826950/b6291e54-daf9-42c1-8649-ec14532d79c7">
 </picture>
 
-## Roadmap
-We use GitHub projects as a project manager, you can view and comment here: https://github.com/OneFolderApp/OneFolder/milestones
+Website: https://onefolder.app/
 
-## Development
+## Roadmap
+https://onefolder.canny.io/feedback
+
 
 ### Quick Start
 

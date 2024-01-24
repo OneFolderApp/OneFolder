@@ -6,7 +6,7 @@
 Navigate your files based on image metadata.
 
 - Website: https://onefolder.app/
-- Reoadmap: https://onefolder.canny.io/feedback
+- Roadmap: https://onefolder.canny.io/feedback
 
 ## Do you want to help?
 There is many ways people can help:

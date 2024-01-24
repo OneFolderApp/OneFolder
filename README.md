@@ -1,5 +1,5 @@
 
-![Readme-Clear](https://github.com/OneFolderApp/OneFolder/assets/27826950/63e6f5ce-ea44-4063-b4c1-96d509f05535)
+![Readme-Clear](https://github.com/OneFolderApp/OneFolder/assets/27826950/5b505ec0-e9ec-4c74-9ec1-ef208af9a549)
 
 
 

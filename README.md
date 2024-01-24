@@ -10,10 +10,10 @@ Navigate your files based on image metadata.
 
 ## Do you want to help?
 There is many ways people can help:
-- feedback and suggestion on design
 - Test new features
+- feedback and suggestion on design
 - Copy Writting and bloggin
-- Growth
+- Detect new communities for growth
 - Coding
 
 If you are interested here is a form so we can reach out:

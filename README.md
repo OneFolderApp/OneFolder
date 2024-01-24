@@ -10,9 +10,8 @@ https://onefolder.canny.io/feedback
 
 ## Do you want to help?
 There is many ways people can help:
-- Give feedback on designs
-- Test features
-- Help us with design
+- feedback and suggestion on design
+- Test new features
 - Copy Writting and bloggin
 - Growth
 - Coding

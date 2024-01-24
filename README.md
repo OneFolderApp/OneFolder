@@ -8,6 +8,17 @@ Website: https://onefolder.app/
 ## Roadmap
 https://onefolder.canny.io/feedback
 
+## Do you want to help?
+There is many ways people can help:
+- Give feedback on designs
+- Test features
+- Help us with design
+- Copy Writting and bloggin
+- Growth
+- Coding
+
+If you are interested here is a form so we can reach out:
+https://forms.gle/TpU1NxBQSreadki18
 
 ### Quick Start
 

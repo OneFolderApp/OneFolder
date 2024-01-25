@@ -44,7 +44,7 @@ const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) 
         <button
           className="wip-link"
           onClick={() => {
-            shell.openExternal('/https://onefolder.canny.io/feedback/p/calendar-view');
+            shell.openExternal('https://onefolder.canny.io/feedback/p/calendar-view');
           }}
         >
           onefolder.canny.io/feedback/p/calendar-view

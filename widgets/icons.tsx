@@ -76,6 +76,7 @@ import MORE from 'resources/icons/more.svg';
 import PALETTE from 'resources/icons/palette.svg';
 import OPEN_EXTERNAL from 'resources/icons/open-external.svg';
 // import OUTLINER from 'resources/icons/outliner.svg';
+import PLAY from 'resources/icons/play.svg';
 import PLUS from 'resources/icons/plus.svg';
 import PREVIEW from 'resources/icons/preview.svg';
 import RELOAD from 'resources/icons/reload.svg';
@@ -190,6 +191,7 @@ const IconSet = {
   MORE: toSvg(MORE),
   PALETTE: toSvg(PALETTE),
   OPEN_EXTERNAL: toSvg(OPEN_EXTERNAL),
+  PLAY: toSvg(PLAY),
   PLUS: toSvg(PLUS),
   PREVIEW: toSvg(PREVIEW),
   RELOAD: toSvg(RELOAD),

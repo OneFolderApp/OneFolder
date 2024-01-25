@@ -466,6 +466,7 @@ video {
 #content-placeholder {
   max-width: 480px;
   margin: 10% auto auto auto;
+  margin-top: 5%;
   text-align: center;
 
   .divider {
@@ -473,6 +474,45 @@ video {
     width: 60%;
     border-bottom: 1px solid var(--text-color-muted);
     margin: 1rem auto;
+  }
+
+  .flower {
+    width: 7rem;
+    height: 7rem;
+    animation-name: spin;
+    animation-duration: 30000ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+  }
+
+  .landing-text {
+    margin: auto;
+    font-size: 19px;
+    max-width: 300px;
+    text-align: left;
+  }
+
+  .button-container {
+    display: flex;
+    justify-content: center;
+    color: var(--text-color);
+
+    .figma_video-button {
+      display: inline-flex;
+      padding: 10px var(--Section-Margin, 24px);
+
+      justify-content: center;
+      align-items: center;
+      gap: var(--Element-Spacing, 8px);
+      border-radius: 32px;
+      border: 1px solid var(--Colors-Grey-400, #bcc3c8);
+      box-shadow: 0px 0px 4px 2px rgba(22, 22, 22, 0.057),
+        0px -1px 2px 2px rgba(22, 22, 22, 0.08) inset,
+        0px 1px 2px 2px rgba(255, 255, 255, 0.12) inset;
+
+      cursor: pointer;
+      font-weight: 500;
+    }
   }
 }
 

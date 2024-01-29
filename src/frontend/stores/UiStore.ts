@@ -122,6 +122,7 @@ type PersistentPreferenceFields =
   | 'hotkeyMap'
   | 'isThumbnailTagOverlayEnabled'
   | 'isFaceModuleEnabled'
+  | 'importMetadataAtLocationLoading'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'inspectorIsDescriptionVisible'
@@ -958,6 +959,9 @@ class UiStore {
           this.setUpscaleMode(prefs.upscaleMode);
         }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
+        this.importMetadataAtLocationLoading = Boolean(
+          prefs.importMetadataAtLocationLoading ?? true,
+        );
         this.isFaceModuleEnabled = Boolean(prefs.isFaceModuleEnabled ?? false);
         this.isThumbnailFilenameOverlayEnabled = Boolean(
           prefs.isThumbnailFilenameOverlayEnabled ?? false,
@@ -1037,6 +1041,7 @@ class UiStore {
       inspectorIsToolsVisible: this.inspectorIsToolsVisible,
       inspectorIsInformationVisible: this.inspectorIsInformationVisible,
       isFaceModuleEnabled: this.isFaceModuleEnabled,
+      importMetadataAtLocationLoading: this.importMetadataAtLocationLoading,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerWidth: this.outlinerWidth,
       inspectorWidth: this.inspectorWidth,

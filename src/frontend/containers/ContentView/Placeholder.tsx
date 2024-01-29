@@ -94,7 +94,7 @@ const Welcome = () => {
           <button
             className="figma_video-button "
             onClick={() => {
-              shell.openExternal('https://onefolder.app/video-tutorial');
+              shell.openExternal('https://onefolder.app/getting-started');
             }}
           >
             {/* <img src="/play.svg" alt="OneFolder logo" class="mr-1 fill-[#333]" /> */}

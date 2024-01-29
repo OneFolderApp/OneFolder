@@ -130,7 +130,8 @@ export class ClientFile {
         this.tags,
         action((t) => t.path),
       );
-      this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+
+      // this.exifTool.writeTags(this.absolutePath, tagHierarchy);
 
       tag.incrementFileCount();
 
@@ -147,8 +148,8 @@ export class ClientFile {
         this.tags,
         action((t) => t.path),
       );
-      this.exifTool.writeTags(this.absolutePath, tagHierarchy);
 
+      //   this.exifTool.writeTags(this.absolutePath, tagHierarchy);
       tag.decrementFileCount();
 
       if (this.tags.size === 0) {

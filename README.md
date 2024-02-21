@@ -23,6 +23,7 @@ Comming soon:
 - Map View
 - Calendar View
 - Detect duplicates
+- HEIC
 
 ## Do you want to help?
 There is many ways people can help:

@@ -21,6 +21,9 @@ export class ClientTag {
   @observable isHidden: boolean;
   @observable private _parent: ClientTag | undefined;
   readonly subTags = observable<ClientTag>([]);
+  @observable impliedTags = observable<ClientTag>([]);
+  @observable copyImpliedTags: boolean;
+
   // icon, (fileCount?)
 
   /** The amount of files that has this tag assigned to it
@@ -37,6 +40,7 @@ export class ClientTag {
     dateAdded: Date,
     color: string,
     isHidden: boolean,
+    copyImpliedTags: boolean,
   ) {
     this.store = store;
     this.id = id;
@@ -45,6 +49,7 @@ export class ClientTag {
     this.color = color;
     this.fileCount = 0;
     this.isHidden = isHidden;
+    this.copyImpliedTags = copyImpliedTags;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -174,6 +179,21 @@ export class ClientTag {
     return true;
   }
 
+  @action.bound addImpliedTag(tag: ClientTag): void {
+    if (!this.impliedTags.includes(tag)) {
+      this.impliedTags.push(tag);
+    }
+    this.store.refetchFiles();
+  }
+
+  @action.bound removeImpliedTag(tag: ClientTag): void {
+    const index = this.impliedTags.indexOf(tag);
+    if (index !== -1) {
+      this.impliedTags.splice(index, 1);
+    }
+    this.store.refetchFiles();
+  }
+
   @action.bound incrementFileCount(amount = 1): void {
     this.fileCount += amount;
   }
@@ -195,6 +215,8 @@ export class ClientTag {
       color: this.color,
       subTags: this.subTags.map((subTag) => subTag.id),
       isHidden: this.isHidden,
+      impliedTags: this.impliedTags.map((impliedTag) => impliedTag.id),
+      copyImpliedTags: true,
     };
   }
 

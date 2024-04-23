@@ -10,7 +10,7 @@ describe('Backend', () => {
   function test(name: string, test: (backend: Backend) => Promise<void>) {
     it(name, async () => {
       const db = dbInit(`Test_${TEST_DATABASE_ID_COUNTER++}`);
-      const backend = await Backend.init(db, () => {});
+      const backend = await Backend.init(db, () => { });
       await test(backend);
     });
   }
@@ -21,6 +21,8 @@ describe('Backend', () => {
     dateAdded: new Date(),
     color: '',
     subTags: [],
+    impliedTags: [],
+    copyImpliedTags: false,
     isHidden: false,
   };
 

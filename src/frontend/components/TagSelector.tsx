@@ -30,6 +30,7 @@ export interface TagSelectorProps {
     resetTextBox: () => void,
   ) => ReactElement<RowProps> | ReactElement<RowProps>[];
   multiline?: boolean;
+  filter?: (tag: ClientTag) => boolean;
   showTagContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
@@ -45,6 +46,7 @@ const TagSelector = (props: TagSelectorProps) => {
     extraIconButtons,
     renderCreateOption,
     multiline,
+    filter,
   } = props;
   const gridId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +171,7 @@ const TagSelector = (props: TagSelectorProps) => {
         <SuggestedTagsList
           ref={gridRef}
           id={gridId}
+          filter={filter}
           query={query}
           selection={selection}
           toggleSelection={toggleSelection}
@@ -206,6 +209,7 @@ interface SuggestedTagsListProps {
   id: string;
   query: string;
   selection: readonly ClientTag[];
+  filter?: (tag: ClientTag) => boolean;
   toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
   resetTextBox: () => void;
   renderCreateOption?: (
@@ -219,17 +223,17 @@ const SuggestedTagsList = observer(
     props: SuggestedTagsListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
-    const { id, query, selection, toggleSelection, resetTextBox, renderCreateOption } = props;
+    const { id, query, selection, filter = (() => true), toggleSelection, resetTextBox, renderCreateOption } = props;
     const { tagStore } = useStore();
 
     const suggestions = useMemo(
       () =>
         computed(() => {
           if (query.length === 0) {
-            return tagStore.tagList;
+            return tagStore.tagList.filter(filter);
           } else {
             const textLower = query.toLowerCase();
-            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower));
+            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower)).filter(filter);
           }
         }),
       [query, tagStore],

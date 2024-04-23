@@ -25,6 +25,7 @@ import TreeItemRevealer from '../TreeItemRevealer';
 import { TagItemContextMenu } from './ContextMenu';
 import SearchButton from './SearchButton';
 import { Action, Factory, State, reducer } from './state';
+import { TagImply } from 'src/frontend/containers/Outliner/TagsPanel/TagsImply';
 
 export class TagsTreeItemRevealer extends TreeItemRevealer {
   public static readonly instance: TagsTreeItemRevealer = new TagsTreeItemRevealer();
@@ -79,8 +80,8 @@ const Label = (props: ILabelProps) =>
       onFocus={(e) => e.target.select()}
       // Stop propagation so that the parent Tag element doesn't toggle selection status
       onClick={(e) => e.stopPropagation()}
-      // TODO: Visualizing errors...
-      // Only show red outline when input field is in focus and text is invalid
+    // TODO: Visualizing errors...
+    // Only show red outline when input field is in focus and text is invalid
     />
   ) : (
     <div className="label-text" data-tooltip={props.tooltip}>
@@ -436,6 +437,7 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     editableNode: undefined,
     deletableNode: undefined,
     mergableNode: undefined,
+    impliedTags: undefined,
   });
   const dndData = useTagDnD();
 
@@ -628,6 +630,10 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
 
       {state.mergableNode && (
         <TagMerge tag={state.mergableNode} onClose={() => dispatch(Factory.abortMerge())} />
+      )}
+
+      {state.impliedTags && (
+        <TagImply tag={state.impliedTags} onClose={() => dispatch(Factory.disableModifyImpliedTags())} />
       )}
     </MultiSplitPane>
   );

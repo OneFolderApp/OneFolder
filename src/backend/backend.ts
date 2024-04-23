@@ -54,6 +54,8 @@ export default class Backend implements DataStorage {
           name: 'Root',
           dateAdded: new Date(),
           subTags: [],
+          impliedTags: [],
+          copyImpliedTags: true,
           color: '',
           isHidden: false,
         });
@@ -411,7 +413,7 @@ function filterArrayLambda<T>(crit: ArrayConditionDTO<T, any>): (val: T) => bool
     return crit.value.length === 0
       ? (val: T): boolean => (val as any)[crit.key].length !== 0
       : (val: T): boolean =>
-          crit.value.every((item) => (val as any)[crit.key].indexOf(item) === -1);
+        crit.value.every((item) => (val as any)[crit.key].indexOf(item) === -1);
   }
 }
 

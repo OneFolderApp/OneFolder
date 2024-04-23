@@ -23,6 +23,7 @@ import {
   TagOperatorType,
 } from '../../api/search-criteria';
 import RootStore from '../stores/RootStore';
+import { ROOT_TAG_ID } from 'src/api/tag';
 
 // A dictionary of labels for (some of) the keys of the type we search for
 export type SearchKeyDict = Partial<Record<keyof FileDTO, string>>;
@@ -94,10 +95,10 @@ export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
           arr.value.length <= 1
             ? arr.operator
             : arr.operator === 'contains'
-              ? 'containsRecursively'
-              : arr.operator === 'notContains'
-                ? 'containsNotRecursively'
-                : arr.operator;
+            ? 'containsRecursively'
+            : arr.operator === 'notContains'
+            ? 'containsNotRecursively'
+            : arr.operator;
         const value = arr.value[0];
         return new ClientTagSearchCriteria(arr.key, value, op);
       default:
@@ -165,7 +166,7 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
     if (rootStore.tagStore.get(val[0])?.copyImpliedTags) {
       // Go up the parents until we encounter a node which has "copyImpliedTags" set to false (or the root node) and copy their implied tag
       let parentTag = rootStore.tagStore.get(val[0])?.parent;
-      while (parentTag && parentTag.copyImpliedTags) {
+      while (parentTag && parentTag.id != ROOT_TAG_ID && parentTag.copyImpliedTags) {
         val.push(...(parentTag.impliedTags?.map((t) => t.id) || []));
         parentTag = parentTag.parent;
       }
@@ -201,7 +202,8 @@ export class ClientStringSearchCriteria extends ClientFileSearchCriteria {
   }
 
   @action.bound getLabel: (dict: SearchKeyDict) => string = (dict) =>
-    `${dict[this.key] || camelCaseToSpaced(this.key as string)} ${StringOperatorLabels[this.operator as StringOperatorType] || camelCaseToSpaced(this.operator)
+    `${dict[this.key] || camelCaseToSpaced(this.key as string)} ${
+      StringOperatorLabels[this.operator as StringOperatorType] || camelCaseToSpaced(this.operator)
     } "${this.value}"`;
 
   serialize = (): IStringSearchCriteria => {
@@ -239,7 +241,8 @@ export class ClientNumberSearchCriteria extends ClientFileSearchCriteria {
     makeObservable(this);
   }
   @action.bound getLabel: () => string = () =>
-    `${camelCaseToSpaced(this.key as string)} ${NumberOperatorSymbols[this.operator as NumberOperatorType] || camelCaseToSpaced(this.operator)
+    `${camelCaseToSpaced(this.key as string)} ${
+      NumberOperatorSymbols[this.operator as NumberOperatorType] || camelCaseToSpaced(this.operator)
     } ${this.value}`;
 
   serialize = (): INumberSearchCriteria => {
@@ -279,7 +282,8 @@ export class ClientDateSearchCriteria extends ClientFileSearchCriteria {
   }
 
   @action.bound getLabel: (dict: SearchKeyDict) => string = (dict) =>
-    `${dict[this.key] || camelCaseToSpaced(this.key as string)} ${NumberOperatorSymbols[this.operator as NumberOperatorType] || camelCaseToSpaced(this.operator)
+    `${dict[this.key] || camelCaseToSpaced(this.key as string)} ${
+      NumberOperatorSymbols[this.operator as NumberOperatorType] || camelCaseToSpaced(this.operator)
     } ${this.value.toLocaleDateString()}`;
 
   serialize = (): IDateSearchCriteria => {

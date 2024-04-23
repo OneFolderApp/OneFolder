@@ -2,6 +2,7 @@ import Dexie, { Transaction } from 'dexie';
 import fse from 'fs-extra';
 
 import { FileDTO } from '../api/file';
+import { TagDTO } from 'src/api/tag';
 
 // The name of the IndexedDB
 export const DB_NAME = 'Allusion';
@@ -96,6 +97,24 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    version: 9,
+    collections: [
+      {
+        name: 'tags',
+        schema: '++id',
+      }
+    ],
+    upgrade: (tx: Transaction): void => {
+      tx.table('tags')
+        .toCollection()
+        .modify((tag: TagDTO) => {
+          tag.copyImpliedTags = true;
+          tag.impliedTags = [];
+          return tag;
+        });
+    }
+  }
 ];
 
 type DBVersioningConfig = {

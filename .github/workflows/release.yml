@@ -34,3 +34,10 @@ jobs:
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
           release: true
+
+      # Mark the created draft release as non-draft
+      - name: Mark release as non-draft
+        run: gh release edit ${{ github.ref }} --draft false
+        env:
+          GH_TOKEN: ${{ secrets.github_token }}
+          GH_REPO: ${{ github.repository }}

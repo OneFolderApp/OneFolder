@@ -41,7 +41,7 @@ jobs:
     steps:
       # Mark the created draft release as non-draft
       - name: Mark release as non-draft
-        run: gh release edit ${{ github.ref }} --draft false
+        run: gh release edit ${{ github.ref }} --draft=false
         env:
           GH_TOKEN: ${{ secrets.github_token }}
           GH_REPO: ${{ github.repository }}

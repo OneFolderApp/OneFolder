@@ -631,9 +631,12 @@ class FileStore {
       const file = new ClientFile(this, f);
       // Initialize the thumbnail path so the image can be loaded immediately when it mounts.
       // To ensure the thumbnail actually exists, the `ensureThumbnail` function should be called
-      file.thumbnailPath = this.rootStore.imageLoader.needsThumbnail(f)
+      file.thumbnailPath = 
+        /*this.rootStore.imageLoader.needsThumbnail(f)
         ? getThumbnailPath(f.absolutePath, this.rootStore.uiStore.thumbnailDirectory)
-        : f.absolutePath;
+          :*/
+        // NOTE: Do not make thumbnails (fixes a bug where thumbnails don't load, plus reduces usage)
+          f.absolutePath;
       return file;
     });
 

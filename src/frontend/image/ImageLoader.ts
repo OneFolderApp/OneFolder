@@ -118,7 +118,7 @@ class ImageLoader {
           success = await this.extractKritaThumbnail(absolutePath, thumbnailPath);
         } else {
           // Fallback to extracting thumbnail using exiftool (works for PSD and some other formats)
-          success = await this.exifIO.extractThumbnail(absolutePath, thumbnailPath);
+          //success = await this.exifIO.extractThumbnail(absolutePath, thumbnailPath);
         }
         if (!success) {
           // There might not be an embedded thumbnail

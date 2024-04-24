@@ -114,6 +114,8 @@ function createWindow() {
       nodeIntegrationInWorker: true,
       nodeIntegrationInSubFrames: true,
       contextIsolation: false,
+      webSecurity: false,
+      allowRunningInsecureContent: false,
     },
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,

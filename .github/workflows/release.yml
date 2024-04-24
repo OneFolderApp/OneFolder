@@ -1,11 +1,11 @@
 # This is the config for the github actions that creates new releases
 name: Build/release
 
-# Whenever something is pushed to master
 on:
+  # Create a release for tag pushes starting with 'v'
   push:
-    branches:
-      - master
+    tags:
+      - v*
 
 jobs:
   release:

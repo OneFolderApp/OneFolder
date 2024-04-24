@@ -53,6 +53,7 @@ import {
   WINDOW_MAXIMIZE,
   WINDOW_SYSTEM_BUTTON_PRESS,
   WINDOW_UNMAXIMIZE,
+  CONSOLE_MESSAGE,
 } from './messages';
 
 export class RendererMessenger {
@@ -186,4 +187,7 @@ export class RendererMessenger {
     const userDataPath = await RendererMessenger.getPath('userData');
     return path.join(userDataPath, 'themes');
   };
+
+  static sendConsoleMessage = (type: 'log' | 'info' | 'error' | 'warn' | 'debug', message: string) =>
+    ipcRenderer.send(CONSOLE_MESSAGE, { type, message });
 }

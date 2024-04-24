@@ -30,6 +30,7 @@ const basePath = app.getPath('userData');
 
 const preferencesFilePath = path.join(basePath, 'preferences.json');
 const windowStateFilePath = path.join(basePath, 'windowState.json');
+const logFilePath = path.join(basePath, 'app.log');
 
 type PreferencesFile = {
   checkForUpdatesOnStartup?: boolean;
@@ -45,7 +46,25 @@ let previewWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let clipServer: ClipServer | null = null;
 
+// Setup logging to file
+const logStream = fse.createWriteStream(logFilePath, { flags: 'a' });
+
+// Override console methods
+const originalConsole = { ...console };
+
+for (const method of ['log', 'error', 'warn', 'info', 'debug'] as const) {
+  console[method] = (...args: any[]) => {
+    originalConsole[method](...args); // Log to original console
+    const message = args
+      .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : arg))
+      .join(' '); // Stringify objects
+    logStream.write(`[${method.toUpperCase().padEnd(5)}][BACKEND ] ${message}\n`); // Write to log file
+  };
+}
+
 function initialize() {
+  console.log('Initializing Allusion...');
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     if (details.responseHeaders === undefined) {
       callback({});
@@ -486,8 +505,9 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
     return;
   }
 
-  const message = `Update available: ${info.releaseName || info.version
-    }:\nDo you wish to update now?`;
+  const message = `Update available: ${
+    info.releaseName || info.version
+  }:\nDo you wish to update now?`;
   // info.releaseNotes attribute is HTML, could show that in renderer at some point
 
   const dialogResult = await dialog.showMessageBox(mainWindow, {
@@ -547,8 +567,9 @@ autoUpdater.on('download-progress', (progressObj: { percent: number }) => {
 process.on('uncaughtException', async (error) => {
   console.error('Uncaught exception', error);
 
-  const errorMessage = `An unexpected error occurred. Please file a bug report if you think this needs fixing!\n${error.stack?.includes(error.message) ? '' : `${error.name}: ${error.message.slice(0, 200)}\n`
-    }\n${error.stack?.slice(0, 300)}`;
+  const errorMessage = `An unexpected error occurred. Please file a bug report if you think this needs fixing!\n${
+    error.stack?.includes(error.message) ? '' : `${error.name}: ${error.message.slice(0, 200)}\n`
+  }\n${error.stack?.slice(0, 300)}`;
 
   try {
     if (mainWindow != null && !mainWindow.isDestroyed()) {
@@ -742,6 +763,10 @@ MainMessenger.onToggleCheckUpdatesOnStartup(() => {
 });
 
 MainMessenger.onIsCheckUpdatesOnStartupEnabled(() => preferences.checkForUpdatesOnStartup === true);
+
+MainMessenger.onConsoleMessage((type, message) => {
+  logStream.write(`[${type.toUpperCase().padEnd(5)}][FRONTEND] ${message}\n`);
+});
 
 // Helper functions and variables/constants
 

@@ -52,6 +52,7 @@ import {
   WINDOW_MAXIMIZE,
   WINDOW_SYSTEM_BUTTON_PRESS,
   WINDOW_UNMAXIMIZE,
+  CONSOLE_MESSAGE,
 } from './messages';
 
 export class MainMessenger {
@@ -183,4 +184,8 @@ export class MainMessenger {
 
   static onIsCheckUpdatesOnStartupEnabled = (cb: () => boolean) =>
     ipcMain.on(IS_CHECK_UPDATES_ON_STARTUP_ENABLED, (e) => (e.returnValue = cb()));
+
+  static onConsoleMessage = (
+    cb: (type: 'log' | 'info' | 'error' | 'warn' | 'debug', message: string) => void,
+  ) => ipcMain.on(CONSOLE_MESSAGE, (_, { type, message }) => cb(type, message));
 }

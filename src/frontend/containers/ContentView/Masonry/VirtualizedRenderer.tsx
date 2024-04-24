@@ -176,7 +176,6 @@ const VirtualizedRenderer = observer(
                 // Otherwise you'll see very low res images. This is usually only the case for images with extreme aspect ratios
                 // TODO: Not the best solution; could generate multiple thumbnails of other resolutions
                 forceNoThumbnail={
-                  true ||
                   transform[0] > thumbnailMaxSize ||
                   transform[1] > thumbnailMaxSize ||
                   // Not using thumbnails for gifs, since they're mostly used for animations, which doesn't get preserved in thumbnails

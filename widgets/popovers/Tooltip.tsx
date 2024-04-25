@@ -84,8 +84,9 @@ export const TooltipLayer = ({ document }: { document: Document }) => {
       role="tooltip"
       data-popover
       data-open={isOpen}
+      dangerouslySetInnerHTML={{ __html: content.current }}
     >
-      {content.current}
+
     </div>
   );
 };

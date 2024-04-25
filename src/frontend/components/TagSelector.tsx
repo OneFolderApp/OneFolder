@@ -268,21 +268,24 @@ interface TagOptionProps {
 
 export const TagOption = observer(({ id, tag, selected, toggleSelection }: TagOptionProps) => {
   const [path, hint] = useComputed(() => {
-    const path = tag.path.join(' › ');
-    const hint = path.slice(0, Math.max(0, path.length - tag.name.length - 3));
+    const path = tag.path.map((v) => v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v).join(' › ');
+    const hint = path.slice(0, Math.max(0, path.length - tag.name.length - (tag.name.startsWith("#") ? 18 : 3)));
     return [path, hint];
   }).get();
+
+  const isHeader = useMemo(() => tag.name.startsWith('#'), [tag.name]);
 
   return (
     <Row
       id={id}
-      value={tag.name}
+      value={isHeader ? "<b>" + tag.name.slice(1) + "</b>" : tag.name}
       selected={selected}
       icon={<span style={{ color: tag.viewColor }}>{IconSet.TAG}</span>}
       onClick={() => toggleSelection(selected ?? false, tag)}
       tooltip={path}
+      valueIsHtml
     >
-      {hint.length > 0 ? <GridCell className="tag-option-hint">{hint}</GridCell> : <GridCell />}
+      {hint.length > 0 ? <GridCell className="tag-option-hint" __html={hint}></GridCell> : <GridCell />}
     </Row>
   );
 });

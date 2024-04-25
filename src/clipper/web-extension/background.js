@@ -219,9 +219,9 @@ chrome.runtime.onMessageExternal.addListener(async function (message, sender, se
     console.log('Generated filename', filename);
 
     // Get all of the tags that exist
-    const existingTags = await fetch(`${apiUrl}/tags`).then((response) => response.json());
-
-    const existingTagsLowercase = existingTags.map((tag) => tag.name.toLowerCase());
+    const existingTags = await fetch(`${apiUrl}/tags`)
+      .then((response) => response.json())
+      .then((tags) => tags.map((tag) => tag.name));
 
     let promptTags = [];
 
@@ -236,14 +236,17 @@ chrome.runtime.onMessageExternal.addListener(async function (message, sender, se
       console.log('Prompt filtered to', filteredPrompt);
 
       promptTags = filteredPrompt
-        // Split into all tags
-        .split(', ')
-        // Trim whitespace
-        .map((tagName) => tagName.trim().toLowerCase())
-        // Filter to existing tags
-        .filter((tagName) => existingTagsLowercase.includes(tagName))
-        // Map to the actual tag ids
-        .map((tagName) => existingTags.find((tag) => tag.name.toLowerCase() === tagName).id);
+        .split(', ') // Split the prompt by comma and space to get individual tag names
+        .map((tagName) => tagName.trim().toLowerCase()) // Trim and convert tag names to lowercase
+        .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicate tag names
+        .filter((tagName) => tagName.length > 0) // Remove empty tag names
+        .map((tagName) => {
+          let existingTag = existingTags.find((tag) => tag.toLowerCase() === tagName); // Check if the tag already exists
+          if (existingTag) {
+            return existingTag; // Return the tag name if it already exists
+          } else return null; // Return null if the tag doesn't exist
+        })
+        .filter((tagName) => tagName !== null); // Remove null values from the array
 
       console.log('Applying tags', promptTags);
       console.log('Existing tags', existingTags);

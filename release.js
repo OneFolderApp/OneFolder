@@ -59,6 +59,9 @@ async function main() {
   executeCommand('git add .');
   executeCommand(`git commit -m "${commitMessage}"`);
 
+  // Push the changes to the repo
+  executeCommand('git push origin master');
+
   // Create a tag with the new version
   executeCommand(`git tag v${newVersion}`);
 

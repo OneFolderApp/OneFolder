@@ -1,7 +1,7 @@
 {
   "name": "allusion",
   "productName": "Allusion",
-  "version": "1.0.0-rc.25-custom",
+  "version": "1.0.0-rc.26-custom",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -16,7 +16,8 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "build:masonry": "cd wasm/wasm-build && cargo run masonry masonry/masonry-scalar && cargo run masonry masonry/masonry-simd -- -C target-feature=+simd128",
-    "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr"
+    "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr",
+    "release": "if not exist .git\\refs\\tags\\v%npm_package_version% ( echo Tagging version %npm_package_version% && git tag v%npm_package_version% && git push origin v%npm_package_version% ) else ( echo Version %npm_package_version% already tagged )"
   },
   "build": {
     "appId": "com.allusion-app.allusion",

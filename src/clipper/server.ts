@@ -215,6 +215,7 @@ class ClipServer {
               if (req.url && req.url.endsWith('import-image')) {
                 const directory = this.preferences.importLocation;
                 const { filename, imgBase64, pageUrl } = JSON.parse(body);
+                console.log('Received body', body);
                 console.log('Received file', filename);
 
                 await this.storeAndImportImage(directory, filename, imgBase64, pageUrl);

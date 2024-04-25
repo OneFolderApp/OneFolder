@@ -10,8 +10,9 @@ let errCount = 0;
  * @param {string} filename The filename of the image, e.g. my-image.jpg
  * @param {string} url The url of the image, e.g. https://pbs.twimg.com/media/ASDF1234?format=jpg&name=small
  * @param {string} pageUrl The url of the page where the image is on, e.g. https://twitter.com/User/status/12345
+ * @param {string[]} tagNames The tags to assign to the image, e.g. ['cat', 'cute']
  */
-async function importImage(filename, url, pageUrl) {
+async function importImage(filename, url, pageUrl, tagNames = []) {
   // We could just send the URL, but in some cases you need permission to view an image (e.g. pixiv)
   // Therefore we send it base64 encoded
 
@@ -31,7 +32,7 @@ async function importImage(filename, url, pageUrl) {
       filename: filenameWithExtension,
       url,
       imgBase64: base64,
-      tagNames: [],
+      tagNames: tagNames || [],
       pageUrl,
       error: false,
     };
@@ -201,5 +202,55 @@ chrome.commands.onCommand.addListener((command) => {
       const tab = tabs[0];
       chrome.tabs.sendMessage(tab.id, { type: 'pick-image' });
     });
+  }
+});
+
+/// Add support for the following:
+/// Allow a normal web page to emit a specific event ('send-allusion-image') to send a specific image to Allusion
+chrome.runtime.onMessageExternal.addListener(async function (message, sender, sendResponse) {
+  console.log('Received external message', message, sender, sendResponse);
+  if (message.type === 'send-allusion-image') {
+    const { src, alt, pageUrl = '', prompt = undefined } = message.payload;
+    console.log('Received data.');
+    console.log('Src', src);
+    console.log('Alt', alt);
+    console.log('PageURL', pageUrl);
+    const filename = filenameFromUrl(src, sender.tab?.title || alt);
+    console.log('Generated filename', filename);
+
+    // Get all of the tags that exist
+    const existingTags = await fetch(`${apiUrl}/tags`).then((response) => response.json());
+
+    const existingTagsLowercase = existingTags.map((tag) => tag.name.toLowerCase());
+
+    let promptTags = [];
+
+    // If the prompt is set, then we automatically assign all tags that are in the prompt
+    if (prompt) {
+      // Prompt is multi-line and could contain commented out lines (starting with #)
+      // We remove those lines
+      const promptLines = prompt.split('\n').filter((line) => !line.startsWith('#'));
+      const filteredPrompt = promptLines.join(', ');
+
+      console.log('Received Prompt', prompt);
+      console.log('Prompt filtered to', filteredPrompt);
+
+      promptTags = filteredPrompt
+        // Split into all tags
+        .split(', ')
+        // Trim whitespace
+        .map((tagName) => tagName.trim().toLowerCase())
+        // Filter to existing tags
+        .filter((tagName) => existingTagsLowercase.includes(tagName))
+        // Map to the actual tag ids
+        .map((tagName) => existingTags.find((tag) => tag.name.toLowerCase() === tagName).id);
+
+      console.log('Applying tags', promptTags);
+      console.log('Existing tags', existingTags);
+    }
+
+    importImage(filename, src, pageUrl, promptTags);
+    console.log('Imported image.');
+    sendResponse({ status: 'ok' });
   }
 });

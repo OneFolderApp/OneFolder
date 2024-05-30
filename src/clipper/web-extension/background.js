@@ -227,16 +227,50 @@ chrome.runtime.onMessageExternal.addListener(async function (message, sender, se
 
     // If the prompt is set, then we automatically assign all tags that are in the prompt
     if (prompt) {
-      // Prompt is multi-line and could contain commented out lines (starting with #)
+      // Prompt is multi-line and could contain commented out lines (starting with #, but keep #!allusion lines)
       // We remove those lines
-      const promptLines = prompt.split('\n').filter((line) => !line.startsWith('#'));
+      let promptLines = prompt
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('#') || line.trim().startsWith('#!allusion '));
+
+      promptLines = promptLines.map(
+        (line) => line.replace('#!allusion ', '') /* Remove the "#!allusion" from all lines */,
+      );
+
+      // Some tags can be combined into groups (example: "(cat, cute:1.2)"), or simply have added weights (example: "cat:1.2")
+      // We have to make sure that the parentheses and the weights are removed, so the tags get parsed correctly, we do want to keep the tags though
+      promptLines = promptLines.map((line) => {
+        // Replace escaped parentheses with temporary placeholders
+        let cleanedLine = line
+          .replace(/\\\(/g, 'TEMP_OPEN_PAREN')
+          .replace(/\\\)/g, 'TEMP_CLOSE_PAREN');
+
+        // Remove actual parentheses
+        cleanedLine = cleanedLine.replace(/[()]/g, '');
+
+        // Restore the placeholders to normal parentheses
+        cleanedLine = cleanedLine
+          .replace(/TEMP_OPEN_PAREN/g, '(')
+          .replace(/TEMP_CLOSE_PAREN/g, ')');
+
+        // Remove any weights indicated by a colon followed by numbers
+        cleanedLine = cleanedLine.replace(/:\d+(\.\d+)?/g, '');
+
+        // Split any remaining parts inside parentheses into separate tags
+        const parts = cleanedLine
+          .split(', ')
+          .flatMap((part) => part.split(/ \(|\)/).filter(Boolean));
+
+        return parts.join(', ');
+      });
+
       const filteredPrompt = promptLines.join(', ');
 
       console.log('Received Prompt', prompt);
       console.log('Prompt filtered to', filteredPrompt);
 
       promptTags = filteredPrompt
-        .split(', ') // Split the prompt by comma and space to get individual tag names
+        .split(',') // Split the prompt by comma and space to get individual tag names
         .map((tagName) => tagName.trim().toLowerCase()) // Trim and convert tag names to lowercase
         .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicate tag names
         .filter((tagName) => tagName.length > 0) // Remove empty tag names

@@ -261,7 +261,16 @@ chrome.runtime.onMessageExternal.addListener(async function (message, sender, se
           .split(', ')
           .flatMap((part) => part.split(/ \(|\)/).filter(Boolean));
 
-        return parts.join(', ');
+        // Generate permutations for multi-word tags and join them
+        const processedParts = parts.flatMap((part) => {
+          const words = part.trim().split(' ');
+          if (words.length > 1) {
+            return permute(words).map((perm) => perm.join(' '));
+          }
+          return [part];
+        });
+
+        return processedParts.join(', ');
       });
 
       const filteredPrompt = promptLines.join(', ');
@@ -291,3 +300,15 @@ chrome.runtime.onMessageExternal.addListener(async function (message, sender, se
     sendResponse({ status: 'ok' });
   }
 });
+
+const permute = (arr) => {
+  if (arr.length <= 1) return [arr];
+  const permutations = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = permute(arr.slice(0, i).concat(arr.slice(i + 1)));
+    for (const perm of rest) {
+      permutations.push([arr[i], ...perm]);
+    }
+  }
+  return permutations;
+};

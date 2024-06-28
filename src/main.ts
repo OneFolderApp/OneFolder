@@ -569,18 +569,37 @@ MainMessenger.onDragExport(async (absolutePaths) => {
 
   let previewIcon = nativeImage.createEmpty();
   try {
-    previewIcon = await nativeImage.createThumbnailFromPath(absolutePaths[0], {
-      width: 200,
-      height: 200,
-    });
+    // nativeImage.createThumbnailFromPath isn't supported on Linux by the latest Electron release as of 2024-06-28
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (nativeImage.createThumbnailFromPath) {
+      previewIcon = await nativeImage.createThumbnailFromPath(absolutePaths[0], {
+        width: 200,
+        height: 200,
+      });
+    } else {
+      console.log('Falling back to manual resize for drag icon');
+      previewIcon = nativeImage.createFromPath(absolutePaths[0]).resize({
+        width: 200,
+        height: 200,
+      });
+    }
   } catch (e) {
     console.error('Could not create drag icon', absolutePaths[0], e);
     try {
       const fallbackIconPath = path.join(__dirname, TrayIcon);
-      previewIcon = await nativeImage.createThumbnailFromPath(fallbackIconPath, {
-        width: 200,
-        height: 200,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (nativeImage.createThumbnailFromPath) {
+        previewIcon = await nativeImage.createThumbnailFromPath(fallbackIconPath, {
+          width: 200,
+          height: 200,
+        });
+      } else {
+        console.log('Falling back to manual resize for fallback drag icon');
+        previewIcon = nativeImage.createFromPath(fallbackIconPath).resize({
+          width: 200,
+          height: 200,
+        });
+      }
     } catch (e) {
       console.error('Could not create fallback drag icon', TrayIcon, e);
     }

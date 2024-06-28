@@ -97,6 +97,7 @@ const dbConfig: DBVersioningConfig[] = [
     },
   },
   {
+    // Version 9, 9-12-23 Added annotations for face detections (WIP)
     version: 9,
     collections: [
       {
@@ -110,6 +111,32 @@ const dbConfig: DBVersioningConfig[] = [
         .toCollection()
         .modify((file: FileDTO) => {
           file.annotations = '{}';
+          return file;
+        });
+    },
+  },
+  {
+    // Version 10, 28-6-24 Added 'ino' back because we removed it by mistake in Version 9
+    version: 10,
+    collections: [
+      {
+        name: 'files',
+        schema:
+          '++id, ino, locationId, *tags, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated, annotations',
+      },
+    ],
+    upgrade: (tx: Transaction): void => {
+      tx.table('files')
+        .toCollection()
+        .modify((file: FileDTO) => {
+          try {
+            // apparently you can't do async stuff here, even though it is typed to return a PromiseLike :/
+            const stats = fse.statSync(file.absolutePath);
+            // fallback to random value so that it won't be recognized as identical file to others where no ino could be found
+            file.ino = stats.ino.toString() || Math.random().toString();
+          } catch (e) {
+            console.warn(`Could not get ino for ${file.absolutePath}`);
+          }
           return file;
         });
     },

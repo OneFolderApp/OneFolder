@@ -86,8 +86,8 @@ const Welcome = () => {
 
       <div className="landing-text">
         <p>{IconSet.RELOAD} Remember to always have backups</p>
-        <p>{IconSet.TAG} Tags can be order in hierarchy (like folders)</p>
-        <p>↖️ Click &rdquo;+ Add Location&rdquo; in the top left cornet to get started</p>
+        <p>{IconSet.TAG} Tags can be ordered in hierarchy (like folders)</p>
+        <p>↖️ Click &rdquo;+ Add Location&rdquo; in the top left corner to get started</p>
 
         <br />
         <div className="button-container">

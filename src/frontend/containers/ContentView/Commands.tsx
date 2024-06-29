@@ -82,12 +82,16 @@ export class CommandDispatcher {
     });
   }
 
-  dragStart(event: BaseEvent) {
+  dragStart(event: MousePointerEvent) {
     event.stopPropagation();
     event.preventDefault();
     dispatchCustomEvent(event, {
       selector: Selector.FileDragStart,
-      payload: { file: this.file },
+      payload: {
+        file: this.file,
+        selectAdditive: event.ctrlKey || event.metaKey,
+        selectRange: event.shiftKey,
+      },
     });
   }
 
@@ -244,9 +248,10 @@ export function useCommandHandler(
 
     const handleDragStart = action((event: Event) => {
       event.stopPropagation();
-      const file = (event as CommandHandlerEvent<Payload>).detail.file;
+      const { file, selectAdditive, selectRange } = (event as CommandHandlerEvent<DragStartPayload>)
+        .detail;
       if (!uiStore.fileSelection.has(file)) {
-        return;
+        select(file, selectAdditive, selectRange);
       }
       if (uiStore.fileSelection.size > 1) {
         RendererMessenger.startDragExport(Array.from(uiStore.fileSelection, (f) => f.absolutePath));
@@ -348,7 +353,8 @@ type ContentViewCommand =
   | Command<Selector.ContextMenu | Selector.SlideContextMenu, ContextMenuPayload>
   | Command<Selector.TagContextMenu, TagContextMenuPayload>
   // Drag and Drop
-  | Command<Selector.FileDragStart | Selector.FileDragOver | Selector.FileDrop, Payload>
+  | Command<Selector.FileDragStart, DragStartPayload>
+  | Command<Selector.FileDragOver | Selector.FileDrop, Payload>
   | Command<Selector.FileDragLeave, EmptyPayload>;
 
 interface Command<S extends string, T> {
@@ -375,6 +381,11 @@ interface Payload {
 }
 
 interface SelectPayload extends Payload {
+  selectAdditive: boolean;
+  selectRange: boolean;
+}
+
+interface DragStartPayload extends Payload {
   selectAdditive: boolean;
   selectRange: boolean;
 }

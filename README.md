@@ -61,4 +61,8 @@ Then run the following commands to get started:
 An installable executable can be built using `yarn package` for your platform in the `/dist` folder. The building is performed using the [electron-builder](https://www.electron.build/) package, and is configured by a section in the `package.json` file.
 Builds are automatically published to Github Releases when a tag is created in GitHub.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=OneFolderApp/OneFolder&type=Date)](https://star-history.com/#OneFolderApp/OneFolder&Date)
+
 

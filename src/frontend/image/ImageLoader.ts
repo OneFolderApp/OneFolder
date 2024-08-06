@@ -39,6 +39,7 @@ const FormatHandlers: Record<IMG_EXTENSIONS_TYPE, FormatHandlerType> = {
   // xcf: 'extractEmbeddedThumbnailOnly',
   exr: 'exrLoader',
   // avif: 'sharp',
+  heic: 'web',
   mp4: 'web',
   webm: 'web',
   ogg: 'web',

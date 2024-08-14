@@ -26,6 +26,9 @@ let mainConfig = {
   resolve: {
     extensions: ['.js', '.json', '.ts'],
   },
+  externals: {
+    fsevents: "require('fsevents')",
+  },
   module: {
     rules: [
       {
@@ -69,6 +72,9 @@ let rendererConfig = {
       src: path.resolve(__dirname, 'src/'),
       wasm: path.resolve(__dirname, 'wasm/'),
     },
+  },
+  externals: {
+    fsevents: "require('fsevents')",
   },
   module: {
     rules: [

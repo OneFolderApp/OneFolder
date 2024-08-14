@@ -6,12 +6,10 @@ import { useEffect } from 'react';
 import { thumbnailFormat } from 'common/config';
 import { ID } from '../../api/id';
 import { ClientFile } from '../entities/File';
-import { IMG_EXTENSIONS_TYPE } from 'src/api/file';
 
 export interface IThumbnailMessage {
   filePath: string;
   fileId: ID;
-  fileExtension: IMG_EXTENSIONS_TYPE;
   thumbnailFilePath: string;
   thumbnailFormat: string;
 }
@@ -47,7 +45,6 @@ export const generateThumbnailUsingWorker = action(
   async (file: ClientFile, thumbnailFilePath: string, timeout = 10000) => {
     const msg: IThumbnailMessage = {
       filePath: file.absolutePath,
-      fileExtension: file.extension,
       thumbnailFilePath,
       thumbnailFormat,
       fileId: file.id,

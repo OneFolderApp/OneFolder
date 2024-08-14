@@ -142,7 +142,6 @@
     "electron-updater": "^6.1.7",
     "fs-extra": "^11.1.0",
     "geo-coordinates-parser": "^1.6.3",
-    "heic-convert": "^2.1.0",
     "libheif-js": "^1.17.1",
     "mapbox-gl": "^3.0.1",
     "mobx": "^6.8.0",

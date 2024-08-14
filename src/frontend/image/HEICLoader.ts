@@ -2,11 +2,6 @@ import { Remote, wrap } from 'comlink';
 import { HeicReaderWorker } from '../workers/heicReader.worker';
 import { Loader } from './util';
 
-/**
- * Uses the ag-psd dependency to create bitmap images of PSD files.
- * Uses a worker to offload process intensive work off the main thread
- * Based on https://github.com/Agamnentzar/ag-psd#reading-2
- */
 class HeicLoader implements Loader {
   worker?: Remote<HeicReaderWorker>;
 

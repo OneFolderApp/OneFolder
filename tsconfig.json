@@ -17,9 +17,17 @@
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "useUnknownInCatchVariables": false,
-    "strict": true, 
+    "strict": true,
     "isolatedModules": true
   },
-  "include": ["widgets/**/*", "src/**/*", "custom.d.ts", "wasm/**/*", "common/**/*", "tests/**/*"],
+  "include": [
+    "widgets/**/*",
+    "src/**/*",
+    "custom.d.ts",
+    "wasm/**/*",
+    "common/**/*",
+    "tests/**/*",
+    "declarations/**/*"
+  ],
   "exclude": ["**/node_modules", "**/.*/*", "dist", "resources", "build"]
 }

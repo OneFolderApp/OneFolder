@@ -1,51 +1,38 @@
 import libheif from 'libheif-js';
-import { PNG } from 'pngjs/browser';
 import { expose } from 'comlink';
 
 const decoder = new libheif.HeifDecoder();
 
 export class HeicReaderWorker {
   constructor() {
-    // initializeCanvas(this.createCanvas, this.createCanvasFromData);
+    // No initialization needed for now
   }
 
-  async readImage(data) {
+  async readImage(data: ArrayBuffer | Uint8Array): Promise<{ image: ImageData }> {
     const decoded = decoder.decode(data);
     const image = decoded[0];
     const width = image.get_width();
     const height = image.get_height();
 
-    const imageData = await new Promise((resolve, reject) => {
-      image.display(
-        { data: new Uint8ClampedArray(width * height * 4), width, height },
-        (displayData) => {
-          if (!displayData) {
-            return reject(new Error('HEIF processing error'));
-          }
+    // Create a Uint8ClampedArray to hold the pixel data
+    const pixelData = new Uint8ClampedArray(width * height * 4);
 
-          resolve(displayData);
-        },
-      );
+    // Display the image data into the pixelData array
+    await new Promise((resolve, reject) => {
+      image.display({ data: pixelData, width, height }, (displayData) => {
+        if (!displayData) {
+          return reject(new Error('HEIF processing error'));
+        }
+        resolve(displayData);
+      });
     });
 
-    const png = new PNG({ width: imageData.width, height: imageData.height });
-    png.data = imageData.data;
-    const pngBuffer = PNG.sync.write(png);
-
-    // Read the PNG buffer to extract width, height, and data
-    const pngImage = PNG.sync.read(pngBuffer);
-
-    // Create a Uint8ClampedArray from the PNG data
-    const clampedArray = new Uint8ClampedArray(pngImage.data);
-
-    // Create the ImageData object
-    const newImageData = new ImageData(clampedArray, pngImage.width, pngImage.height);
-
-    console.log('newImageData HEIC', newImageData);
+    // Create the ImageData object directly from the pixel data
+    const newImageData = new ImageData(pixelData, width, height);
 
     return { image: newImageData };
   }
 }
 
-// https://lorefnon.tech/2019/03/24/using-comlink-with-typescript-and-worker-loader/
+// Expose the worker using comlink
 expose(HeicReaderWorker, self);

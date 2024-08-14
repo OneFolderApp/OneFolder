@@ -44,5 +44,6 @@
         "@typescript-eslint/explicit-module-boundary-types": "error"
       }
     }
-  ]
+  ],
+  "ignorePatterns": ["declarations/*.d.ts"]
 }

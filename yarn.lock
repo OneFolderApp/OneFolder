@@ -4393,7 +4393,7 @@ gensync@^1.0.0-beta.2:
 
 geo-coordinates-parser@^1.6.3:
   version "1.6.4"
-  resolved "https://registry.yarnpkg.com/geo-coordinates-parser/-/geo-coordinates-parser-1.6.4.tgz#dcb27e9cd14980b27b8aa29056650ec8be82ab95"
+  resolved "https://registry.npmjs.org/geo-coordinates-parser/-/geo-coordinates-parser-1.6.4.tgz"
   integrity sha512-WAXujzfgNL9EhjAQzi+u1muiRgwbVJc/V7ViiHeF/MN8B+DQkeeUfH8yFbP8/tfHqQgeoE3NkdLs6iA16o3TwA==
 
 geojson-vt@^3.2.1:
@@ -5610,6 +5610,11 @@ levn@^0.4.1:
   dependencies:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
+
+libheif-js@^1.17.1:
+  version "1.17.1"
+  resolved "https://registry.npmjs.org/libheif-js/-/libheif-js-1.17.1.tgz"
+  integrity sha512-g9wBm/CasGZMjmH3B2sD9+AO7Y5+79F0oPS+sdAulSxQeYeCeiTIP+lDqvlPofD+y76wvfVtotKZ8AuvZQnWgg==
 
 line-height@^0.3.1:
   version "0.3.1"

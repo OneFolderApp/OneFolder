@@ -34,7 +34,10 @@ const generateThumbnailData = async (filePath: string): Promise<ArrayBuffer | nu
 
   ctx2D.drawImage(img, 0, 0, width, height);
 
-  const thumbBlob = await canvas.convertToBlob({ type: `image/${thumbnailFormat}`, quality: 0.75 });
+  const thumbBlob = await canvas.convertToBlob({
+    type: `image/${thumbnailFormat}`,
+    quality: 0.75,
+  });
   // TODO: is canvas.toDataURL faster?
   const reader = new FileReaderSync();
   const buffer = reader.readAsArrayBuffer(thumbBlob);

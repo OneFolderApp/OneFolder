@@ -8,6 +8,7 @@ import { FileDTO, IMG_EXTENSIONS_TYPE } from '../../api/file';
 import { ClientFile } from '../entities/File';
 import ExrLoader from './ExrLoader';
 import PsdLoader from './PSDLoader';
+import HeicLoader from './HEICLoader';
 import { generateThumbnailUsingWorker } from './ThumbnailGeneration';
 import TifLoader from './TifLoader';
 import { generateThumbnail, getBlob } from './util';
@@ -18,6 +19,7 @@ type FormatHandlerType =
   | 'tifLoader'
   | 'exrLoader'
   | 'psdLoader'
+  | 'heicLoader'
   | 'extractEmbeddedThumbnailOnly'
   | 'none';
 
@@ -39,6 +41,7 @@ const FormatHandlers: Record<IMG_EXTENSIONS_TYPE, FormatHandlerType> = {
   // xcf: 'extractEmbeddedThumbnailOnly',
   exr: 'exrLoader',
   // avif: 'sharp',
+  heic: 'heicLoader',
   mp4: 'web',
   webm: 'web',
   ogg: 'web',
@@ -50,6 +53,7 @@ class ImageLoader {
   private tifLoader: TifLoader;
   private exrLoader: ExrLoader;
   private psdLoader: PsdLoader;
+  private heicLoader: HeicLoader;
 
   private srcBufferCache: WeakMap<ClientFile, ObjectURL> = new WeakMap();
   private bufferCacheTimer: WeakMap<ClientFile, number> = new WeakMap();
@@ -58,11 +62,17 @@ class ImageLoader {
     this.tifLoader = new TifLoader();
     this.exrLoader = new ExrLoader();
     this.psdLoader = new PsdLoader();
+    this.heicLoader = new HeicLoader();
     this.ensureThumbnail = action(this.ensureThumbnail.bind(this));
   }
 
   async init(): Promise<void> {
-    await Promise.all([this.tifLoader.init(), this.exrLoader.init(), this.psdLoader.init()]);
+    await Promise.all([
+      this.tifLoader.init(),
+      this.exrLoader.init(),
+      this.psdLoader.init(),
+      this.heicLoader.init(),
+    ]);
   }
 
   needsThumbnail(file: FileDTO) {
@@ -136,6 +146,10 @@ class ImageLoader {
         await generateThumbnail(this.psdLoader, absolutePath, thumbnailPath, thumbnailMaxSize);
         updateThumbnailPath(file, thumbnailPath);
         break;
+      case 'heicLoader':
+        await generateThumbnail(this.heicLoader, absolutePath, thumbnailPath, thumbnailMaxSize);
+        updateThumbnailPath(file, thumbnailPath);
+        break;
       case 'none':
         // No thumbnail for this format
         file.setThumbnailPath(file.absolutePath);
@@ -166,11 +180,18 @@ class ImageLoader {
         this.updateCache(file, src);
         return src;
       }
-      case 'psdLoader':
+      case 'psdLoader': {
         const src =
           this.srcBufferCache.get(file) ?? (await getBlob(this.psdLoader, file.absolutePath));
         this.updateCache(file, src);
         return src;
+      }
+      case 'heicLoader': {
+        const src =
+          this.srcBufferCache.get(file) ?? (await getBlob(this.heicLoader, file.absolutePath));
+        this.updateCache(file, src);
+        return src;
+      }
       // TODO: krita has full image also embedded (mergedimage.png)
       case 'extractEmbeddedThumbnailOnly':
       case 'none':

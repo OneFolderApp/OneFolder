@@ -7,6 +7,7 @@ import ImageDescription from '../../components/ImageDescription';
 import ImageDates from '../../components/ImageDates';
 import ImageMap from '../../components/ImageMap';
 import ImageDuplicates from '../../components/ImageDuplicates';
+import ImageFaces from '../../components/ImageFaces';
 import ImageTools from '../../components/ImageTools';
 import ImageInfo from '../../components/ImageInfo';
 import { IconSet } from 'widgets';
@@ -74,6 +75,14 @@ const Inspector = observer(() => {
       />
 
       <InspectorToggleSection
+        title="Faces"
+        icon={IconSet.FACE_SMILING}
+        isOpen={uiStore.inspectorIsFacesVisible}
+        toggleVisibility={uiStore.toggleInspectorFacesVisibility}
+        bodyComponent={<ImageFaces file={first} />}
+      />
+
+      <InspectorToggleSection
         title="Tools"
         icon={IconSet.TOOLS}
         isOpen={uiStore.inspectorIsToolsVisible}
@@ -100,37 +109,6 @@ const Inspector = observer(() => {
             onClick={() => shell.showItemInFolder(path)}
             text="Open in file explorer"
           />
-        </div>
-      </section> */}
-
-      {/* <section>
-        <header>
-          <h2>Faces</h2>
-        </header>
-        <Toggle checked={uiStore.isFaceModuleEnabled} onChange={uiStore.toggleFaceModule}>
-          Show faces
-        </Toggle>
-        <div className="faces_settings_container">
-          <button
-            onClick={() => {
-              console.log('imageThumbnail', imageThumbnail.current);
-
-              if (imageThumbnail.current) {
-                console.log('imageThumbnail', imageThumbnail.current);
-                first.detectFaces(imageThumbnail.current);
-              } else {
-                console.error('imageThumbnail is null');
-              }
-            }}
-          >
-            <img
-              ref={imageThumbnail}
-              src={first.absolutePath}
-              alt="img"
-              className="small-thumbnail"
-            />
-            Detect Faces
-          </button>
         </div>
       </section> */}
     </aside>

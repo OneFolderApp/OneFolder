@@ -130,6 +130,7 @@ type PersistentPreferenceFields =
   | 'inspectorIsDatesVisible'
   | 'inspectorIsMapVisible'
   | 'inspectorIsDuplicatesVisible'
+  | 'inspectorIsFacesVisible'
   | 'inspectorIsToolsVisible'
   | 'inspectorIsInformationVisible'
   | 'outlinerWidth'
@@ -177,6 +178,7 @@ class UiStore {
   @observable inspectorIsDatesVisible: boolean = false;
   @observable inspectorIsMapVisible: boolean = false;
   @observable inspectorIsDuplicatesVisible: boolean = false;
+  @observable inspectorIsFacesVisible: boolean = false;
   @observable inspectorIsToolsVisible: boolean = false;
   @observable inspectorIsInformationVisible: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -408,6 +410,10 @@ class UiStore {
 
   @action.bound toggleInspectorDuplicateVisibility(): void {
     this.inspectorIsDuplicatesVisible = !this.inspectorIsDuplicatesVisible;
+  }
+
+  @action.bound toggleInspectorFacesVisibility(): void {
+    this.inspectorIsFacesVisible = !this.inspectorIsFacesVisible;
   }
 
   @action.bound toggleInspectorToolsVisibility(): void {
@@ -974,6 +980,7 @@ class UiStore {
         this.inspectorIsDatesVisible = Boolean(prefs.inspectorIsDatesVisible ?? false);
         this.inspectorIsMapVisible = Boolean(prefs.inspectorIsMapVisible ?? false);
         this.inspectorIsDuplicatesVisible = Boolean(prefs.inspectorIsDuplicatesVisible ?? false);
+        this.inspectorIsFacesVisible = Boolean(prefs.inspectorIsFacesVisible ?? false);
         this.inspectorIsToolsVisible = Boolean(prefs.inspectorIsToolsVisible ?? false);
         this.inspectorIsInformationVisible = Boolean(prefs.inspectorIsInformationVisible ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
@@ -1038,6 +1045,7 @@ class UiStore {
       inspectorIsDatesVisible: this.inspectorIsDatesVisible,
       inspectorIsMapVisible: this.inspectorIsMapVisible,
       inspectorIsDuplicatesVisible: this.inspectorIsDuplicatesVisible,
+      inspectorIsFacesVisible: this.inspectorIsFacesVisible,
       inspectorIsToolsVisible: this.inspectorIsToolsVisible,
       inspectorIsInformationVisible: this.inspectorIsInformationVisible,
       isFaceModuleEnabled: this.isFaceModuleEnabled,

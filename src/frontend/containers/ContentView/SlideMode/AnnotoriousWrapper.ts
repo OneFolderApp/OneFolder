@@ -22,13 +22,22 @@ class AnnotoriousWrapper {
     this.annotorious = new Annotorious({
       image: imgEl,
       widgets: [{ widget: 'TAG', vocabulary: allPeople }],
+      fragmentUnit: 'percent',
     });
 
     runInAction(async () => {
       const faceAnnotationMWG: MWGRegionInfo | undefined = await exifTool.readFacesAnnotations(
         this.file.absolutePath,
       );
+
+      console.log('faceAnnotationMWG', faceAnnotationMWG);
+
       if (faceAnnotationMWG !== undefined) {
+        console.log(
+          'transformMWGRegionInfoToW3CAnnotation(faceAnnotationMWG, this.file.absolutePath)',
+          transformMWGRegionInfoToW3CAnnotation(faceAnnotationMWG, this.file.absolutePath),
+        );
+        console.log('===');
         this.annotorious.setAnnotations(
           transformMWGRegionInfoToW3CAnnotation(faceAnnotationMWG, this.file.absolutePath),
         );

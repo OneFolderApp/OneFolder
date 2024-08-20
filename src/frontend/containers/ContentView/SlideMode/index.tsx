@@ -374,7 +374,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = observer(
         );
       }
 
-      if (uiStore.isFaceModuleEnabled) {
+      if (!uiStore.isFaceModuleEnabled) {
         return <AnnotoriousImage file={file} src={src} />;
       }
 

@@ -192,6 +192,28 @@ table#file-info {
     padding: 0.4rem;
   }
 
+  .parameters-box {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background-color: var(--input-color);
+    color: var(--text-color);
+    padding: 0.4rem;
+    user-select: text;
+    margin-top: 0;
+  }
+
+  .prompt-box {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background-color: #1e1e1e;
+    color: var(--text-color);
+    padding: 0.4rem;
+    user-select: text;
+    margin-top: 0;
+  }
+
   .tools {
     display: flex;
     flex-direction: column;

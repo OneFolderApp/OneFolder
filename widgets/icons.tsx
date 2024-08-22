@@ -66,6 +66,8 @@ import ITEM_MOVE_DOWN from 'resources/icons/item-move-down.svg';
 import ITEM_MOVE_UP from 'resources/icons/item-move-up.svg';
 import LOADING from 'resources/icons/loading.svg';
 import LOGO from 'resources/logo/svg/white/onefolder-logomark-white.svg';
+import MANY_TO_MANY from 'resources/icons/many-to-one.svg';
+
 // import LOGOMARK_BLACK from 'resources/logo/svg/full-color/onefolder-logo-ver-fc-black.svg';
 // import LOGOMARK_WHITE from 'resources/logo/svg/full-color/onefolder-logo-ver-fc-white.svg';
 import MEDIA from 'resources/icons/media.svg';
@@ -105,6 +107,7 @@ import TAG_ADD from 'resources/icons/tag-add.svg';
 // import TAG_ADD_COLLECTION from 'resources/icons/tag-add-collection.svg';
 import TAG_BLANCO from 'resources/icons/tag-blanco.svg';
 // import TAG_GROUP_OPEN from 'resources/icons/tag-group-open.svg';
+import TEXT_HIGHLIGHT from 'resources/icons/text-highlight.svg';
 import TAG_GROUP from 'resources/icons/tag-group.svg';
 import TAG from 'resources/icons/tag.svg';
 import TAG_LINE from 'resources/icons/tag-line.svg';
@@ -182,6 +185,7 @@ const IconSet = {
   // OUTLINER: toSvg(OUTLINER),
   LOADING: toSvg(LOADING),
   LOGO: toSvg(LOGO),
+  MANY_TO_MANY: toSvg(MANY_TO_MANY),
   // LOGO_MARK_BLACK: toSvg(LOGOMARK_BLACK),
   // LOGO_MARK_WHITE: toSvg(LOGOMARK_WHITE),
   MEDIA: toSvg(MEDIA),
@@ -221,6 +225,7 @@ const IconSet = {
   // TAG_ADD_COLLECTION: toSvg(TAG_ADD_COLLECTION),
   TAG_BLANCO: toSvg(TAG_BLANCO),
   // TAG_GROUP_OPEN: toSvg(TAG_GROUP_OPEN),
+  TEXT_HIGHLIGHT: toSvg(TEXT_HIGHLIGHT),
   TAG_GROUP: toSvg(TAG_GROUP),
   TAG: toSvg(TAG),
   TAG_LINE: toSvg(TAG_LINE),

@@ -9,6 +9,8 @@ import ImageMap from '../../components/ImageMap';
 import ImageDuplicates from '../../components/ImageDuplicates';
 import ImageTools from '../../components/ImageTools';
 import ImageInfo from '../../components/ImageInfo';
+import ImageParameters from '../../components/ImageParameters';
+import ImagePrompt from '../../components/ImagePrompt';
 import { IconSet } from 'widgets';
 import { IS_PREVIEW_WINDOW } from 'common/window';
 
@@ -87,6 +89,22 @@ const Inspector = observer(() => {
         isOpen={uiStore.inspectorIsInformationVisible}
         toggleVisibility={uiStore.toggleInspectorInformationVisibility}
         bodyComponent={<ImageInfo file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="Parameters"
+        icon={IconSet.TEXT_HIGHLIGHT}
+        isOpen={uiStore.inspectorIsParametersVisible}
+        toggleVisibility={uiStore.toggleInspectorParametersVisibility}
+        bodyComponent={<ImageParameters file={first} />}
+      />
+
+      <InspectorToggleSection
+        title="ComfyUI Layout"
+        icon={IconSet.MANY_TO_MANY}
+        isOpen={uiStore.inspectorIsPromptVisible}
+        toggleVisibility={uiStore.toggleInspectorPromptVisibility}
+        bodyComponent={<ImagePrompt file={first} />}
       />
 
       {/* <section>

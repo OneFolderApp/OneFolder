@@ -126,6 +126,8 @@ type PersistentPreferenceFields =
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'inspectorIsDescriptionVisible'
+  | 'inspectorIsPromptVisible'
+  | 'inspectorIsParametersVisible'
   | 'inspectorIsTagVisible'
   | 'inspectorIsDatesVisible'
   | 'inspectorIsMapVisible'
@@ -173,6 +175,8 @@ class UiStore {
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   @observable inspectorIsDescriptionVisible: boolean = true;
+  @observable inspectorIsPromptVisible: boolean = false;
+  @observable inspectorIsParametersVisible: boolean = false;
   @observable inspectorIsTagVisible: boolean = true;
   @observable inspectorIsDatesVisible: boolean = false;
   @observable inspectorIsMapVisible: boolean = false;
@@ -392,6 +396,14 @@ class UiStore {
 
   @action.bound toggleInspectorDescriptionVisibility(): void {
     this.inspectorIsDescriptionVisible = !this.inspectorIsDescriptionVisible;
+  }
+
+  @action.bound toggleInspectorPromptVisibility(): void {
+    this.inspectorIsPromptVisible = !this.inspectorIsPromptVisible;
+  }
+
+  @action.bound toggleInspectorParametersVisibility(): void {
+    this.inspectorIsParametersVisible = !this.inspectorIsParametersVisible;
   }
 
   @action.bound toggleInspectorTagVisibility(): void {
@@ -970,6 +982,8 @@ class UiStore {
           prefs.isThumbnailResolutionOverlayEnabled ?? false,
         );
         this.inspectorIsDescriptionVisible = Boolean(prefs.inspectorIsDescriptionVisible ?? true);
+        this.inspectorIsPromptVisible = Boolean(prefs.inspectorIsPromptVisible ?? true);
+        this.inspectorIsParametersVisible = Boolean(prefs.inspectorIsParametersVisible ?? false);
         this.inspectorIsTagVisible = Boolean(prefs.inspectorIsTagVisible ?? true);
         this.inspectorIsDatesVisible = Boolean(prefs.inspectorIsDatesVisible ?? false);
         this.inspectorIsMapVisible = Boolean(prefs.inspectorIsMapVisible ?? false);
@@ -1034,6 +1048,8 @@ class UiStore {
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
       inspectorIsDescriptionVisible: this.inspectorIsDescriptionVisible,
+      inspectorIsPromptVisible: this.inspectorIsPromptVisible,
+      inspectorIsParametersVisible: this.inspectorIsParametersVisible,
       inspectorIsTagVisible: this.inspectorIsTagVisible,
       inspectorIsDatesVisible: this.inspectorIsDatesVisible,
       inspectorIsMapVisible: this.inspectorIsMapVisible,

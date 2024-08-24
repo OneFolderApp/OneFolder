@@ -148,16 +148,30 @@ class FileStore {
         const absolutePath = file.absolutePath;
 
         try {
-          // a buffer with comma separated strings
-          const kdeTags = await getAttribute(absolutePath, 'user.xdg.tags')
-          // balooScore is 5/5 stars, but is double in xfattr
-          const balooScore = await getAttribute(absolutePath, 'user.baloo.rating')
+          // any of these fields may, or may not be present
+          let kdeTags = Buffer.from('')
+          let balooScore = Buffer.from('')
+          try {
+            // a buffer with comma separated strings
+            kdeTags = await getAttribute(absolutePath, 'user.xdg.tags')
+          } catch (e) {
+            console.error('Error reading user.xdg.tags for', absolutePath, e);
+          }
+          try {
+            // balooScore is 5/5 stars, but is double in xfattr
+            balooScore = await getAttribute(absolutePath, 'user.baloo.rating')
+          } catch (e) {
+            console.error('Error reading user.baloo.rating for', absolutePath, e);
+          }
+
           // convert buffer to string, then split in array. Also remove trailing whitespace
           let tagsNameHierarchies = kdeTags.toString().split(',').filter(String)
-          tagsNameHierarchies.push('score:' + balooScore)
+          // if there is no score, skip adding a tag for it
+          if (balooScore.toString() != '') {
+            tagsNameHierarchies.push('score:' + balooScore.toString())
+          }
 
           // Now that we know the tag names in file metadata, add them to the files in OneFolder
-
           const { tagStore } = this.rootStore;
           for (const tagHierarchy of tagsNameHierarchies) {
             const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1]);

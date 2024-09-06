@@ -15,6 +15,7 @@ import { MoveFilesToTrashBin } from 'src/frontend/components/RemovalAlert';
 import { useAction } from 'src/frontend/hooks/mobx';
 import useIsWindowMaximized from 'src/frontend/hooks/useIsWindowMaximized';
 import { ManyOpenExternal } from 'src/frontend/components/WarningAlert';
+import { getThumbnailSize } from 'src/frontend/containers/ContentView/utils';
 
 const ContentView = observer(() => {
   const {
@@ -39,6 +40,9 @@ const Content = observer(() => {
   const [contentRect, setContentRect] = useState({ width: 1, height: 1 });
   const container = useRef<HTMLDivElement>(null);
   const isMaximized = useIsWindowMaximized();
+  const [isCtrlDown, setIsCtrlDown] = useState(false);
+  const ctrlState = useRef<boolean>(false);
+  ctrlState.current = isCtrlDown;
 
   const show = useContextMenu();
   const handleContextMenu = useAction((e: React.MouseEvent) => {
@@ -86,10 +90,32 @@ const Content = observer(() => {
   });
 
   const handleKeyDown = useAction((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.repeat) {
+      return;
+    } else if (e.key === 'Escape') {
+      console.log('escaping');
       if (!uiStore.isSlideMode) {
         uiStore.clearFileSelection();
         e.stopPropagation();
+      }
+    } else if (e.key === 'Control') {
+      setIsCtrlDown(true);
+    }
+  });
+
+  const handleKeyUp = useAction((e: React.KeyboardEvent) => {
+    if (e.key === 'Control') {
+      setIsCtrlDown(false);
+    }
+  });
+
+  const handleWheel = useAction((e: React.WheelEvent) => {
+    if (ctrlState.current) {
+      const currentThumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
+      if (e.deltaY > 0 && currentThumbnailSize > 128) {
+        uiStore.setThumbnailSize(currentThumbnailSize - 20);
+      } else if (e.deltaY < 0 && currentThumbnailSize < 608) {
+        uiStore.setThumbnailSize(currentThumbnailSize + 20);
       }
     }
   });
@@ -108,6 +134,8 @@ const Content = observer(() => {
       // Clear selection when clicking on the background, unless in slide mode: always needs an active image
       onClick={clearFileSelection}
       onKeyDown={handleKeyDown}
+      onWheel={handleWheel}
+      onKeyUp={handleKeyUp}
     >
       <Layout contentRect={contentRect} />
       <MoveFilesToTrashBin />

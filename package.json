@@ -1,7 +1,7 @@
 {
   "name": "onefolder",
   "productName": "OneFolder",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -75,10 +75,10 @@
     ],
     "asar": true
   },
-  "repository": "https://github.com/OneFolderApp/OneFolder",
+  "repository": "https://github.com/Antoien-lb/OneFolder",
   "publish": {
     "provider": "github",
-    "owner": "OneFolderApp",
+    "owner": "Antoien-lb",
     "repo": "OneFolder",
     "releaseType": "release"
   },

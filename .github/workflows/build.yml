@@ -5,7 +5,7 @@ on: push
 jobs:
   release:
     runs-on: ${{ matrix.os }}
-    environment: mac
+    environment: mac # Ensure the environment is named "mac" as referenced in the workflow
 
     strategy:
       matrix:

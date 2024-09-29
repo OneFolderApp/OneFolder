@@ -61,7 +61,7 @@ const sortMenuData: Array<{
   { prop: 'dateAdded', icon: IconSet.FILTER_DATE, text: 'Date added' },
   { prop: 'dateModified', icon: IconSet.FILTER_DATE, text: 'Date modified' },
   { prop: 'dateCreated', icon: IconSet.FILTER_DATE, text: 'Date created' },
-  // { prop: 'random', icon: IconSet.RELOAD_COMPACT, text: 'Random', hideDirection: true },
+  { prop: 'random', icon: IconSet.RELOAD_COMPACT, text: 'Random', hideDirection: true },
 ];
 
 export const SortMenuItems = observer(() => {

@@ -328,11 +328,11 @@
   position: relative;
 }
 
-.thumbnail-square img, video {
+.thumbnail-square img, .thumbnail-square video {
   background-position: center;
   object-fit: cover;
 }
-.thumbnail-letterbox img, video {
+.thumbnail-letterbox img, .thumbnail-letterbox video {
   object-fit: contain;
 }
 

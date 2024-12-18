@@ -48,13 +48,13 @@
   -webkit-user-drag: element;
   background-color: var(--background-color-alt);
   border: 0.0625rem solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: var(--thumbnail-radius);
 
   transition: background-color 0.2s $pt-transition-cubic2;
 
   // This acts as the border-radius, but also for child elements
   :first-child {
-    clip-path: inset(0 round 0.125rem);
+    clip-path: inset(0 round var(--thumbnail-radius));
     transition: clip-path 0.2s $pt-transition-cubic2;
     pointer-events: none;
   }
@@ -66,14 +66,14 @@
     margin-left: auto;
     margin-right: auto;
     display: block;
-    border-radius: 0.25rem;
+    border-radius: var(--thumbnail-radius);
   }
 
   &[data-dnd-target='true'] {
     background-color: var(--accent-color-yellow);
 
     :is(img, video) {
-      clip-path: inset(0.5rem round 0.125rem);
+      clip-path: inset(0.25rem round calc(var(--thumbnail-radius) - 0.25rem));
     }
   }
 }
@@ -82,7 +82,7 @@
   // If selected, show a blue border
   background-color: var(--accent-color);
   > :is(img, video) {
-    clip-path: inset(0.25rem round 0.125rem); // old design
+    clip-path: inset(0.25rem round calc(var(--thumbnail-radius) - 0.25rem)); // old design
   }
 
   // If selected AND drop target: big yellow border
@@ -90,7 +90,7 @@
     background-color: var(--accent-color-yellow);
     > :is(img, video),
     > .image-error {
-      clip-path: inset(0.5rem round 0.125rem);
+      clip-path: inset(0.5rem round calc(var(--thumbnail-radius) - 0.5rem));
     }
   }
 

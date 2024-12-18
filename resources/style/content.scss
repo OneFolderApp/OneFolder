@@ -88,7 +88,8 @@
   // If selected AND drop target: big yellow border
   &[data-dnd-target='true'] {
     background-color: var(--accent-color-yellow);
-    > :is(img, video) {
+    > :is(img, video),
+    > .image-error {
       clip-path: inset(0.5rem round 0.125rem);
     }
   }

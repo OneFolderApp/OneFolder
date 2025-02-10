@@ -1,20 +1,20 @@
 
 /**
- * Example prototype of how you might replace Dexie with Yjs + y-indexeddb,
- * just so it "works" locally and persists in IndexedDB. This is NOT a final,
- * production-ready approach. It shows the rough idea of storing all records
- * in Yjs maps and doing searches in-memory. You lose Dexie’s indexing and
- * advanced queries. For large data, performance might suffer significantly!
+ * Example illustrating how to ensure date fields come back as real `Date` objects
+ * so the frontend doesn't break when it tries `date.getTime()`.
  *
- * The rest of your code (e.g. React MobX stores) should remain mostly
- * unchanged if you keep the same DataStorage interface. That said,
- * there's a fair amount of manual rewriting in this file:
- *   - We replaced Dexie calls with simple Yjs Map operations.
- *   - We do searching in-memory by filtering arrays of objects from Yjs.
- *   - We replicate the same ConditionDTO logic as naive JavaScript filters.
+ * The issue is that Y.js (and many serialization solutions) store Date objects
+ * as plain objects or strings internally. By default, once data is stored in Y.js,
+ * subsequent reads will yield plain JS objects (with the same structure), not true
+ * Date instances.
  *
- * In reality, you'll also want to handle CRDT sync in your .onefolder folder,
- * but this file focuses on local usage only (i.e. no CRDT merges from other files yet).
+ * One simple fix:
+ *   - On every fetch method (e.g. `fetchFiles`, `fetchFilesByID`, etc.),
+ *     we "rehydrate" date fields by explicitly converting them to `new Date()`.
+ *   - This way, the consumer (frontend) receives a true `Date` object.
+ *
+ * This approach requires zero changes to the frontend, because we preserve the
+ * existing contract that `dateX` fields are actual Date objects.
  */
 
 import * as Y from 'yjs'
@@ -38,59 +38,37 @@ import { ROOT_TAG_ID, TagDTO } from '../api/tag'
 
 import { retainArray, shuffleArray } from '../../common/core'
 
-// Reuse the same local filter code as Dexie, but adapted to in-memory arrays:
-type SearchConjunction = 'and' | 'or'
-
 export default class Backend implements DataStorage {
-  // Instead of Dexie, we have:
   #ydoc: Y.Doc
   #provider: IndexeddbPersistence
   #notifyChange: () => void
 
-  // We'll store each "table" as a Y.Map<ID, Entity>.
-  // E.g. #files has shape: { [fileId]: FileDTO, ... }
+  // Yjs Maps
   #files: Y.Map<FileDTO>
   #tags: Y.Map<TagDTO>
   #locations: Y.Map<LocationDTO>
   #searches: Y.Map<FileSearchDTO>
 
-  /**
-   * The constructor sets up the Y.Doc and y-indexeddb provider.
-   * The provider asynchronously loads data from IndexedDB into #ydoc.
-   */
   constructor(docName: string, notifyChange: () => void) {
-    console.info(`Yjs + IndexedDB: Initializing doc "${docName}"...`)
-
     this.#notifyChange = notifyChange
-
-    // Y.Doc holds all CRDT data in memory
     this.#ydoc = new Y.Doc()
-
-    // This provider persists the docName in local IndexedDB
     this.#provider = new IndexeddbPersistence(docName, this.#ydoc)
 
-    // Each "table" is a Y.Map. The keys are the record IDs, the values are the record objects.
     this.#files = this.#ydoc.getMap<FileDTO>('files')
     this.#tags = this.#ydoc.getMap<TagDTO>('tags')
     this.#locations = this.#ydoc.getMap<LocationDTO>('locations')
     this.#searches = this.#ydoc.getMap<FileSearchDTO>('searches')
 
-    // When data is fully loaded from IndexedDB, "synced" fires:
     this.#provider.on('synced', () => {
       console.log('Yjs: content from IndexedDB is loaded!')
     })
   }
 
-  /**
-   * Similar to Dexie’s async constructor pattern; wait for the provider to load existing data.
-   * Also ensure the root tag is created if missing.
-   */
   static async init(docName: string, notifyChange: () => void): Promise<Backend> {
     const backend = new Backend(docName, notifyChange)
+    await backend.#provider.whenSynced
 
-    await backend.#provider.whenSynced // Wait for existing data to load from IDB.
-
-    // Ensure we have a root tag
+    // Ensure root tag
     if (!backend.#tags.has(ROOT_TAG_ID)) {
       backend.#tags.set(ROOT_TAG_ID, {
         id: ROOT_TAG_ID,
@@ -111,23 +89,26 @@ export default class Backend implements DataStorage {
 
   async fetchTags(): Promise<TagDTO[]> {
     console.info('Yjs: Fetching tags...')
-    return Array.from(this.#tags.values())
+    const all = Array.from(this.#tags.values())
+    // We only need to fix date fields if you rely on `dateAdded` being a real Date in the front-end.
+    // So let's do that as well:
+    const rehydrated = all.map((tag) => fixTagDates(tag))
+    return rehydrated
   }
 
   async fetchFiles(order: OrderBy<FileDTO>, fileOrder: OrderDirection): Promise<FileDTO[]> {
     console.info('Yjs: Fetching files...')
-    const all = Array.from(this.#files.values())
+    let all = Array.from(this.#files.values()).map(fixFileDates)
 
     if (order === 'random') {
       return shuffleArray(all)
     }
 
-    // Sort by the "order" key. We'll do naive in-memory sort:
+    // Sort by the "order" key
     all.sort((a, b) => {
       const valA = a[order] as any
       const valB = b[order] as any
-      if (valA === valB) return 0
-      return valA < valB ? -1 : 1
+      return valA < valB ? -1 : valA > valB ? 1 : 0
     })
 
     if (fileOrder === OrderDirection.Desc) {
@@ -140,25 +121,26 @@ export default class Backend implements DataStorage {
     console.info('Yjs: Fetching files by ID...')
     const result: FileDTO[] = []
     for (const id of ids) {
-      const file = this.#files.get(id)
-      if (file) {
-        result.push(file)
-      }
+      const f = this.#files.get(id)
+      if (f) result.push(fixFileDates(f))
     }
     return result
   }
 
   async fetchFilesByKey(key: keyof FileDTO, value: any): Promise<FileDTO[]> {
     console.info('Yjs: Fetching files by key/value...', { key, value })
-    return Array.from(this.#files.values()).filter((file) => file[key] === value)
+    const all = Array.from(this.#files.values())
+    return all
+      .filter((file) => file[key] === value)
+      .map(fixFileDates)
   }
 
   async fetchLocations(): Promise<LocationDTO[]> {
     console.info('Yjs: Fetching locations...')
-    return Array.from(this.#locations.values()).sort((a, b) => {
-      // default: sort by dateAdded ascending
-      return a.dateAdded.getTime() - b.dateAdded.getTime()
-    })
+    let all = Array.from(this.#locations.values()).map(fixLocationDates)
+    // Sort by dateAdded ascending
+    all.sort((a, b) => a.dateAdded.getTime() - b.dateAdded.getTime())
+    return all
   }
 
   async fetchSearches(): Promise<FileSearchDTO[]> {
@@ -166,10 +148,6 @@ export default class Backend implements DataStorage {
     return Array.from(this.#searches.values())
   }
 
-  /**
-   * For `searchFiles`, we just gather all files in memory and apply
-   * the same filter logic we had in Dexie. Then we do naive sorting.
-   */
   async searchFiles(
     criteria: ConditionDTO<FileDTO> | [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
     order: OrderBy<FileDTO>,
@@ -177,25 +155,22 @@ export default class Backend implements DataStorage {
     matchAny?: boolean
   ): Promise<FileDTO[]> {
     console.info('Yjs: Searching files...', { criteria, matchAny })
-    const all = Array.from(this.#files.values())
+    const all = Array.from(this.#files.values()).map(fixFileDates)
     const criterias = Array.isArray(criteria) ? criteria : [criteria]
 
     let result: FileDTO[]
     if (matchAny) {
       // OR
-      // if item matches ANY of the criterias
       result = all.filter((item) =>
         criterias.some((crit) => filterLambda(crit)(item))
       )
     } else {
       // AND
-      // if item matches ALL of the criterias
       result = all.filter((item) =>
         criterias.every((crit) => filterLambda(crit)(item))
       )
     }
 
-    // Handle sort
     if (order === 'random') {
       return shuffleArray(result)
     }
@@ -209,7 +184,6 @@ export default class Backend implements DataStorage {
     if (fileOrder === OrderDirection.Desc) {
       result.reverse()
     }
-
     return result
   }
 
@@ -219,16 +193,18 @@ export default class Backend implements DataStorage {
 
   async createTag(tag: TagDTO): Promise<void> {
     console.info('Yjs: Creating tag...', tag)
-    this.#tags.set(tag.id, tag)
+    // Optionally rehydrate date fields to ensure the doc holds them as real Date objects.
+    // Yjs can store them, but they'll come out as normal JS objects if they get stringified somewhere.
+    // But the main point: if front-end is passing us a real Date, we just set it.
+    this.#tags.set(tag.id, fixTagDates(tag))
     this.#notifyChange()
   }
 
   async createFilesFromPath(path: string, files: FileDTO[]): Promise<void> {
     console.info('Yjs: Creating files from path...', path, files)
-    // We skip the "already existing" check from Dexie. For demonstration, let's do a naive approach:
     for (const f of files) {
       if (!this.#files.has(f.id)) {
-        this.#files.set(f.id, f)
+        this.#files.set(f.id, fixFileDates(f))
       }
     }
     this.#notifyChange()
@@ -236,7 +212,7 @@ export default class Backend implements DataStorage {
 
   async createLocation(location: LocationDTO): Promise<void> {
     console.info('Yjs: Creating location...', location)
-    this.#locations.set(location.id, location)
+    this.#locations.set(location.id, fixLocationDates(location))
     this.#notifyChange()
   }
 
@@ -252,21 +228,21 @@ export default class Backend implements DataStorage {
 
   async saveTag(tag: TagDTO): Promise<void> {
     console.info('Yjs: Saving tag...', tag)
-    this.#tags.set(tag.id, tag)
+    this.#tags.set(tag.id, fixTagDates(tag))
     this.#notifyChange()
   }
 
   async saveFiles(files: FileDTO[]): Promise<void> {
     console.info('Yjs: Saving files...', files)
     for (const file of files) {
-      this.#files.set(file.id, file)
+      this.#files.set(file.id, fixFileDates(file))
     }
     this.#notifyChange()
   }
 
   async saveLocation(location: LocationDTO): Promise<void> {
     console.info('Yjs: Saving location...', location)
-    this.#locations.set(location.id, location)
+    this.#locations.set(location.id, fixLocationDates(location))
     this.#notifyChange()
   }
 
@@ -282,7 +258,6 @@ export default class Backend implements DataStorage {
 
   async removeTags(tags: ID[]): Promise<void> {
     console.info('Yjs: Removing tags...', tags)
-    // Also remove them from any files referencing them:
     const filesArr = Array.from(this.#files.values())
     for (const file of filesArr) {
       const newTags = file.tags.filter((t) => !tags.includes(t))
@@ -290,7 +265,6 @@ export default class Backend implements DataStorage {
         this.#files.set(file.id, { ...file, tags: newTags })
       }
     }
-    // Delete from #tags
     for (const tagId of tags) {
       this.#tags.delete(tagId)
     }
@@ -299,17 +273,16 @@ export default class Backend implements DataStorage {
 
   async mergeTags(tagToBeRemoved: ID, tagToMergeWith: ID): Promise<void> {
     console.info('Yjs: Merging tags...', tagToBeRemoved, tagToMergeWith)
-    // Update all files that have tagToBeRemoved => replace with tagToMergeWith
     const filesArr = Array.from(this.#files.values())
     for (const file of filesArr) {
       if (file.tags.includes(tagToBeRemoved)) {
-        const newTags = file.tags.map((t) => t === tagToBeRemoved ? tagToMergeWith : t)
-        // remove duplicates just in case
+        const newTags = file.tags.map((t) =>
+          t === tagToBeRemoved ? tagToMergeWith : t
+        )
         const unique = Array.from(new Set(newTags))
         this.#files.set(file.id, { ...file, tags: unique })
       }
     }
-    // Finally, remove the old tag from #tags
     this.#tags.delete(tagToBeRemoved)
     this.#notifyChange()
   }
@@ -324,7 +297,6 @@ export default class Backend implements DataStorage {
 
   async removeLocation(location: ID): Promise<void> {
     console.info('Yjs: Removing location...', location)
-    // Also remove files associated with it
     const filesArr = Array.from(this.#files.values())
     for (const f of filesArr) {
       if (f.locationId === location) {
@@ -349,7 +321,6 @@ export default class Backend implements DataStorage {
     console.info('Yjs: Counting files...')
     const all = Array.from(this.#files.values())
     const fileCount = all.length
-    // untagged means files.tags is empty
     let taggedCount = 0
     for (const f of all) {
       if (f.tags && f.tags.length > 0) {
@@ -361,17 +332,59 @@ export default class Backend implements DataStorage {
 
   async clear(): Promise<void> {
     console.info('Yjs: Clearing entire doc from local storage...')
-    // If you truly want to destroy all data in IndexedDB:
     await this.#provider.clearData()
-    // Now Yjs doc is empty
     this.#ydoc.destroy()
   }
 }
 
-//////////////////////////////////////////////////////////
-// The same naive filter-lambda approach used in Dexie code,
-// but purely in memory.
-//////////////////////////////////////////////////////////
+/**
+ * Rehydrate date fields on a FileDTO.
+ * If the field is already a Date, we keep it. If it’s a string (or something else),
+ * we convert it to a Date. The front-end expects these to be real Date objects,
+ * so we do this to avoid "getTime is not a function" errors.
+ */
+function fixFileDates(file: FileDTO): FileDTO {
+  return {
+    ...file,
+    dateAdded: toDate(file.dateAdded),
+    dateModified: toDate(file.dateModified),
+    dateLastIndexed: toDate(file.dateLastIndexed),
+    dateCreated: toDate(file.dateCreated)
+  }
+}
+
+/** Rehydrate date fields on a TagDTO (if your front-end tries date methods on it). */
+function fixTagDates(tag: TagDTO): TagDTO {
+  return {
+    ...tag,
+    dateAdded: toDate(tag.dateAdded)
+  }
+}
+
+/** Rehydrate date fields on a LocationDTO. */
+function fixLocationDates(loc: LocationDTO): LocationDTO {
+  return {
+    ...loc,
+    dateAdded: toDate(loc.dateAdded)
+  }
+}
+
+/** Convert something to a Date object if it's not already. */
+function toDate(val: any): Date {
+  // If it's already a Date, return as-is
+  if (val instanceof Date) return val
+  // If it's a string or number, parse it
+  try {
+    return new Date(val)
+  } catch {
+    // fallback
+    return new Date()
+  }
+}
+
+////////////////////////
+// Filter-lambda logic (unchanged from prior examples)
+////////////////////////
 
 function filterLambda<T>(crit: ConditionDTO<T>): (val: T) => boolean {
   switch (crit.valueType) {
@@ -386,11 +399,8 @@ function filterLambda<T>(crit: ConditionDTO<T>): (val: T) => boolean {
   }
 }
 
-// Implementation "in-memory" versions:
-
 function filterArrayLambda<T>(crit: ArrayConditionDTO<T, any>): (val: T) => boolean {
   if (crit.operator === 'contains') {
-    // "value" is an array
     return crit.value.length === 0
       ? (val: T) => (val as any)[crit.key].length === 0
       : (val: T) => {
@@ -411,11 +421,9 @@ function filterArrayLambda<T>(crit: ArrayConditionDTO<T, any>): (val: T) => bool
 function filterStringLambda<T>(crit: StringConditionDTO<T>): (t: T) => boolean {
   const { key, value, operator } = crit
   const valLow = value.toLowerCase()
-
   return (obj: T) => {
     const fieldVal = (obj as any)[key] as string
     const fieldValLower = fieldVal.toLowerCase()
-
     switch (operator) {
       case 'equals':
       case 'equalsIgnoreCase':
@@ -440,7 +448,6 @@ function filterStringLambda<T>(crit: StringConditionDTO<T>): (t: T) => boolean {
 
 function filterNumberLambda<T>(crit: NumberConditionDTO<T>): (t: T) => boolean {
   const { key, value, operator } = crit
-
   return (obj: T) => {
     const fieldVal = (obj as any)[key] as number
     switch (operator) {
@@ -464,16 +471,13 @@ function filterNumberLambda<T>(crit: NumberConditionDTO<T>): (t: T) => boolean {
 
 function filterDateLambda<T>(crit: DateConditionDTO<T>): (t: T) => boolean {
   const { key, operator } = crit
-  // We interpret "crit.value" as the day in question (0..23:59).
   const start = new Date(crit.value)
   start.setHours(0, 0, 0, 0)
   const end = new Date(crit.value)
   end.setHours(23, 59, 59, 999)
-
   return (obj: T) => {
     const fieldVal = (obj as any)[key] as Date
-    if (!fieldVal) return false
-
+    if (!(fieldVal instanceof Date)) return false
     switch (operator) {
       case 'equals':
         return fieldVal >= start && fieldVal <= end

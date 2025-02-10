@@ -1,8 +1,20 @@
-import Dexie from 'dexie';
-import { exportDB, importDB, peakImportFile } from 'dexie-export-import';
+/**
+ * Example prototype of how you might replace Dexie-based backups with Yjs-based backups.
+ * Instead of using `dexie-export-import`, we simply encode & decode the entire Y.Doc state
+ * using Yjs' update API. Then we write/read that from the filesystem (e.g. as a binary file).
+ *
+ * We keep the same scheduling logic (auto-backups, daily/weekly copies) as before. The only
+ * real difference is how `backupToFile()` and `restoreFromFile()` (and `peekFile()`) work.
+ *
+ * IMPORTANT: This assumes you have one "global" Y.Doc with all data (files, tags, etc.).
+ * You'll need to pass that Y.Doc in the constructor. Then we encodeStateAsUpdate() for backup
+ * and applyUpdate() to restore. The "peek" function loads the backup into a temporary doc
+ * to count how many files & tags it contains. This mirrors the old Dexie logic for counting rows.
+ */
+
+import * as Y from 'yjs';
 import fse from 'fs-extra';
 import path from 'path';
-
 import { debounce } from '../../common/timeout';
 import { DataBackup } from '../api/data-backup';
 import { AUTO_BACKUP_TIMEOUT, NUM_AUTO_BACKUPS } from './config';
@@ -10,9 +22,7 @@ import { AUTO_BACKUP_TIMEOUT, NUM_AUTO_BACKUPS } from './config';
 /** Returns the date at 00:00 today */
 function getToday(): Date {
   const today = new Date();
-  today.setHours(0);
-  today.setMinutes(0);
-  today.setSeconds(0, 0);
+  today.setHours(0, 0, 0, 0);
   return today;
 }
 
@@ -24,29 +34,45 @@ function getWeekStart(): Date {
   return date;
 }
 
+/**
+ * A BackupScheduler that creates full "snapshots" of the Y.Doc state on a regular schedule.
+ * Then it writes those snapshots to a file. We can also restore from these snapshots, or
+ * peek how many files/tags are in the backup without fully overwriting our existing doc.
+ */
 export default class BackupScheduler implements DataBackup {
-  #db: Dexie;
-  #backupDirectory: string = '';
+  #ydoc: Y.Doc;
+  #backupDirectory: string;
   #lastBackupIndex: number = 0;
   #lastBackupDate: Date = new Date(0);
 
-  constructor(db: Dexie, directory: string) {
-    this.#db = db;
+  /**
+   * @param ydoc The Y.Doc that holds all data (files, tags, locations, etc).
+   * @param directory The folder path where backup files are stored.
+   */
+  constructor(ydoc: Y.Doc, directory: string) {
+    this.#ydoc = ydoc;
     this.#backupDirectory = directory;
   }
 
-  static async init(db: Dexie, backupDirectory: string): Promise<BackupScheduler> {
+  static async init(ydoc: Y.Doc, backupDirectory: string): Promise<BackupScheduler> {
     await fse.ensureDir(backupDirectory);
-    return new BackupScheduler(db, backupDirectory);
+    return new BackupScheduler(ydoc, backupDirectory);
   }
 
+  /**
+   * Called whenever there's a data change that might merit an auto-backup.
+   * We check if enough time has passed since the last backup, then schedule it.
+   */
   schedule(): void {
-    if (new Date().getTime() > this.#lastBackupDate.getTime() + AUTO_BACKUP_TIMEOUT) {
+    if (Date.now() > this.#lastBackupDate.getTime() + AUTO_BACKUP_TIMEOUT) {
       this.#createPeriodicBackup();
     }
   }
 
-  /** Creates a copy of a backup file, when the target file creation date is less than the provided date */
+  /**
+   * Copies a backup file to `targetPath` if that file is older than `dateToCheck`.
+   * E.g. if daily.json is from yesterday, we copy the newly created auto-backup to daily.json.
+   */
   static async #copyFileIfCreatedBeforeDate(
     srcPath: string,
     targetPath: string,
@@ -57,7 +83,7 @@ export default class BackupScheduler implements DataBackup {
       // If file creation date is less than provided date, create a back-up
       const stats = await fse.stat(targetPath);
       createBackup = stats.ctime < dateToCheck;
-    } catch (e) {
+    } catch {
       // File not found
       createBackup = true;
     }
@@ -103,39 +129,69 @@ export default class BackupScheduler implements DataBackup {
     }
   }, 10000);
 
-  async backupToFile(path: string): Promise<void> {
-    console.info('IndexedDB: Exporting database backup...', path);
+  /**
+   * Creates a single-file snapshot of the entire Y.Doc in its current state.
+   * We encode the doc as a Yjs update (Uint8Array), then store that as raw binary
+   * to disk. Here, we store it as a JSON file for demonstration, but it’s actually
+   * a binary content. You could rename it to .bin if you like.
+   */
+  async backupToFile(filePath: string): Promise<void> {
+    console.info('Yjs: Exporting document backup...', filePath);
 
-    const blob = await exportDB(this.#db, { prettyJson: false });
-    // might be nice to zip it and encode as base64 to save space. Keeping it simple for now
-    await fse.ensureFile(path);
-    await fse.writeFile(path, await blob.text());
+    // 1. Encode entire doc state as a single "update" (snapshot).
+    const update = Y.encodeStateAsUpdate(this.#ydoc);
+
+    // 2. Ensure the file exists, then write. We'll store it as raw binary,
+    //    but let's keep a .json extension for consistency with your original code.
+    //    In Node, you can do:
+    await fse.ensureFile(filePath);
+    await fse.writeFile(filePath, Buffer.from(update));
   }
 
-  async restoreFromFile(path: string): Promise<void> {
-    console.info('IndexedDB: Importing database backup...', path);
+  /**
+   * Restores the doc from a previously saved snapshot.
+   * We read the file as raw binary, then apply it to our existing doc.
+   * If you intend to fully overwrite local changes, you may want to
+   * create a new doc. But typically you can simply "applyUpdate" to merge it in.
+   */
+  async restoreFromFile(filePath: string): Promise<void> {
+    console.info('Yjs: Importing document backup...', filePath);
 
-    const buffer = await fse.readFile(path);
-    const blob = new Blob([buffer]);
+    const buffer = await fse.readFile(filePath);
+    const update = new Uint8Array(buffer);
 
-    console.debug('Clearing database...');
-    Dexie.delete(this.#db.name);
-
-    await importDB(blob);
-    // There also is "importInto" which as an "clearTablesBeforeImport" option,
-    // but that didn't seem to work correctly (files were always re-created after restarting for some reason)
+    // Option A: If you want a fresh doc, you'd do:
+    //   this.#ydoc.destroy()
+    //   this.#ydoc = new Y.Doc()
+    //   Y.applyUpdate(this.#ydoc, update)
+    // Option B: Merge the backup state into your current doc:
+    Y.applyUpdate(this.#ydoc, update);
   }
 
-  async peekFile(path: string): Promise<[numTags: number, numFiles: number]> {
-    console.info('IndexedDB: Peeking database backup...', path);
-    const buffer = await fse.readFile(path);
-    const blob = new Blob([buffer]);
-    const metadata = await peakImportFile(blob); // heh, they made a typo
-    const tagsTable = metadata.data.tables.find((t) => t.name === 'tags');
-    const filesTable = metadata.data.tables.find((t) => t.name === 'files');
-    if (tagsTable && filesTable) {
-      return [tagsTable.rowCount, filesTable.rowCount];
-    }
-    throw new Error('Database does not contain a table for files and/or tags');
+  /**
+   * We replicate Dexie's "peekFile" concept by creating a temporary doc,
+   * applying the snapshot from disk, then counting how many tags/files it contains.
+   */
+  async peekFile(filePath: string): Promise<[numTags: number, numFiles: number]> {
+    console.info('Yjs: Peeking document backup...', filePath);
+
+    const buffer = await fse.readFile(filePath);
+    const update = new Uint8Array(buffer);
+
+    // 1. Create a temp doc and apply the update
+    const tempDoc = new Y.Doc();
+    Y.applyUpdate(tempDoc, update);
+
+    // 2. In our new Y-based architecture, we store:
+    //    - tags in tempDoc.getMap<TagDTO>('tags')
+    //    - files in tempDoc.getMap<FileDTO>('files')
+    // So we simply read their sizes. If either map is empty, the doc has none.
+    const tagsMap = tempDoc.getMap('tags');
+    const filesMap = tempDoc.getMap('files');
+
+    const numTags = tagsMap.size;
+    const numFiles = filesMap.size;
+
+    return [numTags, numFiles];
   }
 }

@@ -63,7 +63,7 @@ function initialize() {
   });
 
   createWindow();
-  createPreviewWindow();
+  // createPreviewWindow();
 
   // Initialize preferences file and its consequences
   try {

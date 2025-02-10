@@ -332,6 +332,14 @@ const TagItem = observer((props: ITagItemProps) => {
         onSubmit={submit}
         tooltip={`${nodeData.path.join(' › ')} (${nodeData.fileCount})`}
       />
+      {nodeData.subTags.length > 0 && (
+        <span
+          className="sub-tag-count"
+          style={{ marginLeft: '0.5rem', color: 'gray', fontSize: '0.8em' }}
+        >
+          ({nodeData.subTags.length})
+        </span>
+      )}
       {/* {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />} */}
     </div>
   );

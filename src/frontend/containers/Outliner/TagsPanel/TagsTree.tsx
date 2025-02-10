@@ -25,6 +25,7 @@ import TreeItemRevealer from '../TreeItemRevealer';
 import { TagItemContextMenu } from './ContextMenu';
 import SearchButton from './SearchButton';
 import { Action, Factory, State, reducer } from './state';
+import TagsMenu from './TagsMenu';
 
 export class TagsTreeItemRevealer extends TreeItemRevealer {
   public static readonly instance: TagsTreeItemRevealer = new TagsTreeItemRevealer();
@@ -649,29 +650,11 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
               tooltip="Add a new tag"
             />
           )}
-          <ToolbarButton
-            icon={IconSet.FILTER_NAME_DOWN}
-            text="Sort A-Z"
-            onClick={() => handleSortAlphabetically('asc')}
-            tooltip="Sort tags alphabetically A-Z"
-          />
-          <ToolbarButton
-            icon={IconSet.FILTER_NAME_UP}
-            text="Sort Z-A"
-            onClick={() => handleSortAlphabetically('desc')}
-            tooltip="Sort tags alphabetically Z-A"
-          />
-          <ToolbarButton
-            icon={IconSet.TAG_GROUP}
-            text="Collapse All"
-            onClick={() => dispatch(Factory.setExpansion({}))}
-            tooltip="Collapse all open tags"
-          />
-          <ToolbarButton
-            icon={IconSet.TAG_GROUP_OPEN}
-            text="Expand All"
-            onClick={handleExpandAll}
-            tooltip="Expand all tags"
+          <TagsMenu
+            onSortAscending={() => handleSortAlphabetically('asc')}
+            onSortDescending={() => handleSortAlphabetically('desc')}
+            onCollapseAll={() => dispatch(Factory.setExpansion({}))}
+            onExpandAll={handleExpandAll}
           />
         </Toolbar>
       }

@@ -1,6 +1,10 @@
 name: Build/release
 
-on: push
+on:
+  workflow_dispatch:  # Enables manual trigger from GitHub Actions
+  push:
+    tags:
+      - 'v*.*.*'  # Only trigger on version tags like v1.0.13
 
 jobs:
   release:

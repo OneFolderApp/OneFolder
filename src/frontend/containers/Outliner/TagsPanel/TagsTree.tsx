@@ -536,7 +536,7 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
   });
 
   // NEW: Action to sort the tags alphabetically (recursively)
-  const handleSortAlphabetically = useAction(() => {
+  const handleSortAlphabetically = useAction((direction: 'asc' | 'desc') => {
     // Recursive sorting function
     const sortTags = (tags: ClientTag[]) => {
       // First, sort children of each tag
@@ -546,7 +546,13 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
         }
       });
       // Then sort the array in place
-      tags.sort((a, b) => a.name.localeCompare(b.name));
+      tags.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return direction === 'asc' ? -1 : 1;
+        if (nameA > nameB) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
     };
     sortTags(tagStore.root.subTags);
   });
@@ -613,12 +619,18 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
               tooltip="Add a new tag"
             />
           )}
-          {/* NEW: Sort button */}
+          {/* Updated: Sort button with custom icons */}
           <ToolbarButton
-            icon={IconSet.SORT} // make sure IconSet.SORT exists, or replace with an existing sort icon
-            text="Sort"
-            onClick={handleSortAlphabetically}
-            tooltip="Sort tags alphabetically"
+            icon={IconSet.FILTER_NAME_DOWN}
+            text="Sort A-Z"
+            onClick={() => handleSortAlphabetically('asc')}
+            tooltip="Sort tags alphabetically A-Z"
+          />
+          <ToolbarButton
+            icon={IconSet.FILTER_NAME_UP}
+            text="Sort Z-A"
+            onClick={() => handleSortAlphabetically('desc')}
+            tooltip="Sort tags alphabetically Z-A"
           />
         </Toolbar>
       }

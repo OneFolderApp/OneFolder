@@ -1,7 +1,7 @@
 {
   "name": "onefolder",
   "productName": "OneFolder",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {

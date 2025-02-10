@@ -535,6 +535,22 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     }
   });
 
+  // NEW: Action to sort the tags alphabetically (recursively)
+  const handleSortAlphabetically = useAction(() => {
+    // Recursive sorting function
+    const sortTags = (tags: ClientTag[]) => {
+      // First, sort children of each tag
+      tags.forEach(tag => {
+        if (tag.subTags && tag.subTags.length > 0) {
+          sortTags(tag.subTags);
+        }
+      });
+      // Then sort the array in place
+      tags.sort((a, b) => a.name.localeCompare(b.name));
+    };
+    sortTags(tagStore.root.subTags);
+  });
+
   const handleBranchOnKeyDown = useAction(
     (event: React.KeyboardEvent<HTMLLIElement>, nodeData: ClientTag, treeData: ITreeData) =>
       createBranchOnKeyDown(
@@ -597,6 +613,13 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
               tooltip="Add a new tag"
             />
           )}
+          {/* NEW: Sort button */}
+          <ToolbarButton
+            icon={IconSet.SORT} // make sure IconSet.SORT exists, or replace with an existing sort icon
+            text="Sort"
+            onClick={handleSortAlphabetically}
+            tooltip="Sort tags alphabetically"
+          />
         </Toolbar>
       }
       {...props}

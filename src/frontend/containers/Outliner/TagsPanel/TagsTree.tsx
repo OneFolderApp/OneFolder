@@ -599,6 +599,28 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     }
   });
 
+  // Helper to compute expansion state for all tags
+  const handleExpandAll = useAction(() => {
+    const getExpandedNodes = (tag: ClientTag): Record<string, boolean> => {
+      let exp: Record<string, boolean> = {};
+      if (tag.subTags.length > 0) {
+        exp[tag.id] = true;
+        tag.subTags.forEach((child) => {
+          exp = { ...exp, ...getExpandedNodes(child) };
+        });
+      }
+      return exp;
+    };
+
+    // Build expansion state for all children of the root
+    const expansionState = root.subTags.reduce((acc, tag) => {
+      return { ...acc, ...getExpandedNodes(tag) };
+    }, {});
+
+    // Dispatch the new expansion state to expand all tags
+    dispatch(Factory.setExpansion(expansionState));
+  });
+
   return (
     <MultiSplitPane
       id="tags"
@@ -627,7 +649,6 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
               tooltip="Add a new tag"
             />
           )}
-          {/* Updated: Sort button with custom icons */}
           <ToolbarButton
             icon={IconSet.FILTER_NAME_DOWN}
             text="Sort A-Z"
@@ -639,6 +660,18 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
             text="Sort Z-A"
             onClick={() => handleSortAlphabetically('desc')}
             tooltip="Sort tags alphabetically Z-A"
+          />
+          <ToolbarButton
+            icon={IconSet.TAG_GROUP}
+            text="Collapse All"
+            onClick={() => dispatch(Factory.setExpansion({}))}
+            tooltip="Collapse all open tags"
+          />
+          <ToolbarButton
+            icon={IconSet.TAG_GROUP_OPEN}
+            text="Expand All"
+            onClick={handleExpandAll}
+            tooltip="Expand all tags"
           />
         </Toolbar>
       }

@@ -8,6 +8,7 @@ interface TagsMenuProps {
   onSortDescending: () => void;
   onCollapseAll: () => void;
   onExpandAll: () => void;
+  onAddNewTag: () => void;
 }
 
 const TagsMenu: React.FC<TagsMenuProps> = ({
@@ -15,6 +16,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   onSortDescending,
   onCollapseAll,
   onExpandAll,
+  onAddNewTag,
 }) => {
   const showContextMenu = useContextMenu();
 
@@ -26,6 +28,8 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
         e.clientX,
         e.clientY,
         <Menu>
+          <MenuItem text="Add a new tag" icon={IconSet.PLUS} onClick={onAddNewTag} />
+          <MenuDivider />
           <MenuItem text="Sort A-Z" icon={IconSet.FILTER_NAME_DOWN} onClick={onSortAscending} />
           <MenuItem text="Sort Z-A" icon={IconSet.FILTER_NAME_UP} onClick={onSortDescending} />
           <MenuDivider />
@@ -34,7 +38,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
         </Menu>,
       );
     },
-    [showContextMenu, onSortAscending, onSortDescending, onCollapseAll, onExpandAll],
+    [showContextMenu, onAddNewTag, onSortAscending, onSortDescending, onCollapseAll, onExpandAll],
   );
 
   return (

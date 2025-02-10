@@ -635,22 +635,16 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       }}
       headerToolbar={
         <Toolbar controls="tag-hierarchy" isCompact>
-          {uiStore.tagSelection.size > 0 ? (
+          {uiStore.tagSelection.size > 0 && (
             <ToolbarButton
               icon={IconSet.CLOSE}
               text="Clear"
               onClick={uiStore.clearTagSelection}
               tooltip="Clear Selection"
             />
-          ) : (
-            <ToolbarButton
-              icon={IconSet.PLUS}
-              text="New Tag"
-              onClick={handleRootAddTag}
-              tooltip="Add a new tag"
-            />
           )}
           <TagsMenu
+            onAddNewTag={handleRootAddTag}
             onSortAscending={() => handleSortAlphabetically('asc')}
             onSortDescending={() => handleSortAlphabetically('desc')}
             onCollapseAll={() => dispatch(Factory.setExpansion({}))}

@@ -124,6 +124,43 @@ export const ImportExport = observer(() => {
         </ButtonGroup>
       </div>
 
+      <div className="vstack">
+        <p>
+          Import tags from extended file attributes (KDE Dolphin tags).
+        </p>
+
+        <ButtonGroup>
+          <Button
+            text="Import tags from xattr"
+            onClick={() => {
+              fileStore.readExtendedAttributeTagsFromFiles();
+            }}
+            styling="outlined"
+          />
+          <Button
+            text="Export tags to xattr"
+            onClick={() => setConfirmingMetadataExport(true)}
+            styling="outlined"
+          />
+          <Alert
+            open={isConfirmingMetadataExport}
+            title="Are you sure you want to overwrite your files' tags?"
+            primaryButtonText="Export"
+            onClick={(button) => {
+              if (button === DialogButton.PrimaryButton) {
+                fileStore.writeExtendedAttributeTagsToFiles();
+              }
+              setConfirmingMetadataExport(false);
+            }}
+          >
+            <p>
+              This will overwrite any existing user.xdg.tags in those files with
+              OneFolder&#39;s tags. It is recommended to import all tags before writing new tags.
+            </p>
+          </Alert>
+        </ButtonGroup>
+      </div>
+
       <h3>Backup Database as File</h3>
 
       <Callout icon={IconSet.INFO}>

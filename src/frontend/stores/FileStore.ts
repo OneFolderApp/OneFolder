@@ -1,4 +1,5 @@
 import fse from 'fs-extra';
+import { getAttribute, setAttribute } from 'fs-xattr'
 import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 
 import { getThumbnailPath } from 'common/fs';
@@ -128,6 +129,106 @@ class FileStore {
     }
   }
 
+  @action.bound async readExtendedAttributeTagsFromFiles(): Promise<void> {
+    // NOTE: https://wiki.archlinux.org/title/Extended_attributes
+    // implemented KDE Dolphin tags and ratings
+    const toastKey = 'read-tags-from-file';
+    try {
+      const numFiles = this.fileList.length;
+      for (let i = 0; i < numFiles; i++) {
+        AppToaster.show(
+          {
+            message: `Reading tags from files ${((100 * i) / numFiles).toFixed(0)}%...`,
+            timeout: 0,
+          },
+          toastKey,
+        );
+        const file = runInAction(() => this.fileList[i]);
+
+        const absolutePath = file.absolutePath;
+
+        try {
+          // any of these fields may, or may not be present
+          let kdeTags = Buffer.from('')
+          let balooScore = Buffer.from('')
+          try {
+            // a buffer with comma separated strings
+            kdeTags = await getAttribute(absolutePath, 'user.xdg.tags')
+          } catch (e) {
+            console.error('Error reading user.xdg.tags for', absolutePath, e);
+          }
+          try {
+            // balooScore is 5/5 stars, but is double in xfattr
+            balooScore = await getAttribute(absolutePath, 'user.baloo.rating')
+          } catch (e) {
+            console.error('Error reading user.baloo.rating for', absolutePath, e);
+          }
+
+          // convert buffer to string, then split in array. Also remove trailing whitespace
+          let tagsNameHierarchies = kdeTags.toString().split(',').filter(String)
+          // if there is no score, skip adding a tag for it
+          if (balooScore.toString() != '') {
+            tagsNameHierarchies.push('score:' + balooScore.toString())
+          }
+
+          // Now that we know the tag names in file metadata, add them to the files in OneFolder
+          const { tagStore } = this.rootStore;
+          for (const tagHierarchy of tagsNameHierarchies) {
+            const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1]);
+            if (match) {
+              // If there is a match to the leaf tag, just add it to the file
+              file.addTag(match);
+            } else {
+              // If there is no direct match to the leaf, insert it in the tag hierarchy: first check if any of its parents exist
+              // parent tags are written as: parentTag/subparent/subtag for example
+              if (tagHierarchy.includes('/')) {
+                let curTag = tagStore.root;
+                // further check for subparents
+                for (const nodeName of tagHierarchy.split('/')) {
+                  const nodeMatch = tagStore.findByName(nodeName);
+                  if (nodeMatch) {
+                    curTag = nodeMatch;
+                  } else {
+                    curTag = await tagStore.create(curTag, nodeName);
+                  }
+                }
+                file.addTag(curTag);
+              } else {
+                // base tag, not a parent tag
+                let curTag = tagStore.root;
+                const nodeMatch = tagStore.findByName(tagHierarchy);
+                if (nodeMatch) {
+                  curTag = nodeMatch;
+                } else {
+                  curTag = await tagStore.create(curTag, tagHierarchy);
+                }
+                file.addTag(curTag);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Could not import tags for', absolutePath, e);
+        }
+      }
+      AppToaster.show(
+        {
+          message: 'Reading tags from files... Done!',
+          timeout: 5000,
+        },
+        toastKey,
+      );
+    } catch (e) {
+      console.error('Could not read tags', e);
+      AppToaster.show(
+        {
+          message: 'Reading tags from files failed. Check the dev console for more details',
+          timeout: 5000,
+        },
+        toastKey,
+      );
+    }
+  }
+
   // @action.bound async readFacesAnnotationsFromFiles(): Promise<void> {
   //   const toastKey = 'read-faces-annotations-from-file';
   //   try {
@@ -210,6 +311,80 @@ class FileStore {
             absolutePath,
             JSON.parse(this.fileList[i].getAnnotations),
           );
+        } catch (e) {
+          console.error('Could not write tags to', absolutePath, tagHierarchy, e);
+        }
+      }
+      AppToaster.show(
+        {
+          message: 'Writing tags to files... Done!',
+          timeout: 5000,
+        },
+        toastKey,
+      );
+    } catch (e) {
+      console.error('Could not write tags', e);
+      AppToaster.show(
+        {
+          message: 'Writing tags to files failed. Check the dev console for more details',
+          timeout: 5000,
+        },
+        toastKey,
+      );
+    }
+  }
+
+  @action.bound async writeExtendedAttributeTagsToFiles(): Promise<void> {
+    const toastKey = 'write-tags-to-file';
+    try {
+      const numFiles = this.fileList.length;
+      const tagFilePairs = runInAction(() =>
+        this.fileList.map((f) => ({
+          absolutePath: f.absolutePath,
+          tagHierarchy: Array.from(
+            f.tags,
+            action((t) => t.path),
+          ),
+        })),
+      );
+      let lastToastVal = '0';
+      for (let i = 0; i < tagFilePairs.length; i++) {
+        const newToastVal = ((100 * i) / numFiles).toFixed(0);
+        if (lastToastVal !== newToastVal) {
+          lastToastVal = newToastVal;
+          AppToaster.show(
+            {
+              message: `Writing tags to files ${newToastVal}%...`,
+              timeout: 0,
+            },
+            toastKey,
+          );
+        }
+
+        const { absolutePath, tagHierarchy } = tagFilePairs[i];
+        try {
+          let tagArray = []
+          let balooScore = '0'
+          for (const tagH of tagHierarchy) {
+            // readExtendedAttributeTagsFromFiles creates score:# for balooScore
+            // tagH is an array; even with one element
+            if (tagH[0].includes('score')) {
+              balooScore = tagH[0].split(':')[1]
+              // skipping adding it to tagArray
+              continue
+            }
+            if (typeof(tagH) != 'string') {
+              // concatenate parents with their sub elements
+              tagArray.push(tagH.join('/'))
+            } else {
+              tagArray.push(tagH)
+            }
+          };
+
+          // tagArray now must be joined into one string, comma separated
+          await setAttribute(absolutePath, 'user.xdg.tags',     tagArray.join(','));
+          await setAttribute(absolutePath, 'user.baloo.rating', String(balooScore));
+
         } catch (e) {
           console.error('Could not write tags to', absolutePath, tagHierarchy, e);
         }

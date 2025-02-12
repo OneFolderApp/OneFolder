@@ -1,3 +1,4 @@
+
 /**
  * Updated renderer.tsx to remove all Dexie references and use our Yjs backend.
  * We still do the same general initialization and pass the Yjs-based backend
@@ -59,8 +60,10 @@ async function runMainApp(root: Root): Promise<void> {
   // 2. Create the Y.Doc that holds our data
   const ydoc = new Y.Doc();
 
-  // 3. Create BackupScheduler for full Yjs backups using the default directory
-  const backup = await BackupScheduler.init(ydoc, defaultBackupDirectory);
+  // 3. Create BackupScheduler for full Yjs backups using the default directory.
+  // Retrieve the local session ID and pass it along.
+  const sessionId = await RendererMessenger.getSessionId();
+  const backup = await BackupScheduler.init(ydoc, defaultBackupDirectory, sessionId);
 
   // 4. Create the Yjs-based backend
   //    We pass a "notifyChange" callback that schedules an auto-backup
@@ -144,8 +147,10 @@ async function runMainApp(root: Root): Promise<void> {
 
 async function runPreviewApp(root: Root): Promise<void> {
   const ydoc = new Y.Doc();
+  // Retrieve sessionId for consistency (even if backups are not really used in preview)
+  const sessionId = await RendererMessenger.getSessionId();
   // We won't do real backups in preview mode. Just pass an empty or in-memory path
-  const backup = await BackupScheduler.init(ydoc, ''); // no real backup dir
+  const backup = await BackupScheduler.init(ydoc, '', sessionId);
   const backend = await Backend.init(ydoc, () => {});
 
   const rootStore = await RootStore.preview(backend, backup);
@@ -221,3 +226,4 @@ main()
       RendererMessenger.toggleDevTools();
     }
   });
+    

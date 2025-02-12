@@ -3,7 +3,7 @@
  *
  * When restoring from backup, the persistent storage (y-indexeddb) is cleared, a new Y.Doc is created,
  * the backup update is applied to it, and the y-indexeddb provider is reinitialized.
- * Finally, the application reloads so that all components reinitialize using the new document.
+ * Finally, the application is reloaded so that all components reinitialize using the new document.
  *
  * This approach mimics the Dexie behavior:
  *   1. Delete the persistent database.
@@ -37,32 +37,47 @@ function getWeekStart(): Date {
 export default class BackupScheduler implements DataBackup {
   #ydoc: Y.Doc;
   #backupDirectory: string;
+  #sessionId: string;
   #lastBackupIndex: number = 0;
   #lastBackupDate: Date = new Date(0);
 
   /**
    * @param ydoc The Y.Doc that holds all data (files, tags, locations, searches, etc).
-   * @param directory The folder path where backup files are stored.
+   * @param directory The base folder path where backup files are stored.
+   * @param sessionId The unique session ID for this installation.
    */
-  constructor(ydoc: Y.Doc, directory: string) {
+  constructor(ydoc: Y.Doc, directory: string, sessionId: string) {
     this.#ydoc = ydoc;
-    this.#backupDirectory = directory;
-  }
-
-  static async init(ydoc: Y.Doc, backupDirectory: string): Promise<BackupScheduler> {
-    await fse.ensureDir(backupDirectory);
-    return new BackupScheduler(ydoc, backupDirectory);
+    this.#sessionId = sessionId;
+    // Set backupDirectory as the provided directory joined with the sessionId.
+    this.#backupDirectory = path.join(directory, sessionId);
   }
 
   /**
-   * Updates the backup directory to a new path.
-   * This is useful for setting the backup directory based on a user-defined location.
-   * @param newDir The new backup directory path.
+   * Initializes the BackupScheduler by ensuring the session-specific backup folder exists.
+   * @param ydoc The Y.Doc instance.
+   * @param backupDirectory The base backup directory.
+   * @param sessionId The unique session id.
+   */
+  static async init(
+    ydoc: Y.Doc,
+    backupDirectory: string,
+    sessionId: string,
+  ): Promise<BackupScheduler> {
+    const directory = path.join(backupDirectory, sessionId);
+    await fse.ensureDir(directory);
+    return new BackupScheduler(ydoc, backupDirectory, sessionId);
+  }
+
+  /**
+   * Updates the backup directory to a new base path.
+   * The actual backup path will be the new directory joined with the sessionId.
+   * @param newDir The new base backup directory.
    */
   async updateBackupDirectory(newDir: string): Promise<void> {
-    this.#backupDirectory = newDir;
-    await fse.ensureDir(newDir);
-    console.log('BackupScheduler: Updated backup directory to', newDir);
+    this.#backupDirectory = path.join(newDir, this.#sessionId);
+    await fse.ensureDir(this.#backupDirectory);
+    console.log('BackupScheduler: Updated backup directory to', this.#backupDirectory);
   }
 
   /**
@@ -142,6 +157,7 @@ export default class BackupScheduler implements DataBackup {
   /**
    * Creates a single-file snapshot of the entire Y.Doc state.
    * The state is encoded as a Yjs update (Uint8Array) and written to disk.
+   * @param filePath The destination file path.
    */
   async backupToFile(filePath: string): Promise<void> {
     console.info('Yjs: Exporting document backup...', filePath);
@@ -156,6 +172,7 @@ export default class BackupScheduler implements DataBackup {
    * This method performs a full overwrite by first clearing the persistent y-indexeddb storage,
    * then creating a new Y.Doc, applying the backup update, and reinitializing the y-indexeddb provider.
    * Finally, the application is reloaded so that all components reinitialize with the restored state.
+   * @param filePath The backup file to restore from.
    */
   async restoreFromFile(filePath: string): Promise<void> {
     console.info('Yjs: Importing document backup...', filePath);
@@ -196,6 +213,7 @@ export default class BackupScheduler implements DataBackup {
   /**
    * Mimics Dexie's "peekFile" by creating a temporary Y.Doc,
    * applying the backup update, and returning the counts of tags and files.
+   * @param filePath The backup file to peek into.
    */
   async peekFile(filePath: string): Promise<[numTags: number, numFiles: number]> {
     console.info('Yjs: Peeking document backup...', filePath);

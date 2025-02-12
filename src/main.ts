@@ -10,6 +10,7 @@ import {
   session,
   shell,
   Rectangle,
+  ipcMain,
 } from 'electron';
 import path from 'path';
 import fse from 'fs-extra';
@@ -19,13 +20,36 @@ import AppIcon from '../resources/logo/png/full-color/onefolder-logomark-fc-512x
 import { createBugReport, githubUrl } from '../common/config';
 import { IS_DEV } from '../common/process';
 import { MainMessenger } from './ipc/main';
-import { WindowSystemButtonPress } from './ipc/messages';
+import { WindowSystemButtonPress, GET_SESSION_ID } from './ipc/messages';
+import { generateId } from './api/id';
 
 // TODO: change this when running in portable mode, see portable-improvements branch
 const basePath = app.getPath('userData');
 
+const sessionFilePath = path.join(basePath, 'session.json');
 const preferencesFilePath = path.join(basePath, 'preferences.json');
 const windowStateFilePath = path.join(basePath, 'windowState.json');
+
+let sessionId: string;
+try {
+  if (fse.pathExistsSync(sessionFilePath)) {
+    const sessionData = fse.readJSONSync(sessionFilePath);
+    sessionId = sessionData.sessionId;
+    if (!sessionId) {
+      throw new Error('Session ID missing in session file');
+    }
+  } else {
+    sessionId = generateId();
+    fse.writeJSONSync(sessionFilePath, { sessionId });
+  }
+} catch (e) {
+  console.error('Error reading session file, generating new session ID:', e);
+  sessionId = generateId();
+  fse.writeJSONSync(sessionFilePath, { sessionId });
+}
+
+// Expose the session ID via an IPC handler so the renderer can retrieve it.
+ipcMain.handle(GET_SESSION_ID, () => sessionId);
 
 // if (IS_DEV) {
 //   Object.defineProperty(app, 'isPackaged', {

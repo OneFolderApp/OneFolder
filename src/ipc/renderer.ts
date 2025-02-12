@@ -1,3 +1,4 @@
+
 import { ipcRenderer } from 'electron';
 import path from 'path';
 import {
@@ -49,6 +50,7 @@ import {
   WINDOW_MAXIMIZE,
   WINDOW_SYSTEM_BUTTON_PRESS,
   WINDOW_UNMAXIMIZE,
+  GET_SESSION_ID
 } from './messages';
 
 export class RendererMessenger {
@@ -176,4 +178,8 @@ export class RendererMessenger {
     const userDataPath = await RendererMessenger.getPath('userData');
     return path.join(userDataPath, 'themes');
   };
+
+  // NEW: Method to retrieve the session ID from the main process.
+  static getSessionId = async (): Promise<string> => ipcRenderer.invoke(GET_SESSION_ID);
 }
+    

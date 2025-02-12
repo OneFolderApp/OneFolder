@@ -148,3 +148,25 @@ Summary of Recent Changes to the OneFolder Backup System:
    - The modifications resolve previous issues with backup locations and maintain the original documentation and comments for clarity and future maintenance.
 
 --- day #2 end ---
+
+Notes for day 3:
+With everything now working we have to move to the more weird part of this POC. The part where we create a diferent "session" for each user. And honestly I have no idea on how to do it, and I'm already imagining many edge cases that can be weird to handle.
+
+Here is how I'm imagining it: every onefolder installation has it's own unic id. And that id is used inside of the `onefolder_tags` folder to separate between each session (I call sesion for each user, I don't know if is the right name, I'm open to ideas).
+
+I don't know how to generate that session id, nor where to store it (maybe Electron has something like that? or maybe there is a simpler way?).
+
+How do I see it working:
+
+```
+photos.png
+work.ppt
+/onfolder_tags
+  /database
+    /<sessionId>
+      /database.db
+```
+
+Every 30 seconds the system will update the session database (if there is a change), and check for all of the other sessions in the database folder to see if there are updates, and if there are merge them with Yjs.
+
+How does that sound?

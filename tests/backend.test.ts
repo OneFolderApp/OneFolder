@@ -2,16 +2,16 @@ import { OrderDirection } from '../src/api/data-storage-search';
 import { FileDTO } from '../src/api/file';
 import { ROOT_TAG_ID, TagDTO } from '../src/api/tag';
 import Backend from '../src/backend/backend';
-import { dbInit } from '../src/backend/config';
+import * as Y from 'yjs';
 
 describe('Backend', () => {
   let TEST_DATABASE_ID_COUNTER = 0;
 
-  function test(name: string, test: (backend: Backend) => Promise<void>) {
+  function test(name: string, testFn: (backend: Backend) => Promise<void>) {
     it(name, async () => {
-      const db = dbInit(`Test_${TEST_DATABASE_ID_COUNTER++}`);
-      const backend = await Backend.init(db, () => {});
-      await test(backend);
+      const ydoc = new Y.Doc();
+      const backend = await Backend.init(ydoc, () => {});
+      await testFn(backend);
     });
   }
 
@@ -26,9 +26,8 @@ describe('Backend', () => {
 
   const mockLocationPath = 'c:/test';
 
-  function createMockFiles(count: number) {
+  function createMockFiles(count: number): FileDTO[] {
     const mockFiles: FileDTO[] = [];
-
     for (let index = 0; index < count; index++) {
       mockFiles.push({
         absolutePath: `${mockLocationPath}/test (${index}).jpg`,
@@ -49,7 +48,6 @@ describe('Backend', () => {
         annotations: '',
       });
     }
-
     return mockFiles;
   }
 
@@ -88,11 +86,8 @@ describe('Backend', () => {
           },
         ]);
         await backend.removeTags(['tag1']);
-
         const dbFiles = await backend.fetchFiles('id', OrderDirection.Desc);
-
         expect(dbFiles).toHaveLength(1);
-
         expect(dbFiles[0].tags).toHaveLength(1);
         expect(dbFiles[0].tags[0]).toBe('tag2');
       });
@@ -111,11 +106,8 @@ describe('Backend', () => {
           },
         ]);
         await backend.removeTags(['tag1', 'tag3']);
-
         const dbFiles = await backend.fetchFiles('id', OrderDirection.Desc);
-
         expect(dbFiles).toHaveLength(1);
-
         expect(dbFiles[0].tags).toHaveLength(1);
         expect(dbFiles[0].tags[0]).toBe('tag2');
       });

@@ -1,17 +1,17 @@
 import Backend from '../src/backend/backend';
-import { dbInit } from '../src/backend/config';
+import * as Y from 'yjs';
 import TagStore from '../src/frontend/stores/TagStore';
 
 describe('TagStore', () => {
   let TEST_DATABASE_ID_COUNTER = 0;
 
-  function test(name: string, test: (store: TagStore) => Promise<void>) {
+  function test(name: string, testFn: (store: TagStore) => Promise<void>) {
     it(name, async () => {
-      const db = dbInit(`Test_${TEST_DATABASE_ID_COUNTER++}`);
-      const backend = await Backend.init(db, () => {});
+      const ydoc = new Y.Doc();
+      const backend = await Backend.init(ydoc, () => {});
       const store = new TagStore(backend, {} as any);
       await store.init();
-      await test(store);
+      await testFn(store);
       // FIXME: That is kind of our fault for automatically making backend calls in MobX reactions.
       // The delay is 500ms, so twice should hopefully suffice.
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -26,17 +26,13 @@ describe('TagStore', () => {
   describe('getAncestors', () => {
     test('should return nothing for the root tag', async (store) => {
       const tag = store.root;
-
       const ancestors = Array.from(tag.getAncestors());
-
       expect(ancestors).toHaveLength(0);
     });
 
     test('should return the the tag itself', async (store) => {
       const tag = await store.create(store.root, 'myTag');
-
       const ancestors = Array.from(tag.getAncestors());
-
       expect(ancestors).toHaveLength(1);
       expect(ancestors[0].id).toBe(tag.id);
     });
@@ -45,9 +41,7 @@ describe('TagStore', () => {
       const root = store.root;
       const parent = await store.create(root, 'parent');
       const tag = await store.create(parent, 'myTag');
-
       const ancestors = Array.from(tag.getAncestors());
-
       expect(ancestors).toHaveLength(2);
       expect(ancestors[0].id).toBe(tag.id);
       expect(ancestors[1].id).toBe(parent.id);
@@ -58,7 +52,6 @@ describe('TagStore', () => {
     test('should be false when testing against itself', async (store) => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
-
       expect(tag1.isAncestor(tag1)).toBeFalsy();
     });
 
@@ -66,7 +59,6 @@ describe('TagStore', () => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
-
       expect(tag2.isAncestor(tag1)).toBeTruthy();
     });
 
@@ -74,7 +66,6 @@ describe('TagStore', () => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
-
       expect(tag1.isAncestor(tag2)).toBeFalsy();
     });
 
@@ -83,7 +74,6 @@ describe('TagStore', () => {
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
       const tag3 = await store.create(tag2, 'tag3');
-
       expect(tag3.isAncestor(tag1)).toBeTruthy();
     });
   });
@@ -98,7 +88,6 @@ describe('TagStore', () => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
-
       expect(tag2.insertSubTag(tag1, 0)).toBeFalsy();
       expect(tag2.parent).toBe(tag1);
     });
@@ -107,7 +96,6 @@ describe('TagStore', () => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
-
       expect(tag1.insertSubTag(tag2, 0)).toBeTruthy();
       expect(tag2.parent).toBe(tag1);
     });
@@ -116,7 +104,6 @@ describe('TagStore', () => {
       const root = store.root;
       const tag1 = await store.create(root, 'tag1');
       const tag2 = await store.create(tag1, 'tag2');
-
       expect(root.insertSubTag(tag2, 0)).toBeTruthy();
       expect(tag2.parent).toBe(root);
     });

@@ -1,9 +1,10 @@
+
 /**
  * BackupScheduler for Yjs that creates full snapshots of the Y.Doc state and supports full-overwrite restoration.
  *
  * When restoring from backup, the persistent storage (y-indexeddb) is cleared, a new Y.Doc is created,
  * the backup update is applied to it, and the y-indexeddb provider is reinitialized.
- * Finally, the application is reloaded so that all components reinitialize using the new document.
+ * Finally, the application is reloaded so that all components reinitialize using the restored state.
  *
  * This approach mimics the Dexie behavior:
  *   1. Delete the persistent database.
@@ -49,8 +50,8 @@ export default class BackupScheduler implements DataBackup {
   constructor(ydoc: Y.Doc, directory: string, sessionId: string) {
     this.#ydoc = ydoc;
     this.#sessionId = sessionId;
-    // Set backupDirectory as the provided directory joined with the sessionId.
-    this.#backupDirectory = path.join(directory, sessionId);
+    // Set backupDirectory as the provided directory joined with "database" and then sessionId.
+    this.#backupDirectory = path.join(directory, "database", sessionId);
   }
 
   /**
@@ -59,23 +60,19 @@ export default class BackupScheduler implements DataBackup {
    * @param backupDirectory The base backup directory.
    * @param sessionId The unique session id.
    */
-  static async init(
-    ydoc: Y.Doc,
-    backupDirectory: string,
-    sessionId: string,
-  ): Promise<BackupScheduler> {
-    const directory = path.join(backupDirectory, sessionId);
+  static async init(ydoc: Y.Doc, backupDirectory: string, sessionId: string): Promise<BackupScheduler> {
+    const directory = path.join(backupDirectory, "database", sessionId);
     await fse.ensureDir(directory);
     return new BackupScheduler(ydoc, backupDirectory, sessionId);
   }
 
   /**
    * Updates the backup directory to a new base path.
-   * The actual backup path will be the new directory joined with the sessionId.
+   * The actual backup path will be the new directory joined with "database" and the sessionId.
    * @param newDir The new base backup directory.
    */
   async updateBackupDirectory(newDir: string): Promise<void> {
-    this.#backupDirectory = path.join(newDir, this.#sessionId);
+    this.#backupDirectory = path.join(newDir, "database", this.#sessionId);
     await fse.ensureDir(this.#backupDirectory);
     console.log('BackupScheduler: Updated backup directory to', this.#backupDirectory);
   }
@@ -231,3 +228,4 @@ export default class BackupScheduler implements DataBackup {
     return [tagsMap.size, filesMap.size];
   }
 }
+    

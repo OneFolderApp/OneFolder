@@ -2,8 +2,10 @@
  * Updated renderer.tsx to remove all Dexie references and use our Yjs backend.
  * We still do the same general initialization and pass the Yjs-based backend
  * to the RootStore. The BackupScheduler is also Yjs-based now.
+ *
+ * This update also includes logic to update the BackupScheduler's directory
+ * to a 'onefolder_tags' folder located at the root of the user's location.
  */
-
 import './style.scss';
 
 import fse from 'fs-extra';
@@ -27,6 +29,7 @@ import PreviewApp from './frontend/Preview';
 import { FILE_STORAGE_KEY } from './frontend/stores/FileStore';
 import RootStore from './frontend/stores/RootStore';
 import { PREFERENCES_STORAGE_KEY } from './frontend/stores/UiStore';
+import path from 'path';
 
 async function main(): Promise<void> {
   console.groupCollapsed('Initializing OneFolder');
@@ -49,21 +52,31 @@ async function main(): Promise<void> {
 }
 
 async function runMainApp(root: Root): Promise<void> {
-  // 1. Ensure backup directory
+  // 1. Ensure backup directory (default)
   const defaultBackupDirectory = await RendererMessenger.getDefaultBackupDirectory();
   await fse.ensureDir(defaultBackupDirectory);
 
   // 2. Create the Y.Doc that holds our data
   const ydoc = new Y.Doc();
 
-  // 3. Create BackupScheduler for full Yjs backups
+  // 3. Create BackupScheduler for full Yjs backups using the default directory
   const backup = await BackupScheduler.init(ydoc, defaultBackupDirectory);
 
   // 4. Create the Yjs-based backend
   //    We pass a "notifyChange" callback that schedules an auto-backup
   const backend = await Backend.init(ydoc, () => backup.schedule());
 
-  // 5. Initialize the main RootStore with our backend & backup
+  // 5. Update the backup directory based on the user's location.
+  // For our POC, we assume there is only one location.
+  const locations = await backend.fetchLocations();
+  if (locations.length > 0) {
+    const primaryLocation = locations[0];
+    const newBackupDirectory = path.join(primaryLocation.path, 'onefolder_tags');
+    await backup.updateBackupDirectory(newBackupDirectory);
+    console.log('Updated backup directory to', newBackupDirectory);
+  }
+
+  // 6. Initialize the main RootStore with our backend & backup
   const rootStore = await RootStore.main(backend, backup);
 
   // Let main process know we're ready

@@ -2,7 +2,7 @@ import { getFilenameFriendlyFormattedDateTime } from 'common/fmt';
 import { shell } from 'electron';
 import { observer } from 'mobx-react-lite';
 import SysPath from 'path';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { AppToaster } from 'src/frontend/components/Toaster';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { Button, ButtonGroup, IconSet } from 'widgets';
@@ -14,23 +14,20 @@ import FileInput from 'src/frontend/components/FileInput';
 
 export const ImportExport = observer(() => {
   const rootStore = useStore();
-  const { fileStore, tagStore, exifTool } = rootStore;
+  const backupDir = rootStore.backupDirectory;
+
   const [isConfirmingMetadataExport, setConfirmingMetadataExport] = useState(false);
   const [isConfirmingFileImport, setConfirmingFileImport] = useState<{
     path: string;
     info: string;
   }>();
-  const [backupDir, setBackupDir] = useState('');
-  useEffect(() => {
-    RendererMessenger.getDefaultBackupDirectory().then(setBackupDir);
-  }, []);
 
   const handleChooseImportDir = async ([path]: [string, ...string[]]) => {
     try {
       const [numTags, numFiles] = await rootStore.peekDatabaseFile(path);
       setConfirmingFileImport({
         path,
-        info: `Backup contains ${numTags} tags (currently ${tagStore.count}) and ${numFiles} images (currently ${fileStore.numTotalFiles}).`,
+        info: `Backup contains ${numTags} tags (currently ${rootStore.tagStore.count}) and ${numFiles} images (currently ${rootStore.fileStore.numTotalFiles}).`,
       });
     } catch (e) {
       console.log(e);
@@ -72,7 +69,7 @@ export const ImportExport = observer(() => {
         The separator is used to format the tags metadata. For example a file with the assigned tags
         Food, Fruit and Apple will be formatted with the currently selected separator as{' '}
         <pre style={{ display: 'inline' }}>
-          {['Food', 'Fruit', 'Apple'].join(exifTool.hierarchicalSeparator)}
+          {['Food', 'Fruit', 'Apple'].join(rootStore.exifTool.hierarchicalSeparator)}
         </pre>
         .
       </Callout>
@@ -80,8 +77,8 @@ export const ImportExport = observer(() => {
         <label>
           Hierarchical separator
           <select
-            value={exifTool.hierarchicalSeparator}
-            onChange={(e) => exifTool.setHierarchicalSeparator(e.target.value)}
+            value={rootStore.exifTool.hierarchicalSeparator}
+            onChange={(e) => rootStore.exifTool.setHierarchicalSeparator(e.target.value)}
           >
             <option value="|">|</option>
             <option value="/">/</option>
@@ -89,14 +86,11 @@ export const ImportExport = observer(() => {
             <option value=":">:</option>
           </select>
         </label>
-        {/* TODO: adobe bridge has option to read with multiple separators */}
-
         <ButtonGroup>
           <Button
             text="Import tags from file metadata"
             onClick={() => {
-              fileStore.readTagsFromFiles();
-              // fileStore.readFacesAnnotationsFromFiles();
+              rootStore.fileStore.readTagsFromFiles();
             }}
             styling="outlined"
           />
@@ -111,7 +105,7 @@ export const ImportExport = observer(() => {
             primaryButtonText="Export"
             onClick={(button) => {
               if (button === DialogButton.PrimaryButton) {
-                fileStore.writeTagsToFiles();
+                rootStore.fileStore.writeTagsToFiles();
               }
               setConfirmingMetadataExport(false);
             }}

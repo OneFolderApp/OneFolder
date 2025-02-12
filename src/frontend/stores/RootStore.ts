@@ -12,6 +12,8 @@ import ImageLoader from '../image/ImageLoader';
 
 import { RendererMessenger } from 'src/ipc/renderer';
 import SearchStore from './SearchStore';
+// Import BackupScheduler to access extended methods (e.g., getBackupDirectory)
+import BackupScheduler from 'src/backend/backup-scheduler';
 
 // This will throw exceptions whenever we try to modify the state directly without an action
 // Actions will batch state modifications -> better for performance
@@ -44,7 +46,7 @@ class RootStore {
   private constructor(
     backend: DataStorage,
     backup: DataBackup,
-    formatWindowTitle: (FileStore: FileStore, uiStore: UiStore) => string,
+    formatWindowTitle: (fileStore: FileStore, uiStore: UiStore) => string,
   ) {
     this.tagStore = new TagStore(backend, this);
     this.fileStore = new FileStore(backend, this);
@@ -181,6 +183,10 @@ class RootStore {
   async close(): Promise<void> {
     // TODO: should be able to be done more reliably by running exiftool as a child process
     return this.exifTool.close();
+  }
+
+  get backupDirectory(): string {
+    return (this.#backup as BackupScheduler).getBackupDirectory();
   }
 }
 

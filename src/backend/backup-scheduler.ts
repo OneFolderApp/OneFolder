@@ -66,6 +66,13 @@ export default class BackupScheduler implements DataBackup {
   }
 
   /**
+   * Returns the current backup directory.
+   */
+  getBackupDirectory(): string {
+    return this.#backupDirectory;
+  }
+
+  /**
    * Called whenever there's a data change that might merit an auto-backup.
    */
   schedule(): void {

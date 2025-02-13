@@ -70,6 +70,12 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
         checked={uiStore.isCalendar}
         text="Calendar"
       />
+      <NavigationButton
+        icon={IconSet.FACE_SMILING}
+        onClick={uiStore.setMethodHistory}
+        checked={uiStore.isHistory}
+        text="History"
+      />
     </div>
   );
 });

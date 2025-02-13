@@ -25,6 +25,7 @@ import TreeItemRevealer from '../TreeItemRevealer';
 import { TagItemContextMenu } from './ContextMenu';
 import SearchButton from './SearchButton';
 import { Action, Factory, State, reducer } from './state';
+import TagsMenu from './TagsMenu';
 
 export class TagsTreeItemRevealer extends TreeItemRevealer {
   public static readonly instance: TagsTreeItemRevealer = new TagsTreeItemRevealer();
@@ -332,6 +333,14 @@ const TagItem = observer((props: ITagItemProps) => {
         onSubmit={submit}
         tooltip={`${nodeData.path.join(' › ')} (${nodeData.fileCount})`}
       />
+      {nodeData.subTags.length > 0 && (
+        <span
+          className="sub-tag-count"
+          style={{ marginLeft: '0.5rem', color: 'gray', fontSize: '0.8em' }}
+        >
+          ({nodeData.subTags.length})
+        </span>
+      )}
       {/* {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />} */}
     </div>
   );
@@ -535,6 +544,28 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     }
   });
 
+  // NEW: Action to sort the tags alphabetically (recursively)
+  const handleSortAlphabetically = useAction((direction: 'asc' | 'desc') => {
+    // Recursive sorting function
+    const sortTags = (tags: ClientTag[]) => {
+      // First, sort children of each tag
+      tags.forEach(tag => {
+        if (tag.subTags && tag.subTags.length > 0) {
+          sortTags(tag.subTags);
+        }
+      });
+      // Then sort the array in place
+      tags.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return direction === 'asc' ? -1 : 1;
+        if (nameA > nameB) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    };
+    sortTags(tagStore.root.subTags);
+  });
+
   const handleBranchOnKeyDown = useAction(
     (event: React.KeyboardEvent<HTMLLIElement>, nodeData: ClientTag, treeData: ITreeData) =>
       createBranchOnKeyDown(
@@ -569,6 +600,28 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     }
   });
 
+  // Helper to compute expansion state for all tags
+  const handleExpandAll = useAction(() => {
+    const getExpandedNodes = (tag: ClientTag): Record<string, boolean> => {
+      let exp: Record<string, boolean> = {};
+      if (tag.subTags.length > 0) {
+        exp[tag.id] = true;
+        tag.subTags.forEach((child) => {
+          exp = { ...exp, ...getExpandedNodes(child) };
+        });
+      }
+      return exp;
+    };
+
+    // Build expansion state for all children of the root
+    const expansionState = root.subTags.reduce((acc, tag) => {
+      return { ...acc, ...getExpandedNodes(tag) };
+    }, {});
+
+    // Dispatch the new expansion state to expand all tags
+    dispatch(Factory.setExpansion(expansionState));
+  });
+
   return (
     <MultiSplitPane
       id="tags"
@@ -582,21 +635,21 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       }}
       headerToolbar={
         <Toolbar controls="tag-hierarchy" isCompact>
-          {uiStore.tagSelection.size > 0 ? (
+          {uiStore.tagSelection.size > 0 && (
             <ToolbarButton
               icon={IconSet.CLOSE}
               text="Clear"
               onClick={uiStore.clearTagSelection}
               tooltip="Clear Selection"
             />
-          ) : (
-            <ToolbarButton
-              icon={IconSet.PLUS}
-              text="New Tag"
-              onClick={handleRootAddTag}
-              tooltip="Add a new tag"
-            />
           )}
+          <TagsMenu
+            onAddNewTag={handleRootAddTag}
+            onSortAscending={() => handleSortAlphabetically('asc')}
+            onSortDescending={() => handleSortAlphabetically('desc')}
+            onCollapseAll={() => dispatch(Factory.setExpansion({}))}
+            onExpandAll={handleExpandAll}
+          />
         </Toolbar>
       }
       {...props}

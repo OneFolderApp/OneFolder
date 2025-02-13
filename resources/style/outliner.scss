@@ -215,51 +215,24 @@
 }
 
 .navigation-buttons {
-  // display: flex;
-  // flex-wrap: wrap;
-  padding: 0.2rem;
+  display: flex;
+  overflow-x: auto; /* Allows horizontal scrolling if needed */
+  white-space: nowrap; /* Prevents text wrapping */
+}
 
-  .navigation-buttons-raw {
-    display: flex;
+.navigation-button {
+  // flex: 0 0 auto; /* Prevents buttons from shrinking */
+  width: 100%; /* Square width */
+  // height: 100%; /* Square height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
+  transition: border-color 0.3s;
+  border-radius: 10px;
+}
 
-    .navigation-button {
-      // flex: 1;
-
-      display: inline-block;
-      flex-direction: column;
-      background-color: var(--background-color);
-      border-radius: 10px;
-      width: 100%;
-      min-width: 50px;
-      cursor: pointer;
-      // max-width: 120px;
-
-      margin: 0.2rem;
-
-      &:hover {
-        background-color: var(--text-color-alt);
-      }
-
-      .navigation-button__icon {
-        .custom-icon {
-          width: 1.4rem;
-          height: 1.4rem;
-        }
-      }
-
-      .navigation-button__label {
-      }
-    }
-  }
-
-  .navigation-button--checked {
-    box-shadow: inset 0 0 0 2px var(--accent-color);
-    background-color: none;
-
-    .navigation-button__icon {
-      .custom-icon {
-        color: var(--accent-color);
-      }
-    }
-  }
+.navigation-button--checked {
+  background-color: var(--background-color);
+  border-radius: 10px;
 }

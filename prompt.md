@@ -170,3 +170,96 @@ work.ppt
 Every 30 seconds the system will update the session database (if there is a change), and check for all of the other sessions in the database folder to see if there are updates, and if there are merge them with Yjs.
 
 How does that sound?
+
+--- day #3 start ---
+
+# OneFolder Technical Documentation – Session and Backup System
+
+This document summarizes the key technical changes implemented in OneFolder. These updates cover session management (via a unique UUID stored in a `session.json` file), IPC-based retrieval of the session ID, and an enhanced backup scheduler with dual backup mechanisms.
+
+## 1. Session Management
+
+### Session UUID Generation and Storage
+
+- **UUID Generation:**
+  - On first run, OneFolder generates a unique session ID using `crypto.randomUUID()` if available; otherwise, it falls back to Node's crypto module.
+- **Persistent Storage:**
+  - The generated UUID is stored in a dedicated file (`session.json`) located in the application's `userData` directory.
+- **Purpose:**
+  - This ensures each OneFolder installation has a unique identifier, isolating its backups from others.
+
+### IPC Retrieval
+
+- **IPC Handler:**
+  - An IPC handler (`GET_SESSION_ID`) is registered in the main process.
+- **Usage:**
+  - The renderer process retrieves the session ID using `RendererMessenger.getSessionId()`, ensuring that all backup operations (folder structure, dumps, etc.) are tied to the correct session.
+
+## 2. Backup Folder Structure
+
+- **New Structure:**
+  - Backups are stored in:  
+    `<baseBackupDirectory>/database/<sessionId>/`
+- **Benefit:**
+  - This isolates backups per session and supports syncing through cloud storage without conflicts.
+
+## 3. Backup Scheduler Enhancements
+
+### Dual Backup Mechanisms
+
+#### Auto Backup (Snapshot) Functionality
+
+- **Trigger:**
+  - Activated via the `schedule()` method using a debounced function.
+- **Operation:**
+  - Creates snapshot files named `auto-backup-<index>.json`.
+  - Additionally, it makes daily and weekly copies to `daily.json` and `weekly.json`.
+
+#### Auto Dump Functionality
+
+- **Operation:**
+  - Independently dumps the entire Y.Doc state to a file.
+  - The dump file is named `database.yjs.db` (instead of `database.db`).
+  - This dump is performed every `SYNC_INTERVAL` milliseconds.
+- **Configurability:**
+  - The interval is configurable via the constant `SYNC_INTERVAL` (default set to 10,000 ms).
+
+### Directory Updates
+
+- **updateBackupDirectory():**
+  - Updates the backup directory to a new base path while preserving the structure `<newDir>/database/<sessionId>`.
+  - Restarts the auto dump functionality so that future dumps are written to the new location.
+
+## 4. Restoration Process
+
+- **restoreFromFile():**
+  - Clears the persistent y-indexeddb storage.
+  - Destroys the current Y.Doc and creates a new one.
+  - Applies the backup update from the file.
+  - Reinitializes the y-indexeddb provider and reloads the application once syncing is complete.
+
+## 5. Configurability and Constants
+
+- **SYNC_INTERVAL:**
+  - A constant defined at the top of the backup scheduler file that controls the auto dump interval.
+  - This allows for easy adjustment of the dump frequency.
+
+## Summary
+
+- **Unique Session Identification:**
+  - Each installation is uniquely identified using a UUID stored in `session.json` and retrieved via IPC.
+- **Session-Specific Backup Storage:**
+  - Backups are organized under `<baseBackupDirectory>/database/<sessionId>/`, ensuring isolation and safe syncing.
+- **Dual Backup Mechanisms:**
+  - The scheduler provides both periodic JSON snapshot backups (with daily/weekly copies) and continuous Y.Doc dumps (to `database.yjs.db`), with the dump interval configurable by `SYNC_INTERVAL`.
+- **Robust Restoration:**
+  - The restoration process clears existing storage, reapplies the backup, and reinitializes the application state seamlessly.
+
+These enhancements provide a robust, flexible, and session-specific backup system that underpins OneFolder’s local-first, cloud-synced design.
+
+--- day #3 end ---
+
+Notes for day 4:
+We are getting very close, now we just need to sync with the other sessions.
+
+In the same loop as the dump of the db, we now have to first check the other `uuid`'s databases, and merge them with ours.

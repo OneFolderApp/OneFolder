@@ -8,8 +8,8 @@
  *      `auto-backup-<index>.json` and makes daily/weekly copies.
  *
  * 2. **Auto Dump Functionality:**
- *    - Independently, every 10 seconds the entire Y.Doc is dumped (exported) to a single file named
- *      `database.db` inside the backup folder. This file is overwritten on each dump.
+ *    - Independently, every SYNC_INTERVAL milliseconds the entire Y.Doc is dumped (exported) to a single file named
+ *      `database.yjs.db` inside the backup folder. This file is overwritten on each dump.
  *
  * The folder structure is:
  *   <baseBackupDirectory>/database/<sessionId>/
@@ -25,6 +25,9 @@ import path from 'path';
 import { debounce } from '../../common/timeout';
 import { DataBackup } from '../api/data-backup';
 import { AUTO_BACKUP_TIMEOUT, NUM_AUTO_BACKUPS } from './config';
+
+// Configurable dump interval (in milliseconds)
+export const SYNC_INTERVAL = 10000; // Change this constant to adjust the auto dump interval
 
 /** Returns the date at 00:00 today */
 function getToday(): Date {
@@ -178,11 +181,11 @@ export default class BackupScheduler implements DataBackup {
 
   /**
    * **Auto Dump Functionality:**
-   * Starts an interval that dumps the entire Y.Doc state to a file named "database.db"
-   * every 10 seconds. The file is overwritten on each dump.
+   * Starts an interval that dumps the entire Y.Doc state to a file named "database.yjs.db"
+   * every SYNC_INTERVAL milliseconds. The file is overwritten on each dump.
    */
   #startAutoDump(): void {
-    const dumpFilePath = path.join(this.#backupDirectory, 'database.db');
+    const dumpFilePath = path.join(this.#backupDirectory, 'database.yjs.db');
     this.#dumpInterval = setInterval(async () => {
       try {
         await this.backupToFile(dumpFilePath);
@@ -190,7 +193,7 @@ export default class BackupScheduler implements DataBackup {
       } catch (error) {
         console.error('Error during auto dump:', error);
       }
-    }, 10000); // every 10 seconds
+    }, SYNC_INTERVAL);
   }
 
   /**

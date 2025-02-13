@@ -262,4 +262,8 @@ These enhancements provide a robust, flexible, and session-specific backup syste
 Notes for day 4:
 We are getting very close, now we just need to sync with the other sessions.
 
-In the same loop as the dump of the db, we now have to first check the other `uuid`'s databases, and merge them with ours.
+In the same loop as the dump of the db, we now have to first check the other `uuid`'s databases, and merge them with ours. Like iterating over every folder under the `database` folder (exept ours).
+
+This would require creating a new function to marge the data, and not use the restore database function.
+
+I was checking JSDocs, and I like it, let's use it from now on (don't add it if the function doesn't have it, but for every new function yes).

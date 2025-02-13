@@ -262,4 +262,77 @@ These enhancements provide a robust, flexible, and session-specific backup syste
 Notes for day 4:
 We are getting very close, now we just need to sync with the other sessions.
 
-In the same loop as the dump of the db, we now have to first check the other `uuid`'s databases, and merge them with ours.
+In the same loop as the dump of the db, we now have to first check the other `uuid`'s databases, and merge them with ours. Like iterating over every folder under the `database` folder (exept ours).
+
+This would require creating a new function to marge the data, and not use the restore database function.
+
+I was checking JSDocs, and I like it, let's use it from now on (don't add it if the function doesn't have it, but for every new function yes).
+
+--- day #4 start ---
+
+# Backup Scheduler Enhancements Summary
+
+This update to the `BackupScheduler` class in `backup-scheduler.ts` introduces two main improvements:
+
+1. **Merging Backups from Other Sessions:**
+
+   - **What Changed:**  
+     Before performing the auto dump, the scheduler now calls `mergeOtherSessionBackups()`. This function:
+     - Iterates through the `database` folder under the base backup directory.
+     - Excludes the current session (using `this.#sessionId`).
+     - For each other session, if a dump file (`database.yjs.db`) exists, it reads the file, converts it into a Yjs update, and applies it to the current Y.Doc.
+   - **Why:**  
+     This allows merging of changes from multiple sessions (i.e., different installations/users) when syncing via a cloud storage solution.
+   - **Key Variable/Method:**
+     - `async mergeOtherSessionBackups(): Promise<void>`
+     - Uses variables like:
+       - `this.#baseBackupDirectory` (the original backup directory provided)
+       - `this.#backupDirectory` (constructed as `path.join(newDir, 'database', this.#sessionId)`)
+       - `this.#sessionId` (unique session identifier for the current installation)
+       - `Y.applyUpdate(this.#ydoc, update);` (merges the update into the current document)
+
+2. **Auto Dump Flow Update:**
+   - **What Changed:**  
+     The `#startAutoDump()` method now calls `mergeOtherSessionBackups()` before dumping the current Y.Doc state.
+   - **Why:**  
+     This ensures that any changes from other sessions are merged into the current document before the auto dump occurs.
+   - **Key Variable/Method:**
+     - The auto dump interval (`this.#dumpInterval`) now runs:
+       ```typescript
+       await this.mergeOtherSessionBackups();
+       const dumpFilePath = path.join(this.#backupDirectory, 'database.yjs.db');
+       await this.backupToFile(dumpFilePath);
+       ```
+
+## Variable Overview
+
+- **`this.#ydoc`**:  
+  The Yjs document instance that holds all the application data.
+
+- **`this.#baseBackupDirectory` & `this.#backupDirectory`**:
+
+  - `#baseBackupDirectory` is the provided base directory for backups.
+  - `#backupDirectory` is the session-specific folder (`<baseBackupDirectory>/database/<sessionId>`) where backups are stored.
+
+- **`this.#sessionId`**:  
+  A unique identifier for the current installation/session, used to segregate backups.
+
+- **`SYNC_INTERVAL`**:  
+  A constant that determines the frequency (in milliseconds) of the auto dump process.
+
+- **`this.#dumpInterval`**:  
+  The interval timer that triggers the auto dump (and merging process) periodically.
+
+## Conclusion
+
+These enhancements provide better observability of the Yjs document’s state during backup operations and ensure that changes from multiple sessions are merged seamlessly. This is crucial for maintaining data consistency when files are synced via cloud services, allowing a more robust and traceable backup and merge strategy within OneFolder.
+
+--- day #4 end ---
+
+Notes for day 5:
+Yestarday I tested for the first time with two computers, and it the plan seems to work, is just that I found new problems.
+
+- In the database files have a `relativePath` and a `absolutePath`, and the `absolutePath` is used more than 150 times across the app. But the `absolutePath` is different on each computer, breaking the thumbnails and a bunch of stuff in the way.
+- When importing a new location in computer2 it creates new `id`s for each image, which are not the same as the one in computer1, to kind of fix it I restored the database from computer1 to computer2, so they can have the same `id`. What we should do is that when importing a location, we first check if there isn't a db already that we can copy
+
+Debuging this I realized that I have very little knowledge on what is going on in the DB, bc is hard to see, harder than a simple SQL. So I wanted to stop for a minute and make a "history" page in the app, where we can see all of the data flow.

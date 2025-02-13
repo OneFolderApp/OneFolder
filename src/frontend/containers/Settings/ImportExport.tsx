@@ -129,7 +129,7 @@ export const ImportExport = observer(() => {
           className="btn-outlined"
           options={{
             properties: ['openFile'],
-            filters: [{ extensions: ['json'], name: 'JSON' }],
+            // filters: [{ extensions: ['json'], name: 'JSON' }],
             defaultPath: backupDir,
           }}
           onChange={handleChooseImportDir}

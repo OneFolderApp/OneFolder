@@ -46,6 +46,7 @@ function getWeekStart(): Date {
 
 export default class BackupScheduler implements DataBackup {
   #ydoc: Y.Doc;
+  #baseBackupDirectory: string;
   #backupDirectory: string;
   #sessionId: string;
   #lastBackupIndex: number = 0;
@@ -62,6 +63,7 @@ export default class BackupScheduler implements DataBackup {
   constructor(ydoc: Y.Doc, directory: string, sessionId: string) {
     this.#ydoc = ydoc;
     this.#sessionId = sessionId;
+    this.#baseBackupDirectory = directory;
     this.#backupDirectory = path.join(directory, 'database', sessionId);
     fse.ensureDirSync(this.#backupDirectory);
     // Start the auto dump functionality independently.
@@ -91,6 +93,7 @@ export default class BackupScheduler implements DataBackup {
    * @param newDir The new base backup directory.
    */
   async updateBackupDirectory(newDir: string): Promise<void> {
+    this.#baseBackupDirectory = newDir;
     this.#backupDirectory = path.join(newDir, 'database', this.#sessionId);
     await fse.ensureDir(this.#backupDirectory);
     console.log('BackupScheduler: Updated backup directory to', this.#backupDirectory);
@@ -114,7 +117,7 @@ export default class BackupScheduler implements DataBackup {
    */
   schedule(): void {
     if (Date.now() > this.#lastBackupDate.getTime() + AUTO_BACKUP_TIMEOUT) {
-      this.#createPeriodicBackup();
+      // this.#createPeriodicBackup();
     }
   }
 
@@ -181,17 +184,20 @@ export default class BackupScheduler implements DataBackup {
 
   /**
    * **Auto Dump Functionality:**
-   * Starts an interval that dumps the entire Y.Doc state to a file named "database.yjs.db"
-   * every SYNC_INTERVAL milliseconds. The file is overwritten on each dump.
+   * Starts an interval that merges backups from other sessions and then dumps the entire Y.Doc state
+   * to a file named "database.yjs.db" every SYNC_INTERVAL milliseconds.
+   * The file is overwritten on each dump.
    */
   #startAutoDump(): void {
-    const dumpFilePath = path.join(this.#backupDirectory, 'database.yjs.db');
     this.#dumpInterval = setInterval(async () => {
       try {
+        // Merge backups from other sessions before dumping our own state.
+        await this.mergeOtherSessionBackups();
+        const dumpFilePath = path.join(this.#backupDirectory, 'database.yjs.db');
         await this.backupToFile(dumpFilePath);
         console.log('Auto-dumped database to', dumpFilePath);
       } catch (error) {
-        console.error('Error during auto dump:', error);
+        console.error('Error during auto dump or merging other sessions:', error);
       }
     }, SYNC_INTERVAL);
   }
@@ -281,5 +287,39 @@ export default class BackupScheduler implements DataBackup {
     const filesMap = tempDoc.getMap('files');
 
     return [tagsMap.size, filesMap.size];
+  }
+
+  /**
+   * Merges backup updates from all other sessions into the current Y.Doc.
+   *
+   * This method iterates over each session directory under the base backup directory (excluding the current session)
+   * and, if a dump file ("database.yjs.db") exists, reads and applies the Yjs update to the current document.
+   *
+   * @returns A promise that resolves when all available session backups have been merged.
+   */
+  async mergeOtherSessionBackups(): Promise<void> {
+    const sessionsDir = path.join(this.#baseBackupDirectory, 'database');
+    try {
+      const sessions = await fse.readdir(sessionsDir);
+      for (const session of sessions) {
+        if (session === this.#sessionId) {
+          continue;
+        }
+        const otherSessionBackupDir = path.join(sessionsDir, session);
+        const dumpFilePath = path.join(otherSessionBackupDir, 'database.yjs.db');
+        if (await fse.pathExists(dumpFilePath)) {
+          try {
+            const buffer = await fse.readFile(dumpFilePath);
+            const update = new Uint8Array(buffer);
+            Y.applyUpdate(this.#ydoc, update);
+            console.log(`Merged backup from session ${session} from file ${dumpFilePath}`);
+          } catch (err) {
+            console.error(`Failed to merge backup from session ${session}:`, err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error reading sessions directory:', err);
+    }
   }
 }

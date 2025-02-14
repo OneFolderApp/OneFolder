@@ -336,3 +336,18 @@ Yestarday I tested for the first time with two computers, and it the plan seems 
 - When importing a new location in computer2 it creates new `id`s for each image, which are not the same as the one in computer1, to kind of fix it I restored the database from computer1 to computer2, so they can have the same `id`. What we should do is that when importing a location, we first check if there isn't a db already that we can copy
 
 Debuging this I realized that I have very little knowledge on what is going on in the DB, bc is hard to see, harder than a simple SQL. So I want to make a in-app database view, to make it easier to debug and further develop the app.
+
+--- day #5 start ---
+
+- Created the `DatabaseView.tsx` component to visualize files, tags and locations.
+
+--- day #5 end ---
+
+Notes for day 6:
+There are some bugs regarding the locations, when I reload the app a location is loaded again, duplicating everything and breaking stuff. Even if it worked we have to handle the loading properly to account for the new way where multiple instances have the same database.
+
+We will ignore the fact that the database uses the `absolutePath` and simply try to make the database sync properly.
+
+For this to work we will have to load the database before loading all of the files, so it has the same id. But what should happen to the `ino` number? can it be the same between two computers?
+
+I first have to answer this questions.

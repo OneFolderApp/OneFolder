@@ -23,7 +23,7 @@ export const enum ViewMethod {
   MasonryHorizontal,
   Calendar,
   Map,
-  History,
+  Database,
   Faces,
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
@@ -54,7 +54,7 @@ export interface IHotkeyMap {
   viewMasonryHorizontal: string;
   viewCalendar: string;
   viewFaces: string;
-  viewHistory: string;
+  viewDatabase: string;
   viewMap: string;
   viewSlide: string;
   search: string;
@@ -84,7 +84,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewCalendar: 'alt + 5',
   viewFaces: 'alt + 6',
   viewMap: 'alt + 7',
-  viewHistory: 'alt + 8',
+  viewDatabase: 'alt + 8',
   search: 'mod + f',
   advancedSearch: 'mod + shift + f',
   // openPreviewWindow: 'space',
@@ -264,8 +264,8 @@ class UiStore {
     return this.method === ViewMethod.Faces;
   }
 
-  @computed get isHistory(): boolean {
-    return this.method === ViewMethod.History;
+  @computed get isDatabase(): boolean {
+    return this.method === ViewMethod.Database;
   }
 
   @computed get isMap(): boolean {
@@ -356,8 +356,8 @@ class UiStore {
     this.method = ViewMethod.Faces;
   }
 
-  @action.bound setMethodHistory(): void {
-    this.method = ViewMethod.History;
+  @action.bound setMethodDatabase(): void {
+    this.method = ViewMethod.Database;
   }
 
   @action.bound setMethodMap(): void {
@@ -912,8 +912,8 @@ class UiStore {
       this.setMethodCalendar();
     } else if (matches(hotkeyMap.viewFaces)) {
       this.setMethodFaces();
-    } else if (matches(hotkeyMap.viewHistory)) {
-      this.setMethodHistory();
+    } else if (matches(hotkeyMap.viewDatabase)) {
+      this.setMethodDatabase();
     } else if (matches(hotkeyMap.viewMap)) {
       this.setMethodMap();
     } else if (matches(hotkeyMap.viewSlide)) {

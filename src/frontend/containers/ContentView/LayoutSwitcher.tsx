@@ -10,7 +10,7 @@ import { ViewMethod } from '../../stores/UiStore';
 import { useCommandHandler } from './Commands';
 import ListGallery from './ListGallery';
 import FaceGallery from './FaceGallery';
-import HistoryView from './HistoryView';
+import DatabaseView from './DatabaseView';
 import CalendarGallery from './CalendarGallery';
 import MapView from './MapView';
 import MasonryRenderer from './Masonry/MasonryRenderer';
@@ -171,9 +171,9 @@ const Layout = ({ contentRect }: LayoutProps) => {
         />
       );
       break;
-    case ViewMethod.History:
+    case ViewMethod.Database:
       overviewElem = (
-        <HistoryView
+        <DatabaseView
           contentRect={contentRect}
           select={handleFileSelect}
           lastSelectionIndex={lastSelectionIndex}

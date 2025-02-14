@@ -335,4 +335,4 @@ Yestarday I tested for the first time with two computers, and it the plan seems 
 - In the database files have a `relativePath` and a `absolutePath`, and the `absolutePath` is used more than 150 times across the app. But the `absolutePath` is different on each computer, breaking the thumbnails and a bunch of stuff in the way.
 - When importing a new location in computer2 it creates new `id`s for each image, which are not the same as the one in computer1, to kind of fix it I restored the database from computer1 to computer2, so they can have the same `id`. What we should do is that when importing a location, we first check if there isn't a db already that we can copy
 
-Debuging this I realized that I have very little knowledge on what is going on in the DB, bc is hard to see, harder than a simple SQL. So I wanted to stop for a minute and make a "history" page in the app, where we can see all of the data flow.
+Debuging this I realized that I have very little knowledge on what is going on in the DB, bc is hard to see, harder than a simple SQL. So I want to make a in-app database view, to make it easier to debug and further develop the app.

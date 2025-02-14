@@ -72,9 +72,9 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
       />
       <NavigationButton
         icon={IconSet.FACE_SMILING}
-        onClick={uiStore.setMethodHistory}
-        checked={uiStore.isHistory}
-        text="History"
+        onClick={uiStore.setMethodDatabase}
+        checked={uiStore.isDatabase}
+        text="Database"
       />
     </div>
   );

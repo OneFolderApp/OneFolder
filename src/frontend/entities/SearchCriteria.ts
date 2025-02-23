@@ -23,6 +23,7 @@ import {
   TagOperatorType,
 } from '../../api/search-criteria';
 import RootStore from '../stores/RootStore';
+import { ROOT_TAG_ID } from '../../api/tag';
 
 // A dictionary of labels for (some of) the keys of the type we search for
 export type SearchKeyDict = Partial<Record<keyof FileDTO, string>>;
@@ -157,6 +158,32 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
       op = 'contains';
     }
 
+    if (val.length > 0) {
+      const tag = rootStore.tagStore.get(val[0]);
+      if (tag && tag.id !== ROOT_TAG_ID) {
+        // Add implied tags
+        const impliedTags = tag.impliedTags;
+        val.push(...(impliedTags?.map((t) => t.id) || []));
+
+        // Check if we want to copy the implied tags from the parent(s)
+        if (tag.copyImpliedTags) {
+          // Go up the parents until we encounter a node which has "copyImpliedTags" set to false (or the root node) and copy their implied tag
+          let currentParent = tag.parent;
+          while (true) {
+            if (
+              currentParent === undefined ||
+              currentParent.id === ROOT_TAG_ID ||
+              !currentParent.copyImpliedTags
+            ) {
+              break;
+            }
+            val.push(...(currentParent.impliedTags?.map((t) => t.id) || []));
+            currentParent = currentParent.parent;
+          }
+        }
+      }
+    }
+
     return {
       key: this.key,
       valueType: this.valueType,
@@ -164,7 +191,6 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
       value: val,
     };
   };
-
   toCondition = (rootStore: RootStore): ArrayConditionDTO<FileDTO, any> => {
     return this.serialize(rootStore) as ArrayConditionDTO<FileDTO, any>;
   };

@@ -5,7 +5,7 @@ import { useStore } from './contexts/StoreContext';
 
 import ErrorBoundary from './containers/ErrorBoundary';
 import HelpCenter from './containers/HelpCenter';
-import { Toaster as CustomToaster } from './components/Toaster';
+import { AppToaster, Toaster as CustomToaster } from './components/Toaster';
 
 import AdvancedSearchDialog from './containers/AdvancedSearch';
 import Settings from './containers/Settings';
@@ -42,6 +42,12 @@ const App = observer(() => {
       uiStore.toggleOutliner();
     }
   }, [uiStore, isOutlinerOpen]);
+
+  AppToaster.show({
+    message: "Allusion Custom Version by PlayWolf officially loaded!",
+    timeout: 5000,
+    type: 'info',
+  })
 
   return (
     <CustomThemeProvider>

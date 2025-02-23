@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 
 import { IconSet } from 'widgets';
@@ -8,6 +8,7 @@ import { useStore } from '../../../contexts/StoreContext';
 import { ClientTagSearchCriteria } from '../../../entities/SearchCriteria';
 import { ClientTag } from '../../../entities/Tag';
 import { Action, Factory } from './state';
+import { action } from 'mobx';
 
 const defaultColorOptions = [
   { title: 'Eminence', color: '#5f3292' },
@@ -87,6 +88,13 @@ export const TagItemContextMenu = observer((props: IContextMenuProps) => {
   const { tagStore, uiStore } = useStore();
   const ctxTags = uiStore.getTagContextItems(tag.id);
 
+  const [copyImpliedTags, setCopyImpliedTags] = useState<Boolean>(tag.copyImpliedTags);
+
+  const toggleCopyImpliedTags = action(() => {
+    tag.copyImpliedTags = !copyImpliedTags;
+    setCopyImpliedTags(!copyImpliedTags);
+  });
+
   return (
     <Menu>
       <MenuItem
@@ -119,6 +127,17 @@ export const TagItemContextMenu = observer((props: IContextMenuProps) => {
         onClick={() => dispatch(Factory.confirmDeletion(tag))}
         text="Delete"
         icon={IconSet.DELETE}
+      />
+      <MenuDivider />
+      <MenuItem
+        onClick={() => dispatch(Factory.enableModifyImpliedTags(tag))}
+        text="Modify implied tags"
+        icon={IconSet.TAG_GROUP}
+      />
+      <MenuCheckboxItem
+        onClick={toggleCopyImpliedTags}
+        text="Copy Implied Tags from Parent(s)"
+        checked={Boolean(copyImpliedTags)}
       />
       <MenuDivider />
       <ColorPickerMenu tag={tag} />

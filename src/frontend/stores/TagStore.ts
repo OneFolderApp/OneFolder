@@ -88,7 +88,7 @@ class TagStore {
 
   @action.bound async create(parent: ClientTag, tagName: string): Promise<ClientTag> {
     const id = generateId();
-    const tag = new ClientTag(this, id, tagName, new Date(), '', false);
+    const tag = new ClientTag(this, id, tagName, new Date(), '', false, true);
     this.tagGraph.set(tag.id, tag);
     tag.setParent(parent);
     parent.subTags.push(tag);
@@ -161,16 +161,16 @@ class TagStore {
 
   @action private createTagGraph(backendTags: TagDTO[]) {
     // Create tags
-    for (const { id, name, dateAdded, color, isHidden } of backendTags) {
+    for (const { id, name, dateAdded, color, isHidden, copyImpliedTags } of backendTags) {
       // Create entity and set properties
       // We have to do this because JavaScript does not allow multiple constructor.
-      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden);
+      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden, copyImpliedTags);
       // Add to index
       this.tagGraph.set(tag.id, tag);
     }
 
-    // Set parent and add sub tags
-    for (const { id, subTags } of backendTags) {
+    // Set parent and add sub and implied tags
+    for (const { id, subTags, impliedTags } of backendTags) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tag = this.tagGraph.get(id)!;
 
@@ -179,6 +179,13 @@ class TagStore {
         if (subTag !== undefined) {
           subTag.setParent(tag);
           tag.subTags.push(subTag);
+        }
+      }
+
+      for (const id of impliedTags) {
+        const impliedTag = this.get(id);
+        if (impliedTag !== undefined) {
+          tag.addImpliedTag(impliedTag);
         }
       }
     }

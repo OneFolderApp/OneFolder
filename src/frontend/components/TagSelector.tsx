@@ -30,6 +30,7 @@ export interface TagSelectorProps {
     resetTextBox: () => void,
   ) => ReactElement<RowProps> | ReactElement<RowProps>[];
   multiline?: boolean;
+  filter?: (tag: ClientTag) => boolean;
   showTagContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
@@ -45,6 +46,7 @@ const TagSelector = (props: TagSelectorProps) => {
     extraIconButtons,
     renderCreateOption,
     multiline,
+    filter,
   } = props;
   const gridId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +171,7 @@ const TagSelector = (props: TagSelectorProps) => {
         <SuggestedTagsList
           ref={gridRef}
           id={gridId}
+          filter={filter}
           query={query}
           selection={selection}
           toggleSelection={toggleSelection}
@@ -206,6 +209,7 @@ interface SuggestedTagsListProps {
   id: string;
   query: string;
   selection: readonly ClientTag[];
+  filter?: (tag: ClientTag) => boolean;
   toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
   resetTextBox: () => void;
   renderCreateOption?: (
@@ -219,17 +223,17 @@ const SuggestedTagsList = observer(
     props: SuggestedTagsListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
-    const { id, query, selection, toggleSelection, resetTextBox, renderCreateOption } = props;
+    const { id, query, selection, filter = (() => true), toggleSelection, resetTextBox, renderCreateOption } = props;
     const { tagStore } = useStore();
 
     const suggestions = useMemo(
       () =>
         computed(() => {
           if (query.length === 0) {
-            return tagStore.tagList;
+            return tagStore.tagList.filter(filter);
           } else {
             const textLower = query.toLowerCase();
-            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower));
+            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower)).filter(filter);
           }
         }),
       [query, tagStore],
@@ -264,21 +268,24 @@ interface TagOptionProps {
 
 export const TagOption = observer(({ id, tag, selected, toggleSelection }: TagOptionProps) => {
   const [path, hint] = useComputed(() => {
-    const path = tag.path.join(' › ');
-    const hint = path.slice(0, Math.max(0, path.length - tag.name.length - 3));
+    const path = tag.path.map((v) => v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v).join(' › ');
+    const hint = path.slice(0, Math.max(0, path.length - tag.name.length - (tag.name.startsWith("#") ? 18 : 3)));
     return [path, hint];
   }).get();
+
+  const isHeader = useMemo(() => tag.name.startsWith('#'), [tag.name]);
 
   return (
     <Row
       id={id}
-      value={tag.name}
+      value={isHeader ? "<b>" + tag.name.slice(1) + "</b>" : tag.name}
       selected={selected}
       icon={<span style={{ color: tag.viewColor }}>{IconSet.TAG}</span>}
       onClick={() => toggleSelection(selected ?? false, tag)}
       tooltip={path}
+      valueIsHtml
     >
-      {hint.length > 0 ? <GridCell className="tag-option-hint">{hint}</GridCell> : <GridCell />}
+      {hint.length > 0 ? <GridCell className="tag-option-hint" __html={hint}></GridCell> : <GridCell />}
     </Row>
   );
 });

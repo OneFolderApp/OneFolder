@@ -114,7 +114,7 @@ const VirtualizedRenderer = observer(
         scrollAnchor.current.style.transform = `translate(${sLeft}px,${
           // Correct for padding of masonry element, otherwise it doesn't completely scroll to the top.
           sTop === 0 && padding ? sTop - padding : sTop
-        }px)`;
+          }px)`;
         scrollAnchor.current.style.width = sWidth + 'px';
         scrollAnchor.current.style.height = sHeight + 'px';
         // TODO: adding behavior: 'smooth' would be nice, but it's disorienting when layout changes a lot. Add threshold for when the delta firstItemIndex than X?

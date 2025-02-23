@@ -23,6 +23,7 @@ export const enum ViewMethod {
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
 export type UpscaleMode = 'smooth' | 'pixelated';
+export type GalleryVideoPlaybackMode = 'auto' | 'hover' | 'disabled';
 export const PREFERENCES_STORAGE_KEY = 'preferences';
 
 export interface IHotkeyMap {
@@ -104,6 +105,7 @@ type PersistentPreferenceFields =
   | 'thumbnailSize'
   | 'thumbnailShape'
   | 'upscaleMode'
+  | 'galleryVideoPlaybackMode'
   | 'hotkeyMap'
   | 'isThumbnailTagOverlayEnabled'
   | 'isThumbnailFilenameOverlayEnabled'
@@ -153,6 +155,7 @@ class UiStore {
   @observable thumbnailSize: ThumbnailSize | number = 'medium';
   @observable thumbnailShape: ThumbnailShape = 'square';
   @observable upscaleMode: UpscaleMode = 'smooth';
+  @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
 
   @observable isToolbarTagPopoverOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
@@ -215,6 +218,22 @@ class UiStore {
 
   @action.bound setUpscaleMode(mode: UpscaleMode): void {
     this.upscaleMode = mode;
+  }
+
+  @action.bound setGalleryVideoPlaybackModeAuto() {
+    this.setGalleryVideoPlaybackMode('auto');
+  }
+
+  @action.bound setGalleryVideoPlaybackModeHover() {
+    this.setGalleryVideoPlaybackMode('hover');
+  }
+
+  @action.bound setGalleryVideoPlaybackModeDisabled() {
+    this.setGalleryVideoPlaybackMode('disabled');
+  }
+
+  @action.bound setGalleryVideoPlaybackMode(mode: GalleryVideoPlaybackMode) {
+    this.galleryVideoPlaybackMode = mode;
   }
 
   @action.bound setFirstItem(index: number = 0): void {
@@ -843,6 +862,9 @@ class UiStore {
         if (prefs.upscaleMode) {
           this.setUpscaleMode(prefs.upscaleMode);
         }
+        if (prefs.galleryVideoPlaybackMode) {
+          this.setGalleryVideoPlaybackMode(prefs.galleryVideoPlaybackMode);
+        }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
@@ -898,6 +920,7 @@ class UiStore {
       thumbnailSize: this.thumbnailSize,
       thumbnailShape: this.thumbnailShape,
       upscaleMode: this.upscaleMode,
+      galleryVideoPlaybackMode: this.galleryVideoPlaybackMode,
       hotkeyMap: { ...this.hotkeyMap },
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,

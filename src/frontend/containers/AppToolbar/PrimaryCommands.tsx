@@ -97,7 +97,7 @@ const FileSelectionCommand = observer(() => {
       icon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
       onClick={handleToggleSelect}
       pressed={allFilesSelected}
-      text={selectionCount}
+      text={fileCount == 0 ? "0" : selectionCount +" / "+ fileCount}
       tooltip="Selects or deselects all images"
       disabled={fileCount === 0}
     />

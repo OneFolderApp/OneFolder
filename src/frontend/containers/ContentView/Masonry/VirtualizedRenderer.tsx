@@ -179,7 +179,8 @@ const VirtualizedRenderer = observer(
                   transform[0] > thumbnailMaxSize ||
                   transform[1] > thumbnailMaxSize ||
                   // Not using thumbnails for gifs, since they're mostly used for animations, which doesn't get preserved in thumbnails
-                  im.extension === 'gif'
+                  //temporary generate thumbnails for gifs to save graphic resources
+                  false //im.extension === 'gif'
                 }
               />
             );

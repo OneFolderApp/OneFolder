@@ -62,12 +62,14 @@ export const MasonryCell = observer(
           onDrop={eventManager.drop}
           onDragEnd={eventManager.dragEnd}
           onMouseEnter={
-            uiStore.galleryVideoPlaybackMode === 'hover' && isFileExtensionVideo(file.extension)
+            uiStore.galleryVideoPlaybackMode === 'hover' &&
+            (isFileExtensionVideo(file.extension) || file.extension === 'gif')
               ? handleMouseEnter
               : (e: React.MouseEvent): void => {}
           }
           onMouseLeave={
-            uiStore.galleryVideoPlaybackMode === 'hover' && isFileExtensionVideo(file.extension)
+            uiStore.galleryVideoPlaybackMode === 'hover' &&
+            (isFileExtensionVideo(file.extension) || file.extension === 'gif')
               ? handleMouseLeave
               : (e: React.MouseEvent): void => {}
           }
@@ -128,6 +130,7 @@ export const Thumbnail = observer(
   }: ItemProps) => {
     const { uiStore, imageLoader } = useStore();
     const { thumbnailPath, isBroken } = file;
+    const [playingGif, setPlayingGif] = useState<boolean | undefined>(undefined);
 
     // This will check whether a thumbnail exists, generate it if needed
     const imageSource = usePromise(
@@ -135,7 +138,7 @@ export const Thumbnail = observer(
       isBroken,
       mounted,
       thumbnailPath,
-      uiStore.isList || !forceNoThumbnail,
+      uiStore.isList || (!forceNoThumbnail && !playingGif),
       async (file, isBroken, mounted, thumbnailPath, useThumbnail) => {
         // If it is broken, only show thumbnail if it exists.
         if (!mounted || isBroken === true) {
@@ -146,7 +149,14 @@ export const Thumbnail = observer(
           }
         }
 
-        if (useThumbnail) {
+        if (useThumbnail && playingGif === undefined) {
+          // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
+          if (file.extension === 'gif') {
+            const srcThumbnail = getThumbnail(file);
+            if (await fse.pathExists(srcThumbnail)) {
+              return srcThumbnail;
+            }
+          }
           const freshlyGenerated = await imageLoader.ensureThumbnail(file);
           // The thumbnailPath of an image is always set, but may not exist yet.
           // When the thumbnail is finished generating, the path will be changed to `${thumbnailPath}?v=1`.
@@ -182,6 +192,28 @@ export const Thumbnail = observer(
       fileIdRef.current = fileId;
       setLoadError(false);
     }, [fileId]);
+
+    // Plays and pauses gifs
+    useEffect(() => {
+      if (file.extension !== 'gif') {
+        return;
+      }
+      if (hovered) {
+        setPlayingGif(true);
+      } else {
+        setPlayingGif(false);
+      }
+    }, [hovered]);
+    useEffect(() => {
+      if (file.extension !== 'gif') {
+        return;
+      }
+      if (galleryVideoPlaybackMode === 'auto') {
+        setPlayingGif(true);
+      } else {
+        setPlayingGif(false);
+      }
+    }, [galleryVideoPlaybackMode]);
 
     // Plays and pauses video
     const thumbnailRef = useRef<HTMLVideoElement>(null);

@@ -185,7 +185,7 @@ class TagStore {
       for (const id of impliedTags) {
         const impliedTag = this.get(id);
         if (impliedTag !== undefined) {
-          tag.addImpliedTag(impliedTag);
+          tag.impliedTags.push(impliedTag);
         }
       }
     }

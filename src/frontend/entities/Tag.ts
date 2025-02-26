@@ -21,6 +21,7 @@ export class ClientTag {
   @observable isHidden: boolean;
   @observable private _parent: ClientTag | undefined;
   readonly subTags = observable<ClientTag>([]);
+  @observable private _impliedByTags = observable<ClientTag>([]);
   @observable impliedTags = observable<ClientTag>([]);
   @observable copyImpliedTags: boolean;
 
@@ -90,6 +91,25 @@ export class ClientTag {
     return tree(this, 0);
   }
 
+  /** Returns this tag and all of its "implied By" sub-tags and their sub-tags ordered depth-first */
+  @action getImpliedSubTree(): Generator<ClientTag> {
+    function* tree(tag: ClientTag, depth: number): Generator<ClientTag> {
+      if (depth > MAX_TAG_DEPTH) {
+        console.error('Subtree has too many tags. Is there a cycle in the tag tree?', tag);
+        return;
+      }
+
+      yield tag;
+      for (const subTag of tag.subTags) {
+        yield* tree(subTag, depth + 1);
+      }
+      for (const subTag of tag._impliedByTags) {
+        yield* tree(subTag, depth + 1);
+      }
+    }
+    return tree(this, 0);
+  }
+
   /** Returns this tag and all its ancestors (excluding root tag). */
   @action getAncestors(): Generator<ClientTag> {
     function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
@@ -145,6 +165,10 @@ export class ClientTag {
     this._parent = parent;
   }
 
+  @action addImpliedByTag(tag: ClientTag): void {
+    this._impliedByTags.push(tag);
+  }
+
   @action.bound rename(name: string): void {
     this.name = name;
   }
@@ -179,17 +203,40 @@ export class ClientTag {
     return true;
   }
 
+  @action.bound replaceImpliedTags(newTags: ClientTag[]): void {
+    //convert to set for efficient comparison and avoid duplicates
+    const newTagsSet = new Set(newTags);
+
+    for (const tag of this.impliedTags.slice()) {
+      if (!newTagsSet.has(tag)) {
+        this.removeImpliedTag(tag);
+      }
+    }
+
+    for (const tag of newTags) {
+      if (!this.impliedTags.includes(tag)) {
+        this.addImpliedTag(tag);
+      }
+    }
+  }
+
   @action.bound addImpliedTag(tag: ClientTag): void {
     if (!this.impliedTags.includes(tag)) {
       this.impliedTags.push(tag);
+      tag._impliedByTags.push(this);
     }
     this.store.refetchFiles();
   }
 
   @action.bound removeImpliedTag(tag: ClientTag): void {
     const index = this.impliedTags.indexOf(tag);
+    const ipliedBy_index = tag._impliedByTags.indexOf(this);
+    console.log(`${tag.name}: ${ipliedBy_index}`);
     if (index !== -1) {
       this.impliedTags.splice(index, 1);
+    }
+    if (ipliedBy_index !== -1) {
+      tag._impliedByTags.splice(ipliedBy_index, 1);
     }
     this.store.refetchFiles();
   }

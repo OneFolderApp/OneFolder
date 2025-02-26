@@ -67,7 +67,7 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
   }, [impliedTags]);
 
   const save = action(() => {
-    tag.impliedTags.replace(impliedTags);
+    tag.replaceImpliedTags(impliedTags);
 
     if (impliedTags.length > 0) {
       AppToaster.show({

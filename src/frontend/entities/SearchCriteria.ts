@@ -149,39 +149,13 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
     let val = this.value ? [this.value] : [];
     if (val.length > 0 && op.includes('Recursively')) {
       const tag = rootStore.tagStore.get(val[0]);
-      val = tag !== undefined ? Array.from(tag.getSubTree(), (t) => t.id) : [];
+      val = tag !== undefined ? Array.from(tag.getImpliedSubTree(), (t) => t.id) : [];
     }
     if (op === 'containsNotRecursively') {
       op = 'notContains';
     }
     if (op === 'containsRecursively') {
       op = 'contains';
-    }
-
-    if (val.length > 0) {
-      const tag = rootStore.tagStore.get(val[0]);
-      if (tag && tag.id !== ROOT_TAG_ID) {
-        // Add implied tags
-        const impliedTags = tag.impliedTags;
-        val.push(...(impliedTags?.map((t) => t.id) || []));
-
-        // Check if we want to copy the implied tags from the parent(s)
-        if (tag.copyImpliedTags) {
-          // Go up the parents until we encounter a node which has "copyImpliedTags" set to false (or the root node) and copy their implied tag
-          let currentParent = tag.parent;
-          while (true) {
-            if (
-              currentParent === undefined ||
-              currentParent.id === ROOT_TAG_ID ||
-              !currentParent.copyImpliedTags
-            ) {
-              break;
-            }
-            val.push(...(currentParent.impliedTags?.map((t) => t.id) || []));
-            currentParent = currentParent.parent;
-          }
-        }
-      }
     }
 
     return {

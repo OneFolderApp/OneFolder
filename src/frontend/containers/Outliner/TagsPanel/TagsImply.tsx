@@ -93,8 +93,8 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
       describedby="imply-info"
     >
       <p id="imply-info">
-        This allows you to modify the implied tags for a tag.
-        Note: You can not imply a parent or child tag, since the parent/child relationship is already implied.
+        This allows you to modify the implied tags for a tag. <br></br>
+        Note: You cannot imply a parent, child, inherited implied, or implied-by tag, to avoid circular relationships and maintain a clearer structure.
       </p>
       <form method="dialog" onSubmit={(e) => e.preventDefault()}>
         <fieldset>
@@ -112,7 +112,7 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
             onDeselect={unimply}
             onClear={unimplyAll}
             multiline
-            filter={(t) => tag !== t && !tag.isAncestor(t) && !t.isAncestor(tag)}
+            filter={(t) => tag !== t && !tag.isImpliedAncestor(t) && !t.isImpliedAncestor(tag)}
           />
         </fieldset>
         <br />

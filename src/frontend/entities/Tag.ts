@@ -123,6 +123,22 @@ export class ClientTag {
     return ancestors(this, 0);
   }
 
+  /** Returns this tag and all its implied ancestors (excluding root tag). */
+  @action getImpliedAncestors(): Generator<ClientTag> {
+    function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
+      if (depth > MAX_TAG_DEPTH) {
+        console.error('Tag has too many ancestors. Is there a cycle in the tag tree?', tag);
+      } else if (tag.id !== ROOT_TAG_ID) {
+        yield tag;
+        yield* ancestors(tag.parent, depth + 1);
+        for (const impliedTag of tag.impliedTags) {
+          yield* ancestors(impliedTag, depth + 1);
+        }
+      }
+    }
+    return ancestors(this, 0);
+  }
+
   /** Returns the tags up the hierarchy from this tag, excluding the root tag */
   @computed get path(): string[] {
     return Array.from(this.getAncestors(), (t) => t.name).reverse();
@@ -154,6 +170,22 @@ export class ClientTag {
       return false;
     }
     for (const ancestor of this.parent.getAncestors()) {
+      if (ancestor === tag) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns true if tag is an implied ancestor of this tag.
+   * @param tag possible ancestor node
+   */
+  @action isImpliedAncestor(tag: ClientTag): boolean {
+    if (this === tag) {
+      return false;
+    }
+    for (const ancestor of this.getImpliedAncestors()) {
       if (ancestor === tag) {
         return true;
       }

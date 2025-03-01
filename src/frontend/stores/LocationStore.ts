@@ -267,36 +267,7 @@ class LocationStore {
         await this.backend.createFilesFromPath(location.path, newFiles);
       }
 
-      // Also update files that have changed, e.g. when overwriting a file (with same filename)
-      // --> update metadata (resolution, size) and recreate thumbnail
-      // This can be accomplished by comparing the dateLastIndexed of the file in DB to dateModified of the file on disk
-      const updatedFiles: FileDTO[] = [];
-      const thumbnailDirectory = runInAction(() => this.rootStore.uiStore.thumbnailDirectory);
-      for (const dbFile of dbFiles) {
-        const diskFile = diskFileMap.get(dbFile.absolutePath);
-        if (
-          diskFile &&
-          dbFile.dateLastIndexed.getTime() < diskFile.dateModified.getTime() &&
-          diskFile.size !== dbFile.size
-        ) {
-          const newFile: FileDTO = {
-            ...dbFile,
-            // Recreate metadata which checks the resolution of the image
-            ...(await getMetaData(diskFile, this.rootStore.imageLoader)),
-            dateLastIndexed: new Date(),
-          };
-
-          // Delete thumbnail if size has changed, will be re-created automatically when needed
-          const thumbPath = getThumbnailPath(dbFile.absolutePath, thumbnailDirectory);
-          fse.remove(thumbPath).catch(console.error);
-
-          updatedFiles.push(newFile);
-        }
-      }
-      if (updatedFiles.length > 0) {
-        console.debug('Re-indexed files changed on disk', updatedFiles);
-        await this.backend.saveFiles(updatedFiles);
-      }
+      this.updateChangedFiles(dbFiles, diskFileMap);
 
       console.groupEnd();
 
@@ -309,6 +280,45 @@ class LocationStore {
       AppToaster.dismiss(progressToastKey);
     }
     return foundNewFiles;
+  }
+
+  @action async updateChangedFiles(
+    dbFiles: FileDTO[],
+    diskFileMap: Map<string, FileStats>,
+  ): Promise<void> {
+    // Also update files that have changed, e.g. when overwriting a file (with same filename)
+    // --> update metadata (resolution, size) and recreate thumbnail
+    // This can be accomplished by comparing the dateLastIndexed of the file in DB to dateModified of the file on disk
+    const updatedFiles: FileDTO[] = [];
+    const thumbnailDirectory = runInAction(() => this.rootStore.uiStore.thumbnailDirectory);
+    for (const dbFile of dbFiles) {
+      const diskFile = diskFileMap.get(dbFile.absolutePath);
+      if (
+        diskFile &&
+        (dbFile.dateLastIndexed.getTime() < diskFile.dateModified.getTime() ||
+          diskFile.size !== dbFile.size ||
+          diskFile.ino !== dbFile.ino)
+      ) {
+        const newFile: FileDTO = {
+          ...dbFile,
+          // Recreate metadata which checks the resolution of the image
+          ino: diskFile.ino,
+          ...(await getMetaData(diskFile, this.rootStore.imageLoader)),
+          dateLastIndexed: new Date(),
+        };
+
+        updatedFiles.push(newFile);
+
+        // Delete thumbnail if size has changed, will be re-created automatically when needed
+        const thumbPath = getThumbnailPath(dbFile.absolutePath, thumbnailDirectory);
+        await fse.remove(thumbPath).catch(console.error);
+        this.rootStore.fileStore.get(newFile.id)?.setThumbnailPath(thumbPath);
+      }
+    }
+    if (updatedFiles.length > 0) {
+      console.debug('Re-indexed files changed on disk', updatedFiles);
+      await this.backend.saveFiles(updatedFiles);
+    }
   }
 
   @action get(locationId: ID): ClientLocation | undefined {
@@ -467,6 +477,9 @@ class LocationStore {
     const dbMatch = match
       ? undefined
       : (await this.backend.fetchFilesByKey('ino', fileStats.ino))[0];
+    const dbMatchOverwrite = match
+      ? undefined
+      : (await this.backend.fetchFilesByKey('absolutePath', fileStats.absolutePath))[0];
 
     if (match) {
       if (fileStats.absolutePath === match.absolutePath) {
@@ -476,6 +489,12 @@ class LocationStore {
     } else if (dbMatch) {
       const newIFile = mergeMovedFile(dbMatch, file);
       this.rootStore.fileStore.save(newIFile);
+    } else if (dbMatchOverwrite) {
+      await this.updateChangedFiles(
+        [dbMatchOverwrite],
+        new Map<string, FileStats>([[fileStats.absolutePath, fileStats]]),
+      );
+      fileStore.debouncedRefetch();
     } else {
       await this.backend.createFilesFromPath(fileStats.absolutePath, [file]);
 
@@ -483,6 +502,18 @@ class LocationStore {
       // might be called a lot when moving many images into a folder, so debounce it
       fileStore.debouncedRefetch();
     }
+  }
+
+  @action async updateFile(fileStats: FileStats): Promise<void> {
+    const fileStore = this.rootStore.fileStore;
+    const dbMatchOverwrite = (
+      await this.backend.fetchFilesByKey('absolutePath', fileStats.absolutePath)
+    )[0];
+    await this.updateChangedFiles(
+      [dbMatchOverwrite],
+      new Map<string, FileStats>([[fileStats.absolutePath, fileStats]]),
+    );
+    fileStore.debouncedRefetch();
   }
 
   @action hideFile(path: string): void {

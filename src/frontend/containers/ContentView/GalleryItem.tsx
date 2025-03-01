@@ -152,9 +152,8 @@ export const Thumbnail = observer(
         if (useThumbnail && playingGif === undefined) {
           // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
           if (file.extension === 'gif') {
-            const srcThumbnail = getThumbnail(file);
-            if (await fse.pathExists(srcThumbnail)) {
-              return srcThumbnail;
+            if (await fse.pathExists(thumbnailPath)) {
+              return thumbnailPath;
             }
           }
           const freshlyGenerated = await imageLoader.ensureThumbnail(file);

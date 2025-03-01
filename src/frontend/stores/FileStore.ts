@@ -257,7 +257,7 @@ class FileStore {
 
       // Move thumbnail
       const { thumbnailDirectory } = this.rootStore.uiStore; // TODO: make a config store for this?
-      const oldThumbnailPath = file.thumbnailPath.replace('?v=1', '');
+      const oldThumbnailPath = file.thumbnailPath.split('?')[0];
       const newThumbPath = getThumbnailPath(newData.absolutePath, thumbnailDirectory);
       fse.move(oldThumbnailPath, newThumbPath).catch(() => {});
 
@@ -631,9 +631,11 @@ class FileStore {
       const file = new ClientFile(this, f);
       // Initialize the thumbnail path so the image can be loaded immediately when it mounts.
       // To ensure the thumbnail actually exists, the `ensureThumbnail` function should be called
-      file.thumbnailPath = this.rootStore.imageLoader.needsThumbnail(f)
-        ? getThumbnailPath(f.absolutePath, this.rootStore.uiStore.thumbnailDirectory)
-        : f.absolutePath;
+      file.setThumbnailPath(
+        this.rootStore.imageLoader.needsThumbnail(f)
+          ? getThumbnailPath(f.absolutePath, this.rootStore.uiStore.thumbnailDirectory)
+          : f.absolutePath,
+      );
       return file;
     });
 

@@ -278,7 +278,10 @@ export class ClientLocation {
     worker.onmessage = ({
       data,
     }: {
-      data: { type: 'remove' | 'error'; value: string } | { type: 'add'; value: FileStats };
+      data:
+        | { type: 'remove' | 'error'; value: string }
+        | { type: 'add'; value: FileStats }
+        | { type: 'update'; value: FileStats };
     }) => {
       if (data.type === 'add') {
         const { absolutePath } = data.value;
@@ -289,6 +292,8 @@ export class ClientLocation {
           console.log(`File ${absolutePath} has been added after initialization`);
           this.store.addFile(data.value, this);
         }
+      } else if (data.type === 'update') {
+        this.store.updateFile(data.value);
       } else if (data.type === 'remove') {
         const { value } = data;
         console.log(`Location "${this.name}": File ${value} has been removed.`);

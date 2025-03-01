@@ -93,7 +93,7 @@ class ImageLoader {
       extension: file.extension,
       absolutePath: file.absolutePath,
       // remove ?v=1 that might have been added after the thumbnail was generated earlier
-      thumbnailPath: file.thumbnailPath.split('?v=1')[0],
+      thumbnailPath: file.thumbnailPath.split('?')[0],
     };
 
     if (await fse.pathExists(thumbnailPath)) {
@@ -239,5 +239,5 @@ export default ImageLoader;
 
 // Update the thumbnail path to re-render the image where ever it is used in React
 const updateThumbnailPath = action((file: ClientFile, thumbnailPath: string) => {
-  file.thumbnailPath = `${thumbnailPath}?v=1`;
+  file.setThumbnailPath(thumbnailPath);
 });

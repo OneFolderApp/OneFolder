@@ -105,7 +105,7 @@ export class ClientFile {
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {
-    this.thumbnailPath = thumbnailPath;
+    this.thumbnailPath = `${thumbnailPath.split('?')[0]}?v=${Date.now()}`;
   }
 
   @action.bound addTag(tag: ClientTag): void {

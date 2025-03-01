@@ -9,7 +9,6 @@ export type TagDTO = {
   color: string;
   subTags: ID[];
   impliedTags: ID[];
-  copyImpliedTags: boolean;
   /** Whether any files with this tag should be hidden */
   isHidden: boolean;
 };

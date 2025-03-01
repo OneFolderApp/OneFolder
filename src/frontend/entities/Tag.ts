@@ -23,7 +23,6 @@ export class ClientTag {
   readonly subTags = observable<ClientTag>([]);
   @observable private _impliedByTags = observable<ClientTag>([]);
   @observable impliedTags = observable<ClientTag>([]);
-  @observable copyImpliedTags: boolean;
 
   // icon, (fileCount?)
 
@@ -41,7 +40,6 @@ export class ClientTag {
     dateAdded: Date,
     color: string,
     isHidden: boolean,
-    copyImpliedTags: boolean,
   ) {
     this.store = store;
     this.id = id;
@@ -50,7 +48,6 @@ export class ClientTag {
     this.color = color;
     this.fileCount = 0;
     this.isHidden = isHidden;
-    this.copyImpliedTags = copyImpliedTags;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -317,7 +314,6 @@ export class ClientTag {
       subTags: this.subTags.map((subTag) => subTag.id),
       isHidden: this.isHidden,
       impliedTags: this.impliedTags.map((impliedTag) => impliedTag.id),
-      copyImpliedTags: true,
     };
   }
 

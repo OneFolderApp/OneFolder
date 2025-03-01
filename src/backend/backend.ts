@@ -55,7 +55,6 @@ export default class Backend implements DataStorage {
           dateAdded: new Date(),
           subTags: [],
           impliedTags: [],
-          copyImpliedTags: true,
           color: '',
           isHidden: false,
         });

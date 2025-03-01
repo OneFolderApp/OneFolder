@@ -88,7 +88,7 @@ class TagStore {
 
   @action.bound async create(parent: ClientTag, tagName: string): Promise<ClientTag> {
     const id = generateId();
-    const tag = new ClientTag(this, id, tagName, new Date(), '', false, true);
+    const tag = new ClientTag(this, id, tagName, new Date(), '', false);
     this.tagGraph.set(tag.id, tag);
     tag.setParent(parent);
     parent.subTags.push(tag);
@@ -161,10 +161,10 @@ class TagStore {
 
   @action private createTagGraph(backendTags: TagDTO[]) {
     // Create tags
-    for (const { id, name, dateAdded, color, isHidden, copyImpliedTags } of backendTags) {
+    for (const { id, name, dateAdded, color, isHidden } of backendTags) {
       // Create entity and set properties
       // We have to do this because JavaScript does not allow multiple constructor.
-      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden, copyImpliedTags);
+      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden);
       // Add to index
       this.tagGraph.set(tag.id, tag);
     }

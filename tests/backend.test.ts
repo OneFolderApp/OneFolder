@@ -22,7 +22,6 @@ describe('Backend', () => {
     color: '',
     subTags: [],
     impliedTags: [],
-    copyImpliedTags: false,
     isHidden: false,
   };
 

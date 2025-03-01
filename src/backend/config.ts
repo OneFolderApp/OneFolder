@@ -103,18 +103,17 @@ const dbConfig: DBVersioningConfig[] = [
       {
         name: 'tags',
         schema: '++id',
-      }
+      },
     ],
     upgrade: (tx: Transaction): void => {
       tx.table('tags')
         .toCollection()
         .modify((tag: TagDTO) => {
-          tag.copyImpliedTags = true;
           tag.impliedTags = [];
           return tag;
         });
-    }
-  }
+    },
+  },
 ];
 
 type DBVersioningConfig = {

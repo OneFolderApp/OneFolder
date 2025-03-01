@@ -75,6 +75,11 @@ export class ClientTag {
     return this._parent;
   }
 
+  /** Get actual tag objects based on the IDs retrieved from the backend */
+  @computed get getImpliedByTags(): ClientTag[] {
+    return this._impliedByTags;
+  }
+
   /** Returns this tag and all of its sub-tags ordered depth-first */
   @action getSubTree(): Generator<ClientTag> {
     function* tree(tag: ClientTag, depth: number): Generator<ClientTag> {
@@ -114,7 +119,7 @@ export class ClientTag {
   @action getAncestors(): Generator<ClientTag> {
     function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
       if (depth > MAX_TAG_DEPTH) {
-        console.error('Tag has too many ancestors. Is there a cycle in the tag tree?', tag);
+        console.error('Tag has too many ancestors. Is there a cycle in the tag tree?', tag.name);
       } else if (tag.id !== ROOT_TAG_ID) {
         yield tag;
         yield* ancestors(tag.parent, depth + 1);
@@ -127,7 +132,7 @@ export class ClientTag {
   @action getImpliedAncestors(): Generator<ClientTag> {
     function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
       if (depth > MAX_TAG_DEPTH) {
-        console.error('Tag has too many ancestors. Is there a cycle in the tag tree?', tag);
+        console.error('Tag has too many ancestors. Is there a cycle in the implied tag tree?', tag.name);
       } else if (tag.id !== ROOT_TAG_ID) {
         yield tag;
         yield* ancestors(tag.parent, depth + 1);
@@ -248,6 +253,23 @@ export class ClientTag {
     for (const tag of newTags) {
       if (!this.impliedTags.includes(tag)) {
         this.addImpliedTag(tag);
+      }
+    }
+  }
+
+  @action.bound replaceImpliedByTags(newTags: ClientTag[]): void {
+    //convert to set for efficient comparison and avoid duplicates
+    const newTagsSet = new Set(newTags);
+
+    for (const tag of this._impliedByTags.slice()) {
+      if (!newTagsSet.has(tag)) {
+        tag.removeImpliedTag(this);
+      }
+    }
+
+    for (const tag of newTags) {
+      if (!this._impliedByTags.includes(tag)) {
+        tag.addImpliedTag(this);
       }
     }
   }

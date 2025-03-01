@@ -1,6 +1,6 @@
 import { action } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useReducer } from 'react';
 
 import { Button, IconSet, Tag } from 'widgets';
 import { Dialog } from 'widgets/popovers';
@@ -17,6 +17,8 @@ interface TagImplyProps {
 /** this component is only shown when all tags in the context do not have child-tags */
 export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
   const [impliedTags, setImpliedTags] = useState<ClientTag[]>(Array.from(tag.impliedTags));
+  const [impliedByTags, setImpliedByTags] = useState<ClientTag[]>(Array.from(tag.getImpliedByTags));
+  const [suggestionsUpdateDependency, forceSuggestionsUpdate] = useReducer((x) => x + 1, 0);
 
   const imply = action((impliedTag: ClientTag) => {
     if (tag === impliedTag) {
@@ -26,14 +28,14 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
         timeout: 3000,
         type: 'error',
       });
-    } else if (tag.isAncestor(impliedTag)) {
+    } else if (tag.isImpliedAncestor(impliedTag)) {
       // Show an error toast
       AppToaster.show({
         message: 'You cannot imply a parent tag',
         timeout: 3000,
         type: 'error',
       });
-    } else if (impliedTag.isAncestor(tag)) {
+    } else if (impliedTag.isImpliedAncestor(tag)) {
       // Show an error toast
       AppToaster.show({
         message: 'You cannot imply a child tag',
@@ -43,16 +45,50 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
     } else {
       setImpliedTags([...impliedTags, impliedTag]);
     }
-  })
+  });
+
+  const implyBy = action((impliedByTag: ClientTag) => {
+    if (tag === impliedByTag) {
+      // Show an error toast
+      AppToaster.show({
+        message: 'You cannot imply a tag with itself',
+        timeout: 3000,
+        type: 'error',
+      });
+    } else if (tag.isImpliedAncestor(impliedByTag)) {
+      // Show an error toast
+      AppToaster.show({
+        message: 'You cannot imply by a parent tag',
+        timeout: 3000,
+        type: 'error',
+      });
+    } else if (impliedByTag.isImpliedAncestor(tag)) {
+      // Show an error toast
+      AppToaster.show({
+        message: 'You cannot imply by a child tag',
+        timeout: 3000,
+        type: 'error',
+      });
+    } else {
+      setImpliedByTags([...impliedByTags, impliedByTag]);
+    }
+  });
 
   const unimply = action((impliedTag: ClientTag) => {
     setImpliedTags(impliedTags.filter((tag) => tag !== impliedTag));
-  })
+  });
+
+  const unimplyBy = action((impliedByTag: ClientTag) => {
+    setImpliedByTags(impliedByTags.filter((tag) => tag !== impliedByTag));
+  });
 
   const unimplyAll = action(() => {
     setImpliedTags([]);
-  })
+  });
 
+  const unimplyByAll = action(() => {
+    setImpliedByTags([]);
+  });
 
   const firstUpdate = React.useRef(true);
   useEffect(() => {
@@ -64,10 +100,12 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
 
     // Automatically save when the tags change
     save();
-  }, [impliedTags]);
+    forceSuggestionsUpdate();
+  }, [impliedTags, impliedByTags]);
 
   const save = action(() => {
     tag.replaceImpliedTags(impliedTags);
+    tag.replaceImpliedByTags(impliedByTags);
 
     if (impliedTags.length > 0) {
       AppToaster.show({
@@ -82,7 +120,20 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
         type: 'success',
       }, "imply-toast");
     }
-  })
+    if (impliedByTags.length > 0) {
+      AppToaster.show({
+        message: `Tag "${tag.name}" now is implied by "${impliedByTags.map((v) => v.name).join('", "')}"`,
+        timeout: 3000,
+        type: 'success',
+      }, "imply-toast");
+    } else {
+      AppToaster.show({
+        message: `Tag "${tag.name}" no longer is implied by any tags`,
+        timeout: 3000,
+        type: 'success',
+      }, "imply-toast");
+    }
+  });
 
   return (
     <Dialog
@@ -93,7 +144,7 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
       describedby="imply-info"
     >
       <p id="imply-info">
-        This allows you to modify the implied tags for a tag. <br></br>
+        This allows you to modify the implied tags for a tag. <br />
         Note: You cannot imply a parent, child, inherited implied, or implied-by tag, to avoid circular relationships and maintain a clearer structure.
       </p>
       <form method="dialog" onSubmit={(e) => e.preventDefault()}>
@@ -113,6 +164,21 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
             onClear={unimplyAll}
             multiline
             filter={(t) => tag !== t && !tag.isImpliedAncestor(t) && !t.isImpliedAncestor(tag)}
+            suggestionsUpdateDependency={suggestionsUpdateDependency}
+          />
+
+          <br />
+
+          <label htmlFor="tag-implyBy-picker">Implied by tags</label>
+          <TagSelector
+            disabled={false}
+            selection={impliedByTags}
+            onSelect={implyBy}
+            onDeselect={unimplyBy}
+            onClear={unimplyByAll}
+            multiline
+            filter={(t) => tag !== t && !tag.isImpliedAncestor(t) && !t.isImpliedAncestor(tag)}
+            suggestionsUpdateDependency={suggestionsUpdateDependency}
           />
         </fieldset>
         <br />

@@ -32,6 +32,7 @@ export interface TagSelectorProps {
   multiline?: boolean;
   filter?: (tag: ClientTag) => boolean;
   showTagContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
+  suggestionsUpdateDependency?: number;
 }
 
 const TagSelector = (props: TagSelectorProps) => {
@@ -47,6 +48,7 @@ const TagSelector = (props: TagSelectorProps) => {
     renderCreateOption,
     multiline,
     filter,
+    suggestionsUpdateDependency,
   } = props;
   const gridId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -177,6 +179,7 @@ const TagSelector = (props: TagSelectorProps) => {
           toggleSelection={toggleSelection}
           resetTextBox={resetTextBox.current}
           renderCreateOption={renderCreateOption}
+          suggestionsUpdateDependency={suggestionsUpdateDependency}
         />
       </Flyout>
     </div>
@@ -216,6 +219,7 @@ interface SuggestedTagsListProps {
     inputText: string,
     resetTextBox: () => void,
   ) => ReactElement<RowProps> | ReactElement<RowProps>[];
+  suggestionsUpdateDependency?: number;
 }
 
 const SuggestedTagsList = observer(
@@ -223,7 +227,7 @@ const SuggestedTagsList = observer(
     props: SuggestedTagsListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
-    const { id, query, selection, filter = (() => true), toggleSelection, resetTextBox, renderCreateOption } = props;
+    const { id, query, selection, filter = (() => true), toggleSelection, resetTextBox, renderCreateOption, suggestionsUpdateDependency } = props;
     const { tagStore } = useStore();
 
     const suggestions = useMemo(
@@ -236,7 +240,7 @@ const SuggestedTagsList = observer(
             return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower)).filter(filter);
           }
         }),
-      [query, tagStore],
+      [query, tagStore, suggestionsUpdateDependency],
     ).get();
 
     return (

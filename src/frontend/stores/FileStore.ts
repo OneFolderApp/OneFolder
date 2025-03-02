@@ -259,7 +259,9 @@ class FileStore {
       const { thumbnailDirectory } = this.rootStore.uiStore; // TODO: make a config store for this?
       const oldThumbnailPath = file.thumbnailPath.split('?')[0];
       const newThumbPath = getThumbnailPath(newData.absolutePath, thumbnailDirectory);
-      fse.move(oldThumbnailPath, newThumbPath).catch(() => {});
+      fse
+        .move(oldThumbnailPath, newThumbPath)
+        .catch((err) => console.error('Error moving file:', err));
 
       const newClientFile = new ClientFile(this, newIFile);
       newClientFile.thumbnailPath = newThumbPath;

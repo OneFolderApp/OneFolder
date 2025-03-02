@@ -506,14 +506,18 @@ class LocationStore {
 
   @action async updateFile(fileStats: FileStats): Promise<void> {
     const fileStore = this.rootStore.fileStore;
-    const dbMatchOverwrite = (
-      await this.backend.fetchFilesByKey('absolutePath', fileStats.absolutePath)
-    )[0];
-    await this.updateChangedFiles(
-      [dbMatchOverwrite],
-      new Map<string, FileStats>([[fileStats.absolutePath, fileStats]]),
+    const dbMatchOverwrites = await this.backend.fetchFilesByKey(
+      'absolutePath',
+      fileStats.absolutePath,
     );
-    fileStore.debouncedRefetch();
+    const dbMatchOverwrite = dbMatchOverwrites.length > 0 ? dbMatchOverwrites[0] : undefined;
+    if (dbMatchOverwrite) {
+      await this.updateChangedFiles(
+        [dbMatchOverwrite],
+        new Map<string, FileStats>([[fileStats.absolutePath, fileStats]]),
+      );
+      fileStore.debouncedRefetch();
+    }
   }
 
   @action hideFile(path: string): void {

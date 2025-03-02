@@ -2,7 +2,7 @@
   "name": "allusion",
   "productName": "Allusion",
 
-  "version": "1.0.1",
+  "version": "1.0.0-ruc.1",
 
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
@@ -75,14 +75,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PlayWolfYT/Allusion.git"
+    "url": "git+https://github.com/RafaUC/Allusion.git"
   },
   "author": "Allusion-App",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/PlayWolfYT/Allusion/issues"
+    "url": "https://github.com/RafaUC/Allusion/issues"
   },
-  "homepage": "https://github.com/PlayWolfYT/Allusion#readme",
+  "homepage": "https://github.com/RafaUC/Allusion/Allusion#readme",
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
     "@types/chrome": "^0.0.195",

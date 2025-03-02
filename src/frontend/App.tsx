@@ -43,12 +43,6 @@ const App = observer(() => {
     }
   }, [uiStore, isOutlinerOpen]);
 
-  AppToaster.show({
-    message: "Allusion Custom Version by PlayWolf officially loaded!",
-    timeout: 5000,
-    type: 'info',
-  })
-
   return (
     <CustomThemeProvider>
       <DropContextProvider onDragEnter={openOutlinerOnDragEnter}>

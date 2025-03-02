@@ -1,15 +1,15 @@
 <img alt="Allusion" src="./screenshot.jpg"/>
 
 Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
-    - Video support.
-    - Implied tag relationships.
-        - Automatic inheritance of implied tags.
-        - Fully compatible with advanced search.
-    -Quality-of-life improvements.
-        - Improved thumbnail updates when files change.
-        - more.
+- Video support.
+- Implied tag relationships.
+  - Automatic inheritance of implied tags.
+  - Fully compatible with advanced search.
+- Quality-of-life improvements.
+  -Improved thumbnail updates when files change.
+  - more.
         
-Thanks to the developers and the community for your hard work! <3
+Thanks to the developers and the community for your hard work! ❤️
 
 ---
 

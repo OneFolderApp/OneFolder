@@ -2,11 +2,14 @@
 
 Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
     - Video support.
-    - Implied Tags Relationships.
+    - Implied tag relationships.
         - Automatic inheritance of implied tags.
-        - Fully compatible with advanced search.        
-    - Quality-Of-Life improvements.
-        - Improved thumbnail update on file changes.
+        - Fully compatible with advanced search.
+    -Quality-of-life improvements.
+        - Improved thumbnail updates when files change.
+        - more.
+        
+Thanks to the developers and the community for your hard work! <3
 
 ---
 

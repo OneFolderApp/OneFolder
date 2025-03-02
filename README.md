@@ -6,7 +6,7 @@ Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
   - Automatic inheritance of implied tags.
   - Fully compatible with advanced search.
 - Quality-of-life improvements.
-  -Improved thumbnail updates when files change.
+  - Improved thumbnail updates when files change.
   - more.
         
 Thanks to the developers and the community for your hard work! ❤️

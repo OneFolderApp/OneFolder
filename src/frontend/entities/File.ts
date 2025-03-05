@@ -3,6 +3,7 @@ import {
   IReactionDisposer,
   makeObservable,
   observable,
+  computed,
   ObservableSet,
   reaction,
 } from 'mobx';
@@ -102,6 +103,22 @@ export class ClientFile {
     );
 
     makeObservable(this);
+  }
+
+  //Gets his tags and all inherithed tags from parent and implied tags from his tags
+  @computed get inheritedTags(): Set<ClientTag> {
+    const inheritedTagSet = new Set<ClientTag>();
+    for (const tag of this.tags) {
+      if (!inheritedTagSet.has(tag)) {
+        for (const inheritedTag of tag.getImpliedAncestors()) {
+          if (!inheritedTagSet.has(inheritedTag)) {
+            inheritedTagSet.add(inheritedTag);
+          }
+        }
+      }
+    }
+    console.log(Array.from(inheritedTagSet, (t) => t.name));
+    return inheritedTagSet;
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {

@@ -19,6 +19,7 @@ import { useComputed } from '../hooks/mobx';
 
 export interface TagSelectorProps {
   selection: ClientTag[];
+  isNotInherithedList?: [ClientTag, boolean][];
   onSelect: (item: ClientTag) => void;
   onDeselect: (item: ClientTag) => void;
   onTagClick?: (item: ClientTag) => void;
@@ -38,6 +39,7 @@ export interface TagSelectorProps {
 const TagSelector = (props: TagSelectorProps) => {
   const {
     selection,
+    isNotInherithedList,
     onSelect,
     onDeselect,
     onTagClick,
@@ -125,6 +127,14 @@ const TagSelector = (props: TagSelectorProps) => {
     [onDeselect, onSelect],
   );
 
+  const selectionSummary = useMemo((): [ClientTag, boolean][] => {
+    if (isNotInherithedList) {
+      return isNotInherithedList;
+    } else {
+      return selection.map((t) => [t, true] as [ClientTag, boolean]);
+    }
+  }, [selection, isNotInherithedList]);
+
   return (
     <div
       role="combobox"
@@ -143,11 +153,11 @@ const TagSelector = (props: TagSelectorProps) => {
         target={(ref) => (
           <div ref={ref} className="multiautocomplete-input">
             <div className="input-wrapper">
-              {selection.map((t) => (
+              {selectionSummary.map((tt) => (
                 <SelectedTag
-                  key={t.id}
-                  tag={t}
-                  onDeselect={onDeselect}
+                  key={tt[0].id}
+                  tag={tt[0]}
+                  onDeselect={tt[1] ? onDeselect : undefined}
                   onTagClick={onTagClick}
                   showContextMenu={showTagContextMenu}
                 />
@@ -190,7 +200,7 @@ export { TagSelector };
 
 interface SelectedTagProps {
   tag: ClientTag;
-  onDeselect: (item: ClientTag) => void;
+  onDeselect?: (item: ClientTag) => void;
   onTagClick?: (item: ClientTag) => void;
   showContextMenu?: (e: React.MouseEvent<HTMLElement>, item: ClientTag) => void;
 }
@@ -201,7 +211,7 @@ const SelectedTag = observer((props: SelectedTagProps) => {
     <Tag
       text={tag.name}
       color={tag.viewColor}
-      onRemove={() => onDeselect(tag)}
+      onRemove={onDeselect ? () => onDeselect(tag) : undefined}
       onClick={onTagClick !== undefined ? () => onTagClick(tag) : undefined}
       onContextMenu={showContextMenu !== undefined ? (e) => showContextMenu(e, tag) : undefined}
     />

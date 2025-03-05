@@ -49,10 +49,15 @@ const FileTags = observer(({ file }: IFileTagProp) => {
     [file, show],
   );
 
+  const isNotInherithedMap = [
+    ...Array.from(file.inheritedTags).map((t) => [t, file.tags.has(t)] as [ClientTag, boolean]),
+  ];
+
   return (
     <TagSelector
       disabled={file.isBroken}
       selection={Array.from(file.tags)}
+      isNotInherithedList={isNotInherithedMap}
       onClear={file.clearTags}
       onDeselect={file.removeTag}
       onSelect={file.addTag}

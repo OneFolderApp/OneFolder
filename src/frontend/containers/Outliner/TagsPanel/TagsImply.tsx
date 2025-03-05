@@ -17,7 +17,7 @@ interface TagImplyProps {
 /** this component is only shown when all tags in the context do not have child-tags */
 export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
   const [impliedTags, setImpliedTags] = useState<ClientTag[]>(Array.from(tag.impliedTags));
-  const [impliedByTags, setImpliedByTags] = useState<ClientTag[]>(Array.from(tag.getImpliedByTags));
+  const [impliedByTags, setImpliedByTags] = useState<ClientTag[]>(Array.from(tag.impliedByTags));
   const [suggestionsUpdateDependency, forceSuggestionsUpdate] = useReducer((x) => x + 1, 0);
 
   const imply = action((impliedTag: ClientTag) => {

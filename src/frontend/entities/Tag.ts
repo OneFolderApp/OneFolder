@@ -73,7 +73,7 @@ export class ClientTag {
   }
 
   /** Get actual tag objects based on the IDs retrieved from the backend */
-  @computed get getImpliedByTags(): ClientTag[] {
+  @computed get impliedByTags(): ClientTag[] {
     return this._impliedByTags;
   }
 
@@ -129,7 +129,10 @@ export class ClientTag {
   @action getImpliedAncestors(): Generator<ClientTag> {
     function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
       if (depth > MAX_TAG_DEPTH) {
-        console.error('Tag has too many ancestors. Is there a cycle in the implied tag tree?', tag.name);
+        console.error(
+          'Tag has too many ancestors. Is there a cycle in the implied tag tree?',
+          tag.name,
+        );
       } else if (tag.id !== ROOT_TAG_ID) {
         yield tag;
         yield* ancestors(tag.parent, depth + 1);

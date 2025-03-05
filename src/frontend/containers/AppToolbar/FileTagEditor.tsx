@@ -21,6 +21,8 @@ import { ClientFile } from '../../entities/File';
 import { ClientTag } from '../../entities/Tag';
 import FocusManager from '../../FocusManager';
 import { useAction, useAutorun, useComputed } from '../../hooks/mobx';
+import { Menu, useContextMenu } from 'widgets/menus';
+import { EditorTagSummaryItems } from '../ContentView/menu-items';
 
 const POPUP_ID = 'tag-editor-popup';
 
@@ -49,12 +51,18 @@ const TagEditor = () => {
   const [inputText, setInputText] = useState('');
 
   const counter = useComputed(() => {
-    // Count how often tags are used
-    const counter = new Map<ClientTag, number>();
+    // Count how often tags are used // Aded las bool value indicating if is an inherited tag -> should not show delete button;
+    const counter = new Map<ClientTag, [number, boolean]>();
     for (const file of uiStore.fileSelection) {
-      for (const tag of file.tags) {
-        const count = counter.get(tag);
-        counter.set(tag, count !== undefined ? count + 1 : 1);
+      for (const tag of file.inheritedTags) {
+        const counterTag = counter.get(tag);
+        const count = counterTag?.[0];
+        const counterNotInherited = counterTag?.[1];
+        const notInherited = file.tags.has(tag);
+        counter.set(tag, [
+          count !== undefined ? count + 1 : 1,
+          counterNotInherited || notInherited,
+        ]);
       }
     }
     return counter;
@@ -168,7 +176,7 @@ const TagEditor = () => {
 
 interface MatchingTagsListProps {
   inputText: string;
-  counter: IComputedValue<Map<ClientTag, number>>;
+  counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   resetTextBox: () => void;
 }
 
@@ -203,7 +211,8 @@ const MatchingTagsList = observer(
     return (
       <Grid ref={ref} id={POPUP_ID} multiselectable>
         {matches.map((tag) => {
-          const selected = counter.get().get(tag) !== undefined;
+          //Only mark as selected those tags that are actually assigned to the file(s) and not only inherited
+          const selected = counter.get().get(tag)?.[1] ?? false;
           return (
             <TagOption
               key={tag.id}
@@ -263,7 +272,7 @@ const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps
 };
 
 interface TagSummaryProps {
-  counter: IComputedValue<Map<ClientTag, number>>;
+  counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   removeTag: (tag: ClientTag) => void;
 }
 
@@ -272,17 +281,23 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
 
   const sortedTags: ClientTag[] = Array.from(counter.get().entries())
     // Sort based on count
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1][0] - a[1][0])
     .map((pair) => pair[0]);
 
+  const handleTagContextMenu = TagSummaryMenu();
+
   return (
-    <div>
+    <div onMouseDown={(e) => e.preventDefault()}>
       {sortedTags.map((t) => (
         <Tag
           key={t.id}
-          text={`${t.name}${uiStore.fileSelection.size > 1 ? ` (${counter.get().get(t)})` : ''}`}
+          text={`${t.name}${
+            uiStore.fileSelection.size > 1 ? ` (${counter.get().get(t)?.[0]})` : ''
+          }`}
           color={t.viewColor}
-          onRemove={() => removeTag(t)}
+          //Only show remove button in those tags that are actually assigned to the file(s) and not only inherited
+          onRemove={counter.get().get(t)?.[1] ? () => removeTag(t) : undefined}
+          onContextMenu={(e) => handleTagContextMenu(e, t)}
         />
       ))}
       {sortedTags.length === 0 && <i>No tags added yet</i>}
@@ -290,12 +305,60 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
   );
 });
 
+const TagSummaryMenu = () => {
+  const { uiStore } = useStore();
+  const handleMenuBlur = useRef((e: React.FocusEvent) => {
+    if (!e.relatedTarget?.closest('[data-popover="true"]')) {
+      uiStore.closeToolbarTagPopover();
+      FocusManager.focusGallery();
+    }
+  }).current;
+  const handleMenuKeyDown = useRef((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      uiStore.closeToolbarTagPopover();
+      FocusManager.focusGallery();
+    }
+  }).current;
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const divRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (activeMenuId && divRef.current) {
+      divRef.current.focus();
+    }
+  }, [activeMenuId]);
+
+  const show = useContextMenu();
+  const handleTagContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLElement>, tag: ClientTag) => {
+      event.stopPropagation();
+      show(
+        event.clientX,
+        event.clientY,
+        <div ref={divRef} onBlur={handleMenuBlur} onKeyDown={handleMenuKeyDown} tabIndex={-1}>
+          <Menu>
+            <EditorTagSummaryItems tag={tag} />
+          </Menu>
+        </div>,
+      );
+      setActiveMenuId(tag.id);
+    },
+    [show, handleMenuBlur, handleMenuKeyDown],
+  );
+
+  return handleTagContextMenu;
+};
+
 const FloatingPanel = observer(({ children }: { children: ReactNode }) => {
   const { uiStore } = useStore();
 
   const handleBlur = useRef((e: React.FocusEvent) => {
     const button = e.currentTarget.previousElementSibling as HTMLElement;
-    if (e.relatedTarget !== button && !e.currentTarget.contains(e.relatedTarget as Node)) {
+    if (
+      e.relatedTarget !== button &&
+      !e.currentTarget.contains(e.relatedTarget as Node) &&
+      !e.relatedTarget?.closest('[data-contextmenu="true"]')
+    ) {
       uiStore.closeToolbarTagPopover();
       FocusManager.focusGallery();
     }

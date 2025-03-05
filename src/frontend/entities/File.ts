@@ -117,7 +117,6 @@ export class ClientFile {
         }
       }
     }
-    console.log(Array.from(inheritedTagSet, (t) => t.name));
     return inheritedTagSet;
   }
 

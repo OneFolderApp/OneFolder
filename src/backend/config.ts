@@ -114,6 +114,20 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    // Version 10, 6-3-25: Added scores and fileScores
+    version: 10,
+    collections: [
+      {
+        name: 'scores',
+        schema: '++id, scoreValue, userId, fileId',
+      },
+      {
+        name: 'fileScores',
+        schema: '++id, fileId, scoreId',
+      },
+    ],
+  },
 ];
 
 type DBVersioningConfig = {

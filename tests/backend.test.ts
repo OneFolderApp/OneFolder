@@ -47,6 +47,7 @@ describe('Backend', () => {
         ino: index.toString(),
         id: index.toString(),
         tags: [],
+        scores: new Map(),
       });
     }
 

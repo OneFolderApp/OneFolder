@@ -6,6 +6,7 @@ import {
   computed,
   ObservableSet,
   reaction,
+  ObservableMap,
 } from 'mobx';
 import Path from 'path';
 
@@ -15,6 +16,7 @@ import ImageLoader from '../image/ImageLoader';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
+import { ClientScore } from './Score';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -46,6 +48,7 @@ export class ClientFile {
   readonly relativePath: string;
   readonly absolutePath: string;
   readonly tags: ObservableSet<ClientTag>;
+  readonly scores: ObservableMap<ClientScore, number>;
   readonly size: number;
   readonly width: number;
   readonly height: number;
@@ -87,6 +90,7 @@ export class ClientFile {
     this.filename = base.slice(0, base.lastIndexOf('.'));
 
     this.tags = observable(this.store.getTags(fileProps.tags));
+    this.scores = observable(this.store.getScores(fileProps.scores));
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -172,6 +176,7 @@ export class ClientFile {
       relativePath: this.relativePath,
       absolutePath: this.absolutePath,
       tags: Array.from(this.tags, (t) => t.id), // removes observable properties from observable array
+      scores: new Map<ID, number>([...this.scores].map(([cs, value]) => [cs.id, value])),
       size: this.size,
       width: this.width,
       height: this.height,

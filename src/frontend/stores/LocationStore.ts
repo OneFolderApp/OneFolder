@@ -596,6 +596,7 @@ export async function pathToIFile(
     id: generateId(),
     locationId: loc.id,
     tags: [],
+    scores: new Map<ID, number>(),
     dateAdded: now,
     dateModified: now,
     dateLastIndexed: now,

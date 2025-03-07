@@ -5,7 +5,7 @@ import { FileSearchDTO } from './file-search';
 import { ID } from './id';
 import { LocationDTO } from './location';
 import { TagDTO } from './tag';
-import { ScoreDTO, FileScoreDTO } from './score';
+import { ScoreDTO } from './score';
 
 /**
  * The user generated persisted data edited or viewed by one or multiple actors (users, multiple devices etc.).
@@ -24,7 +24,6 @@ export interface DataStorage {
   fetchLocations(): Promise<LocationDTO[]>;
   fetchSearches(): Promise<FileSearchDTO[]>;
   fetchScores(): Promise<ScoreDTO[]>;
-  fetchFileScoresByFile(fileId: ID): Promise<FileScoreDTO[]>;
   searchFiles(
     criteria: ConditionDTO<FileDTO> | [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
     order: OrderBy<FileDTO>,
@@ -41,14 +40,12 @@ export interface DataStorage {
   saveLocation(location: LocationDTO): Promise<void>;
   saveSearch(search: FileSearchDTO): Promise<void>;
   saveScore(score: ScoreDTO): Promise<void>;
-  saveFileScore(fileScore: FileScoreDTO): Promise<void>;
   removeTags(tags: ID[]): Promise<void>;
   mergeTags(tagToBeRemoved: ID, tagToMergeWith: ID): Promise<void>;
   removeFiles(files: ID[]): Promise<void>;
   removeLocation(location: ID): Promise<void>;
   removeSearch(search: ID): Promise<void>;
-  removeScore(scoreId: ID): Promise<void>;
-  removeFileScore(fileId: ID, scoreId: ID): Promise<void>;
+  removeScores(scores: ID[]): Promise<void>;
   countFiles(): Promise<[fileCount: number, untaggedFileCount: number]>;
   clear(): Promise<void>;
 }

@@ -12,6 +12,7 @@ import ImageLoader from '../image/ImageLoader';
 
 import { RendererMessenger } from 'src/ipc/renderer';
 import SearchStore from './SearchStore';
+import ScoreStore from './ScoreStore';
 
 // This will throw exceptions whenever we try to modify the state directly without an action
 // Actions will batch state modifications -> better for performance
@@ -33,6 +34,7 @@ class RootStore {
   readonly #backup: DataBackup;
 
   readonly tagStore: TagStore;
+  readonly scoreStore: ScoreStore;
   readonly fileStore: FileStore;
   readonly locationStore: LocationStore;
   readonly uiStore: UiStore;
@@ -47,6 +49,7 @@ class RootStore {
     formatWindowTitle: (FileStore: FileStore, uiStore: UiStore) => string,
   ) {
     this.tagStore = new TagStore(backend, this);
+    this.scoreStore = new ScoreStore(backend, this);
     this.fileStore = new FileStore(backend, this);
     this.locationStore = new LocationStore(backend, this);
     this.uiStore = new UiStore(this);
@@ -75,6 +78,7 @@ class RootStore {
       // The tag store needs to be awaited because file entities have references
       // to tag entities.
       rootStore.tagStore.init(),
+      rootStore.scoreStore.init(),
       rootStore.exifTool.initialize(),
       rootStore.imageLoader.init(),
       rootStore.searchStore.init(),

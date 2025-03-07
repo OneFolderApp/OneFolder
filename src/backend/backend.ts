@@ -16,7 +16,7 @@ import { FileSearchDTO } from '../api/file-search';
 import { ID } from '../api/id';
 import { LocationDTO } from '../api/location';
 import { ROOT_TAG_ID, TagDTO } from '../api/tag';
-import { ScoreDTO, FileScoreDTO } from '../api/score';
+import { ScoreDTO } from '../api/score';
 
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
@@ -30,7 +30,6 @@ export default class Backend implements DataStorage {
   #locations: Table<LocationDTO, ID>;
   #searches: Table<FileSearchDTO, ID>;
   #scores: Table<ScoreDTO, ID>;
-  #fileScores: Table<FileScoreDTO, [ID, ID]>;
   #db: Dexie;
   #notifyChange: () => void;
 
@@ -42,7 +41,6 @@ export default class Backend implements DataStorage {
     this.#locations = db.table('locations');
     this.#searches = db.table('searches');
     this.#scores = db.table('scores');
-    this.#fileScores = db.table('fileScores');
     this.#db = db;
     this.#notifyChange = notifyChange;
   }
@@ -83,13 +81,11 @@ export default class Backend implements DataStorage {
       return shuffleArray(await this.#files.toArray());
     }
     if (order === 'score' && scoreId) {
-      const fileScores = await this.#fileScores.where('scoreId').equals(scoreId).toArray();
-      const scoreMap = new Map(fileScores.map((fs) => [fs.fileId, fs.value]));
       const files = await this.#files.toArray();
 
       files.sort((a, b) => {
-        const scoreA = scoreMap.get(a.id) ?? 0;
-        const scoreB = scoreMap.get(b.id) ?? 0;
+        const scoreA = a.scores.get(scoreId) ?? 0;
+        const scoreB = b.scores.get(scoreId) ?? 0;
         return fileOrder === OrderDirection.Desc ? scoreB - scoreA : scoreA - scoreB;
       });
       return files;
@@ -128,13 +124,8 @@ export default class Backend implements DataStorage {
   }
 
   async fetchScores(): Promise<ScoreDTO[]> {
-    console.info('IndexedDB: Fetching score definitions...');
+    console.info('IndexedDB: Fetching scores...');
     return this.#scores.toArray();
-  }
-
-  async fetchFileScoresByFile(fileId: ID): Promise<FileScoreDTO[]> {
-    console.info('IndexedDB: Fetching file scores for file', fileId);
-    return this.#fileScores.where('fileId').equals(fileId).toArray();
   }
 
   async searchFiles(
@@ -216,12 +207,6 @@ export default class Backend implements DataStorage {
     this.#notifyChange();
   }
 
-  async saveFileScore(fileScore: FileScoreDTO): Promise<void> {
-    console.info('IndexedDB: Saving file score...', fileScore);
-    await this.#fileScores.put(fileScore);
-    this.#notifyChange();
-  }
-
   async removeTags(tags: ID[]): Promise<void> {
     console.info('IndexedDB: Removing tags...', tags);
     await this.#db.transaction('rw', this.#files, this.#tags, () => {
@@ -268,18 +253,13 @@ export default class Backend implements DataStorage {
 
   async removeFiles(files: ID[]): Promise<void> {
     console.info('IndexedDB: Removing files...', files);
-    await this.#db.transaction('rw', this.#files, this.#fileScores, async () => {
-      await this.#fileScores.where('fileId').anyOf(files).delete();
-      await this.#files.bulkDelete(files);
-    });
+    await this.#files.bulkDelete(files);
     this.#notifyChange();
   }
 
   async removeLocation(location: ID): Promise<void> {
     console.info('IndexedDB: Removing location...', location);
-    const fileIdsToDelete = await this.#files.where('locationId').equals(location).primaryKeys();
-    await this.#db.transaction('rw', this.#fileScores, this.#files, this.#locations, () => {
-      this.#fileScores.where('fileId').anyOf(fileIdsToDelete).delete();
+    await this.#db.transaction('rw', this.#files, this.#locations, () => {
       this.#files.where('locationId').equals(location).delete();
       this.#locations.delete(location);
     });
@@ -292,18 +272,20 @@ export default class Backend implements DataStorage {
     this.#notifyChange();
   }
 
-  async removeScore(scoreId: ID): Promise<void> {
-    console.info('IndexedDB: Removing score...', scoreId);
-    await this.#db.transaction('rw', this.#scores, this.#fileScores, async () => {
-      await this.#scores.delete(scoreId);
-      await this.#fileScores.where('scoreId').equals(scoreId).delete();
-    });
-    this.#notifyChange();
-  }
+  async removeScores(scores: ID[]): Promise<void> {
+    console.info('IndexedDB: Removing scores...', scores);
+    await this.#db.transaction('rw', this.#files, this.#scores, async () => {
+      await this.#files
+        .filter((file) => file.scores && scores.some((scoreId) => file.scores.has(scoreId)))
+        .modify((file) => {
+          for (const scoreId of scores) {
+            file.scores.delete(scoreId);
+          }
+        });
 
-  async removeFileScore(fileId: ID, scoreId: ID): Promise<void> {
-    console.info('IndexedDB: Removing file score...', { fileId, scoreId });
-    await this.#fileScores.where({ fileId, scoreId }).delete();
+      await this.#scores.bulkDelete(scores);
+    });
+
     this.#notifyChange();
   }
 

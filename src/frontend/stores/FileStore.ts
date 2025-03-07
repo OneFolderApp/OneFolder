@@ -14,6 +14,7 @@ import { ClientLocation } from '../entities/Location';
 import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
+import { ClientScore } from '../entities/Score';
 
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
@@ -471,6 +472,17 @@ class FileStore {
       }
     }
     return tags;
+  }
+
+  getScores(dtoScores: Map<ID, number>): Map<ClientScore, number> {
+    const scores = new Map<ClientScore, number>();
+    for (const [id, value] of dtoScores.entries()) {
+      const clientScore = this.rootStore.scoreStore.get(id);
+      if (clientScore !== undefined) {
+        scores.set(clientScore, value);
+      }
+    }
+    return scores;
   }
 
   getLocation(location: ID): ClientLocation {

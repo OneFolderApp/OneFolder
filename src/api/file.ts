@@ -9,6 +9,7 @@ export type FileDTO = {
   relativePath: string;
   absolutePath: string;
   tags: ID[];
+  scores: Map<ID, number>;
   /** When the file was imported into Allusion */
   dateAdded: Date;
   /** When the file was modified in Allusion, not related to OS modified date */

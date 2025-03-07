@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 
 import { FileDTO } from '../api/file';
 import { TagDTO } from 'src/api/tag';
+import { ID } from '../api/id';
 
 // The name of the IndexedDB
 export const DB_NAME = 'Allusion';
@@ -115,7 +116,7 @@ const dbConfig: DBVersioningConfig[] = [
     },
   },
   {
-    // Version 10, 6-3-25: Added scores and fileScores
+    // Version 10, 6-3-25: Added scores and .scores to file
     version: 10,
     collections: [
       {
@@ -123,10 +124,19 @@ const dbConfig: DBVersioningConfig[] = [
         schema: '++id, scoreValue, userId, fileId',
       },
       {
-        name: 'fileScores',
-        schema: '++id, fileId, scoreId',
+        name: 'files',
+        schema:
+          '++id, ino, locationId, *tags, scores, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated',
       },
     ],
+    upgrade: (tx: Transaction): void => {
+      tx.table('files')
+        .toCollection()
+        .modify((file: FileDTO) => {
+          file.scores = new Map<ID, number>();
+          return file;
+        });
+    },
   },
 ];
 

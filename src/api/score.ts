@@ -6,9 +6,3 @@ export type ScoreDTO = {
   dateCreated: Date;
   dateModified: Date;
 };
-
-export type FileScoreDTO = {
-  fileId: ID;
-  scoreId: ID;
-  value: number;
-};

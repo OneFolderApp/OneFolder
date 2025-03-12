@@ -91,7 +91,7 @@ import SELECT from 'resources/icons/select.svg';
 import SELECT_CHECKED from 'resources/icons/select-checked.svg';
 import SETTINGS from 'resources/icons/settings.svg';
 // import SMALL_ARROW_DOWN from 'resources/icons/small-arrow-down.svg';
-// import SMALL_ARROW_RIGHT from 'resources/icons/small-arrow-right.svg';
+import SMALL_ARROW_RIGHT from 'resources/icons/small-arrow-right.svg';
 import SORT from 'resources/icons/sort.svg';
 import SORT_ALT from 'resources/icons/sort-alt.svg';
 import TAG_ADD from 'resources/icons/tag-add.svg';
@@ -196,7 +196,7 @@ const IconSet = {
   SELECT_CHECKED: toSvg(SELECT_CHECKED),
   SETTINGS: toSvg(SETTINGS),
   // SMALL_ARROW_DOWN: toSvg(SMALL_ARROW_DOWN),
-  // SMALL_ARROW_RIGHT: toSvg(SMALL_ARROW_RIGHT),
+  SMALL_ARROW_RIGHT: toSvg(SMALL_ARROW_RIGHT),
   SORT: toSvg(SORT),
   SORT_ALT: toSvg(SORT_ALT),
   // SPACER: toSvg(SPACER),

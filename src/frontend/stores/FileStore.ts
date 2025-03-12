@@ -634,6 +634,21 @@ class FileStore {
         ) {
           existingFile.updateTagsFromBackend(newTags);
         }
+        // Update scores (might have changes, e.g. removed)
+        const newScores = new Map<ClientScore, number>();
+        f.scores.forEach((value, id) => {
+          const clientScore = this.rootStore.scoreStore.get(id);
+          if (clientScore) {
+            newScores.set(clientScore, value);
+          }
+        });
+        if (
+          existingFile.scores.size !== newScores.size ||
+          Array.from(existingFile.scores).some((t) => t[1] !== newScores.get(t[0]))
+        ) {
+          existingFile.updateScoresFromBackend(newScores);
+        }
+
         return existingFile;
       }
 

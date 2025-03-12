@@ -118,9 +118,10 @@ export interface RowProps {
   children?: ReactElement<GridCellProps> | ReactElement<GridCellProps>[];
   tooltip?: string;
   valueIsHtml?: boolean;
+  onContextMenu?: React.MouseEventHandler<HTMLSpanElement>;
 }
 
-export const Row = ({ id, value, selected, onClick, icon, tooltip, children, valueIsHtml }: RowProps) => (
+export const Row = ({ id, value, selected, onClick, icon, tooltip, children, valueIsHtml, onContextMenu }: RowProps) => (
   <div
     id={id}
     role="row"
@@ -128,6 +129,7 @@ export const Row = ({ id, value, selected, onClick, icon, tooltip, children, val
     onClick={onClick}
     tabIndex={-1} // Important for focus handling!
     data-tooltip={tooltip}
+    onContextMenu={onContextMenu}
   >
     <GridCell>
       <span className="combobox-popup-option-icon" aria-hidden>

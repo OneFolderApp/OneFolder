@@ -46,7 +46,7 @@ class ScoreStore {
     return this.count === 0;
   }
 
-  @action.bound async createScore(scoreProps: ScoreDTO, scoreName: string): Promise<ClientScore> {
+  @action.bound async createScore(scoreName: string): Promise<ClientScore> {
     const id = generateId();
     const score = new ClientScore(this, id, scoreName, new Date(), new Date());
     this.scoreMap.set(score.id, score);
@@ -58,6 +58,11 @@ class ScoreStore {
     this.scoreMap.delete(score.id);
     score.dispose();
     await this.backend.removeScores([score.id]);
+    this.rootStore.fileStore.refetch();
+  }
+
+  @action.bound removeFromSelectedFiles(score: ClientScore): void {
+    this.rootStore.uiStore.fileSelection.forEach((f) => f.removeScore(score));
   }
 
   save(score: ScoreDTO): void {

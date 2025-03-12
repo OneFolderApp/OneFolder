@@ -121,7 +121,7 @@ const dbConfig: DBVersioningConfig[] = [
     collections: [
       {
         name: 'scores',
-        schema: '++id, scoreValue, userId, fileId',
+        schema: '++id, name, dateCreated, dateModified',
       },
       {
         name: 'files',

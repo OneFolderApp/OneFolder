@@ -1,0 +1,114 @@
+.score-selector-pane {
+  width: 20rem;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  resize: vertical;
+
+  > input {
+    margin: 0.5rem;
+    width: auto;
+    height: auto;
+    min-height: fit-content; // prevents weird slight resize when checklist shrinks when resizing parent
+  }
+
+  // Checklist of all available tags
+  [role='grid'] {
+    flex: 1 1 auto;
+    border-top: 0.0625rem solid var(--border-color);
+    border-bottom: 0.0625rem solid var(--border-color);
+    max-width: unset;
+    max-height: unset;
+
+    [role='separator'] {
+      background: var(--text-color-muted);
+      height: 1px;
+      margin: 0.5rem 1rem;
+    }
+  }
+}
+
+[role="menu"]:has(.score-selector-pane) {
+  padding: 0;
+}
+
+
+table#score-list-editor {
+  display: block;
+  border-spacing: 0 0.25rem;
+
+  tbody {
+    width: 100%;
+    display: table;
+  }
+
+  th,
+  td {
+    user-select: text;
+  }
+
+  th {
+    padding: 0;
+    padding-left: 0.3rem;
+    color: var(--text-color-muted);
+    font-weight: 500;
+    text-align: end;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0;
+    padding-left: 0.5rem;
+    word-break: break-word;
+
+    line-height: normal;
+    display: block;
+
+    max-height: 200px;
+  }
+  .label-container {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 100%;
+  }
+  .count-hint {
+    display: inline-block;
+    margin-left: auto;
+    vertical-align: middle;
+    font-size: smaller;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--background-color-selected)
+  }
+  .score-label {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: start;
+    vertical-align: middle;
+    max-width: 180px;
+  }
+
+  a {
+    // Remove underline for links
+    text-decoration: none;
+
+    // Limit to 3 lines
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  input {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-right: 2px;
+    height: fit-content;
+    width: 100%;
+  }
+}

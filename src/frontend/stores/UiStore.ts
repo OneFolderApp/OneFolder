@@ -158,6 +158,7 @@ class UiStore {
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
 
   @observable isToolbarTagPopoverOpen: boolean = false;
+  @observable isScorePopoverOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
   /** Dialog for moving files to the system's trash bin, and removing from Allusion's database */
@@ -220,19 +221,19 @@ class UiStore {
     this.upscaleMode = mode;
   }
 
-  @action.bound setGalleryVideoPlaybackModeAuto() {
+  @action.bound setGalleryVideoPlaybackModeAuto(): void {
     this.setGalleryVideoPlaybackMode('auto');
   }
 
-  @action.bound setGalleryVideoPlaybackModeHover() {
+  @action.bound setGalleryVideoPlaybackModeHover(): void {
     this.setGalleryVideoPlaybackMode('hover');
   }
 
-  @action.bound setGalleryVideoPlaybackModeDisabled() {
+  @action.bound setGalleryVideoPlaybackModeDisabled(): void {
     this.setGalleryVideoPlaybackMode('disabled');
   }
 
-  @action.bound setGalleryVideoPlaybackMode(mode: GalleryVideoPlaybackMode) {
+  @action.bound setGalleryVideoPlaybackMode(mode: GalleryVideoPlaybackMode): void {
     this.galleryVideoPlaybackMode = mode;
   }
 
@@ -453,6 +454,20 @@ class UiStore {
 
   @action.bound closeToolbarTagPopover(): void {
     this.isToolbarTagPopoverOpen = false;
+  }
+
+  @action.bound toggleScorePopover(): void {
+    this.isScorePopoverOpen = !this.isScorePopoverOpen;
+  }
+
+  @action.bound openScorePopover(): void {
+    if (this.fileSelection.size > 0) {
+      this.isScorePopoverOpen = true;
+    }
+  }
+
+  @action.bound closeScorePopover(): void {
+    this.isScorePopoverOpen = false;
   }
 
   @action.bound openLocationRecovery(locationId: ID): void {

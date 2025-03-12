@@ -17,6 +17,7 @@ import {
 import { ClientTag } from '../../entities/Tag';
 import { LocationTreeItemRevealer } from '../Outliner/LocationsPanel';
 import { TagsTreeItemRevealer } from '../Outliner/TagsPanel/TagsTree';
+import { ClientScore } from 'src/frontend/entities/Score';
 
 export const MissingFileMenuItems = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -261,3 +262,33 @@ export const EditorTagSummaryItems = ({ tag }: { tag: ClientTag }) => {
     </>
   );
 };
+
+export const FileScoreMenuItems = observer(
+  ({
+    score,
+    onDelete,
+    onRemove,
+  }: {
+    score: ClientScore;
+    onDelete: (score: ClientScore) => void;
+    onRemove: (score: ClientScore) => void;
+  }) => {
+    const { uiStore } = useStore();
+
+    const isMultiple = uiStore.fileSelection.size > 1;
+    return (
+      <>
+        <MenuItem
+          onClick={() => onRemove(score)}
+          text={`Remove score from ${isMultiple ? 'files' : 'file'}`}
+          icon={IconSet.META_INFO}
+        />
+        <MenuItem
+          onClick={() => onDelete(score)}
+          text="Delete score and remove it from all files"
+          icon={IconSet.DELETE}
+        />
+      </>
+    );
+  },
+);

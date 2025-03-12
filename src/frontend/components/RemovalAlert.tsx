@@ -1,6 +1,6 @@
 import { action } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { IconSet, Tag } from 'widgets';
 import { Alert, DialogButton } from 'widgets/popovers';
@@ -10,6 +10,7 @@ import { ClientLocation, ClientSubLocation } from '../entities/Location';
 import { ClientFileSearchItem } from '../entities/SearchItem';
 import { ClientTag } from '../entities/Tag';
 import { AppToaster } from './Toaster';
+import { ClientScore } from '../entities/Score';
 
 interface IRemovalProps<T> {
   object: T;
@@ -77,6 +78,48 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
       onConfirm={() => {
         props.onClose();
         object.isSelected ? uiStore.removeSelectedTags() : props.object.delete();
+      }}
+    />
+  );
+});
+
+export const ScoreRemoval = observer((props: IRemovalProps<ClientScore>) => (
+  <RemovalAlert
+    open
+    title={`Are you sure you want to delete the "${props.object.name}" scores ?`}
+    information="This will permanently remove the score and all of its values from all files in Allusion."
+    onCancel={props.onClose}
+    onConfirm={() => {
+      props.onClose();
+      props.object.delete();
+    }}
+  />
+));
+
+export const ScoreUnAssign = observer((props: IRemovalProps<ClientScore>) => {
+  const { uiStore, scoreStore } = useStore();
+  const fileCount = uiStore.fileSelection.size;
+  //If the file selection has less than 2 files auto confirm
+  useEffect(() => {
+    if (fileCount < 2) {
+      props.onClose();
+      scoreStore.removeFromSelectedFiles(props.object);
+    }
+  }, [props, scoreStore, fileCount]);
+
+  if (fileCount < 2) {
+    return <></>;
+  }
+  return (
+    <RemovalAlert
+      open
+      title={`Are you sure you want to remove the "${props.object.name}" scores from ${fileCount} files?`}
+      information="This will permanently remove all of its values from those files in Allusion."
+      primaryButtonText="Remove"
+      onCancel={props.onClose}
+      onConfirm={() => {
+        props.onClose();
+        scoreStore.removeFromSelectedFiles(props.object);
       }}
     />
   );
@@ -204,7 +247,7 @@ const RemovalAlert = (props: IRemovalAlertProps) => (
     title={props.title}
     icon={IconSet.WARNING}
     type="danger"
-    primaryButtonText="Delete"
+    primaryButtonText={props.primaryButtonText ? props.primaryButtonText : 'Delete'}
     defaultButton={DialogButton.PrimaryButton}
     onClick={(button) =>
       button === DialogButton.CloseButton ? props.onCancel() : props.onConfirm()

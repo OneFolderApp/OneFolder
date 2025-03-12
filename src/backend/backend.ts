@@ -125,7 +125,7 @@ export default class Backend implements DataStorage {
 
   async fetchScores(): Promise<ScoreDTO[]> {
     console.info('IndexedDB: Fetching scores...');
-    return this.#scores.toArray();
+    return this.#scores.orderBy('name').toArray();
   }
 
   async searchFiles(
@@ -276,7 +276,7 @@ export default class Backend implements DataStorage {
     console.info('IndexedDB: Removing scores...', scores);
     await this.#db.transaction('rw', this.#files, this.#scores, async () => {
       await this.#files
-        .filter((file) => file.scores && scores.some((scoreId) => file.scores.has(scoreId)))
+        .filter((file) => scores.some((scoreId) => file.scores.has(scoreId)))
         .modify((file) => {
           for (const scoreId of scores) {
             file.scores.delete(scoreId);
@@ -463,7 +463,7 @@ function filterArrayLambda<T>(crit: ArrayConditionDTO<T, any>): (val: T) => bool
     return crit.value.length === 0
       ? (val: T): boolean => (val as any)[crit.key].length !== 0
       : (val: T): boolean =>
-        crit.value.every((item) => (val as any)[crit.key].indexOf(item) === -1);
+          crit.value.every((item) => (val as any)[crit.key].indexOf(item) === -1);
   }
 }
 

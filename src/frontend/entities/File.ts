@@ -140,6 +140,10 @@ export class ClientFile {
     }
   }
 
+  @action.bound setScore(score: ClientScore, value: number = 0): void {
+    this.scores.set(score, value);
+  }
+
   @action.bound removeTag(tag: ClientTag): void {
     const hadTag = this.tags.delete(tag);
     if (hadTag) {
@@ -149,6 +153,10 @@ export class ClientFile {
         this.store.incrementNumUntaggedFiles();
       }
     }
+  }
+
+  @action.bound removeScore(score: ClientScore): void {
+    this.scores.delete(score);
   }
 
   @action.bound clearTags(): void {
@@ -166,6 +174,10 @@ export class ClientFile {
 
   @action.bound updateTagsFromBackend(tags: ClientTag[]): void {
     this.tags.replace(tags);
+  }
+
+  @action.bound updateScoresFromBackend(scores: Map<ClientScore, number>): void {
+    this.scores.replace(scores);
   }
 
   serialize(): FileDTO {

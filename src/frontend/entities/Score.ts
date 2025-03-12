@@ -1,4 +1,4 @@
-import { action, IReactionDisposer, makeObservable, observable, reaction } from 'mobx';
+import { IReactionDisposer, makeObservable, observable, reaction } from 'mobx';
 
 import { ID } from '../../api/id';
 import ScoreStore from '../stores/ScoreStore';
@@ -12,11 +12,9 @@ export class ClientScore {
   private saveHandler: IReactionDisposer;
 
   readonly id: ID;
-  readonly name: string;
+  @observable name: string = '';
   readonly dateCreated: Date;
   readonly dateModified: Date;
-
-  @observable notes: string = '';
 
   constructor(store: ScoreStore, id: ID, name: string, dateCreated: Date, dateModified: Date) {
     this.store = store;
@@ -25,19 +23,21 @@ export class ClientScore {
     this.dateCreated = dateCreated;
     this.dateModified = dateModified;
 
+    makeObservable(this);
+    // observe all changes to observable fields
     this.saveHandler = reaction(
+      // We need to explicitly define which values this reaction should react to
       () => this.serialize(),
+      // Then update the entity in the database
       (score) => {
         this.store.save(score);
       },
       { delay: 500 },
     );
-
-    makeObservable(this);
   }
 
-  @action.bound setNotes(notes: string): void {
-    this.notes = notes;
+  async delete(): Promise<void> {
+    return this.store.deleteScore(this);
   }
 
   serialize(): ScoreDTO {

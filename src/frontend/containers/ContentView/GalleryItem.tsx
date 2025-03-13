@@ -290,7 +290,7 @@ export const Thumbnail = observer(
       if (file.extension === 'gif') {
         return (
           <img
-            src={encodeFilePath(file.thumbnailPath)}
+            src={encodeFilePath(file.absolutePath)}
             alt=""
             data-file-id={file.id}
             onError={handleImageError}

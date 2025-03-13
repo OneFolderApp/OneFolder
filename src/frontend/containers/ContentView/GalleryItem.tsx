@@ -150,12 +150,6 @@ export const Thumbnail = observer(
         }
 
         if (useThumbnail && playingGif === undefined) {
-          // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
-          if (file.extension === 'gif') {
-            if (await fse.pathExists(thumbnailPath)) {
-              return thumbnailPath;
-            }
-          }
           const freshlyGenerated = await imageLoader.ensureThumbnail(file);
           // The thumbnailPath of an image is always set, but may not exist yet.
           // When the thumbnail is finished generating, the path will be changed to `${thumbnailPath}?v=1`.
@@ -253,13 +247,13 @@ export const Thumbnail = observer(
       }
     }, [thumbnailRef, isSlideMode]);
 
+    const is_lowres = file.width < 320 || file.height < 320;
     if (!mounted) {
       return <span className="image-placeholder" />;
     } else if (loadError) {
       return <span className="image-loading" />;
     } else if (imageSource.tag === 'ready') {
       if ('ok' in imageSource.value) {
-        const is_lowres = file.width < 320 || file.height < 320;
         // TODO: add thumbnails to video for performance in gallery view
         if (isFileExtensionVideo(file.extension)) {
           const videoProps = {
@@ -292,6 +286,20 @@ export const Thumbnail = observer(
         return <span className="image-error" />;
       }
     } else {
+      // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
+      if (file.extension === 'gif') {
+        return (
+          <img
+            src={encodeFilePath(file.thumbnailPath)}
+            alt=""
+            data-file-id={file.id}
+            onError={handleImageError}
+            style={
+              is_lowres && uiStore.upscaleMode == 'pixelated' ? { imageRendering: 'pixelated' } : {}
+            }
+          />
+        );
+      }
       return <span className="image-loading" />;
     }
   },

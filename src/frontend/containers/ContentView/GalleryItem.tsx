@@ -131,13 +131,12 @@ export const Thumbnail = observer(
     const { uiStore, imageLoader } = useStore();
     const { thumbnailPath, isBroken } = file;
     const [playingGif, setPlayingGif] = useState<boolean | undefined>(undefined);
-
     // This will check whether a thumbnail exists, generate it if needed
     const imageSource = usePromise(
       file,
       isBroken,
       mounted,
-      thumbnailPath,
+      thumbnailPath.split('?')[0],
       uiStore.isList || (!forceNoThumbnail && !playingGif),
       async (file, isBroken, mounted, thumbnailPath, useThumbnail) => {
         // If it is broken, only show thumbnail if it exists.
@@ -149,13 +148,13 @@ export const Thumbnail = observer(
           }
         }
 
-        if (useThumbnail && playingGif === undefined) {
+        if (useThumbnail) {
           const freshlyGenerated = await imageLoader.ensureThumbnail(file);
           // The thumbnailPath of an image is always set, but may not exist yet.
-          // When the thumbnail is finished generating, the path will be changed to `${thumbnailPath}?v=1`.
+          // When the thumbnail is finished generating, the path will be changed to `${thumbnailPath}?v=`.
           if (freshlyGenerated) {
-            await when(() => file.thumbnailPath.endsWith('?v=1'), { timeout: 10000 });
-            if (!getThumbnail(file).endsWith('?v=1')) {
+            await when(() => file.thumbnailPath.includes('?'), { timeout: 10000 });
+            if (!getThumbnail(file).includes('?')) {
               throw new Error('Thumbnail generation timeout.');
             }
           }
@@ -193,20 +192,22 @@ export const Thumbnail = observer(
       }
       if (hovered) {
         setPlayingGif(true);
-      } else {
+      } else if (playingGif !== undefined) {
         setPlayingGif(false);
       }
-    }, [hovered]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [file.extension, hovered]);
     useEffect(() => {
       if (file.extension !== 'gif') {
         return;
       }
       if (galleryVideoPlaybackMode === 'auto') {
         setPlayingGif(true);
-      } else {
+      } else if (playingGif !== undefined) {
         setPlayingGif(false);
       }
-    }, [galleryVideoPlaybackMode]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [file.extension, galleryVideoPlaybackMode]);
 
     // Plays and pauses video
     const thumbnailRef = useRef<HTMLVideoElement>(null);
@@ -220,7 +221,7 @@ export const Thumbnail = observer(
         thumbnailRef.current.pause();
         thumbnailRef.current.currentTime = 0;
       }
-    }, [thumbnailRef, hovered]);
+    }, [thumbnailRef, hovered, file.extension]);
     useEffect(() => {
       if (thumbnailRef.current === null || !isFileExtensionVideo(file.extension)) {
         return;
@@ -231,7 +232,7 @@ export const Thumbnail = observer(
         thumbnailRef.current.pause();
         thumbnailRef.current.currentTime = 0;
       }
-    }, [thumbnailRef, galleryVideoPlaybackMode]);
+    }, [thumbnailRef, galleryVideoPlaybackMode, file.extension]);
 
     // Pause video when slide mode, don't want to decode when video isn't visible
     useEffect(() => {
@@ -245,7 +246,7 @@ export const Thumbnail = observer(
           thumbnailRef.current.play();
         }
       }
-    }, [thumbnailRef, isSlideMode]);
+    }, [thumbnailRef, isSlideMode, file.extension, galleryVideoPlaybackMode]);
 
     const is_lowres = file.width < 320 || file.height < 320;
     if (!mounted) {
@@ -287,7 +288,7 @@ export const Thumbnail = observer(
       }
     } else {
       // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
-      if (file.extension === 'gif') {
+      if (file.extension === 'gif' && playingGif !== undefined) {
         return (
           <img
             src={encodeFilePath(file.absolutePath)}

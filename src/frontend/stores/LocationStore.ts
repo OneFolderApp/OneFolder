@@ -483,6 +483,7 @@ class LocationStore {
 
     if (match) {
       if (fileStats.absolutePath === match.absolutePath) {
+        fileStore.debouncedRefetch();
         return;
       }
       fileStore.replaceMovedFile(match, file);
@@ -494,14 +495,13 @@ class LocationStore {
         [dbMatchOverwrite],
         new Map<string, FileStats>([[fileStats.absolutePath, fileStats]]),
       );
-      fileStore.debouncedRefetch();
     } else {
       await this.backend.createFilesFromPath(fileStats.absolutePath, [file]);
 
       AppToaster.show({ message: 'New images have been detected.', timeout: 5000 }, 'new-images');
       // might be called a lot when moving many images into a folder, so debounce it
-      fileStore.debouncedRefetch();
     }
+    fileStore.debouncedRefetch();
   }
 
   @action async updateFile(fileStats: FileStats): Promise<void> {

@@ -19,22 +19,16 @@ interface IScoreSelectorProps {
   counter?: IComputedValue<Map<ClientScore, [number, number | undefined]>>;
   onSelect: (item: ClientScore) => void;
   disabled?: boolean;
-  showScoreContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
 }
 
 export const ScoreSelector = (props: IScoreSelectorProps) => {
   const gridId = useId();
   const tagSelectorID = useId();
-  const { counter, onSelect, showScoreContextMenu } = props;
+  const { counter, onSelect, onContextMenu } = props;
   const [inputText, setInputText] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
-  // Autofocus
-  /*useAutorun(() => {
-    if (uiStore.isScorePopoverOpen) {
-      requestAnimationFrame(() => requestAnimationFrame(() => inputRef.current?.focus()));
-    }
-  }); */
 
   const handleInput = useRef((e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
@@ -145,7 +139,7 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
         inputText={inputText}
         resetTextBox={resetTextBox}
         onSelect={onSelect}
-        onContextMenu={showScoreContextMenu}
+        onContextMenu={onContextMenu}
       />
     </div>
   );
@@ -209,7 +203,7 @@ const ScoreList = observer(
   }),
 );
 
-interface TagOptionProps {
+interface ScoreOptionProps {
   id?: string;
   score: ClientScore;
   hint?: string;
@@ -220,7 +214,7 @@ interface TagOptionProps {
 }
 
 export const ScoreOption = observer(
-  ({ id, score, hint, selected, onSelect, resetTextBox, onContextMenu }: TagOptionProps) => {
+  ({ id, score, hint, selected, onSelect, resetTextBox, onContextMenu }: ScoreOptionProps) => {
     const onclick = useCallback(() => {
       onSelect(score);
       resetTextBox?.();

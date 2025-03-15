@@ -1,10 +1,11 @@
-import { computed, IComputedValue, runInAction } from 'mobx';
+import { computed, IComputedValue, reaction, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, {
   ForwardedRef,
   ReactNode,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -32,12 +33,16 @@ const FileTagEditor = observer(() => {
     <>
       <ToolbarButton
         icon={IconSet.TAG_LINE}
-        disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
+        //disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
         onClick={uiStore.toggleToolbarTagPopover}
         text="Tag selected files"
         tooltip="Add or remove tags from selected images"
       />
-      <FloatingPanel>
+      <FloatingPanel
+        title="File Tags Editor"
+        dataOpen={uiStore.isToolbarTagPopoverOpen}
+        onBlur={uiStore.closeToolbarTagPopover}
+      >
         <TagEditor />
       </FloatingPanel>
     </>
@@ -284,10 +289,11 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
     .sort((a, b) => b[1][0] - a[1][0])
     .map((pair) => pair[0]);
 
-  const handleTagContextMenu = TagSummaryMenu();
+  const containerID = useId();
+  const handleTagContextMenu = TagSummaryMenu({ parentPopoverId: containerID });
 
   return (
-    <div onMouseDown={(e) => e.preventDefault()}>
+    <div id={containerID} onMouseDown={(e) => e.preventDefault()}>
       {sortedTags.map((t) => (
         <Tag
           key={t.id}
@@ -305,21 +311,48 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
   );
 });
 
-const TagSummaryMenu = () => {
-  const { uiStore } = useStore();
-  const handleMenuBlur = useRef((e: React.FocusEvent) => {
-    if (!e.relatedTarget?.closest('[data-popover="true"]')) {
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
+interface ITagSummaryMenu {
+  parentPopoverId: string;
+}
+
+const TagSummaryMenu = ({ parentPopoverId }: ITagSummaryMenu) => {
+  const getFocusableElement = useCallback(() => {
+    return document
+      .getElementById(parentPopoverId)
+      ?.querySelector('input, textarea, button, a, select, [tabindex]') as HTMLElement | null;
+  }, [parentPopoverId]);
+  const handleMenuBlur = useCallback(
+    (e: React.FocusEvent) => {
+      if (!e.relatedTarget?.closest('[data-popover="true"]')) {
+        const element = getFocusableElement();
+        if (element && element instanceof HTMLElement) {
+          element.focus();
+          element.blur();
+        }
+      }
+    },
+    [getFocusableElement],
+  );
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const element = getFocusableElement();
+        e.stopPropagation();
+        if (element && element instanceof HTMLElement) {
+          element.focus();
+          element.blur();
+        }
+      }
+    },
+    [getFocusableElement],
+  );
+  const beforeSelect = useCallback(() => {
+    const element = getFocusableElement();
+    if (element && element instanceof HTMLElement) {
+      element.focus();
+      element.blur();
     }
-  }).current;
-  const handleMenuKeyDown = useRef((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
-    }
-  }).current;
+  }, [getFocusableElement]);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const divRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -337,51 +370,137 @@ const TagSummaryMenu = () => {
         event.clientY,
         <div ref={divRef} onBlur={handleMenuBlur} onKeyDown={handleMenuKeyDown} tabIndex={-1}>
           <Menu>
-            <EditorTagSummaryItems tag={tag} />
+            <EditorTagSummaryItems tag={tag} beforeSelect={beforeSelect} />
           </Menu>
         </div>,
       );
       setActiveMenuId(tag.id);
     },
-    [show, handleMenuBlur, handleMenuKeyDown],
+    [show, handleMenuBlur, handleMenuKeyDown, beforeSelect],
   );
 
   return handleTagContextMenu;
 };
 
-const FloatingPanel = observer(({ children }: { children: ReactNode }) => {
-  const { uiStore } = useStore();
+interface IFloatingPanelProps {
+  title?: string;
+  onBlur: () => void;
+  children: ReactNode;
+  dataOpen: boolean;
+}
 
-  const handleBlur = useRef((e: React.FocusEvent) => {
-    const button = e.currentTarget.previousElementSibling as HTMLElement;
-    if (
-      e.relatedTarget !== button &&
-      !e.currentTarget.contains(e.relatedTarget as Node) &&
-      !e.relatedTarget?.closest('[data-contextmenu="true"]')
-    ) {
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
-    }
-  }).current;
+export const FloatingPanel = observer(
+  ({ title, dataOpen, onBlur, children }: IFloatingPanelProps) => {
+    const { uiStore } = useStore();
+    const [style, setStyle] = useState<React.CSSProperties | undefined>(undefined);
+    const isFreshRenderRef = useRef(true); //ref to avoid blinking when toggling slide mode
 
-  const handleKeyDown = useRef((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
-    }
-  }).current;
+    const handleBlur = useAction((e: React.FocusEvent) => {
+      const button = e.currentTarget.previousElementSibling as HTMLElement;
+      if (
+        e.relatedTarget !== button &&
+        !e.currentTarget.contains(e.relatedTarget as Node) &&
+        !e.relatedTarget?.closest('[data-contextmenu="true"]') &&
+        !uiStore.isFloatingPanelToSide
+      ) {
+        onBlur();
+        FocusManager.focusGallery();
+      }
+    });
 
-  return (
-    // FIXME: data attributes placeholder
-    <div
-      data-popover
-      data-open={uiStore.isToolbarTagPopoverOpen}
-      className="floating-dialog"
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-    >
-      {uiStore.isToolbarTagPopoverOpen ? children : null}
-    </div>
-  );
-});
+    const handleKeyDown = useRef((e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onBlur();
+        FocusManager.focusGallery();
+      }
+    }).current;
+
+    const handleSwitchToSide = useRef(() => {
+      uiStore.toggleFloatingPanelToSide();
+    }).current;
+
+    useEffect(() => {
+      const disposer = reaction(
+        () => ({
+          isFloatingPanelToSide: uiStore.isFloatingPanelToSide,
+          outlinerWidth: uiStore.outlinerWidth,
+          outlinerHeights: uiStore.outlinerHeights.slice(),
+          outlinerExpansion: uiStore.outlinerExpansion.slice(),
+        }),
+        ({ isFloatingPanelToSide, outlinerWidth }) => {
+          if (isFloatingPanelToSide) {
+            const outlinerLastChild = document
+              .getElementById('outliner-content')
+              ?.querySelector('.multi-split')?.lastElementChild;
+            if (outlinerLastChild) {
+              const header = outlinerLastChild.querySelector('header');
+              const rect = outlinerLastChild.getBoundingClientRect();
+              const headerHeight = header ? header.getBoundingClientRect().height : 0;
+              const style: React.CSSProperties = {
+                position: 'fixed',
+                display: 'block',
+                left: rect.left,
+                top: rect.top - headerHeight,
+                width: outlinerWidth,
+                height: rect.height,
+                borderTop: 'unset',
+                borderBottom: 'unset',
+                boxShadow: 'unset',
+                transform: 'unset',
+              };
+              if (isFreshRenderRef.current) {
+                style.transition = 'unset'; // Si es freshRender, añade la propiedad
+              }
+              setStyle(style);
+            } else {
+              setStyle(undefined);
+            }
+          } else {
+            setStyle(undefined);
+          }
+          if (isFreshRenderRef.current) {
+            isFreshRenderRef.current = false;
+          }
+        },
+        { fireImmediately: true },
+      );
+
+      return () => disposer();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const isFloatingPanelToSide = uiStore.isFloatingPanelToSide;
+
+    return (
+      // FIXME: data attributes placeholder
+      <div
+        data-popover
+        style={style}
+        data-open={dataOpen}
+        className="floating-dialog"
+        tabIndex={-1} //necessary for handling the onblur correctly
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      >
+        {dataOpen && !isFreshRenderRef.current ? (
+          <>
+            <header>
+              <h2>{title}</h2>
+              <button
+                className="floating-switch-side-button"
+                data-tooltip="Switch to/from the side"
+                onClick={handleSwitchToSide}
+                aria-haspopup="menu"
+                style={isFloatingPanelToSide ? undefined : { transform: 'scaleX(-1)' }}
+              >
+                {IconSet.ARROW_RIGHT}
+              </button>
+            </header>
+            {children}
+          </>
+        ) : null}
+      </div>
+    );
+  },
+);

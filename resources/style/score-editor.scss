@@ -1,3 +1,68 @@
+.score-editor {
+
+  .floating-dialog & {
+    margin: 0.6rem;
+  }
+
+  .btn-content-text {
+    position: unset !important;
+    top: unset !important;
+    overflow: unset !important;
+    clip: unset !important;
+    width: unset !important;
+    height: unset !important;
+    white-space: unset !important;
+  }
+}
+
+.floating-dialog {
+  
+  &:hover .floating-switch-side-button {
+    opacity: 1;
+  }
+
+  header {
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem 0 1rem;
+    background: var(--background-color);
+    outline: 0.0625rem solid var(--border-color);
+
+    h2 {
+      cursor: pointer;
+      flex-grow: 1;
+    }
+
+    [role='toolbar'] {
+      opacity: 0;
+    }
+
+    [role='toolbar']:focus-within {
+      opacity: 1;
+    }
+
+    .toolbar-floating-switch-side-button {
+      min-height: 1.5rem;
+      min-width: 1.5rem;
+
+      &[aria-pressed='true'],
+      &[aria-checked='true'] {
+        color: var(--accent-color);
+      }
+    }
+
+    .floating-switch-side-button {
+      opacity: 0;
+    }
+  }
+}
+
+//prevents data-popovers to interfier when overflow is auto
+.score-editor [data-popover="true"] {
+  position: fixed !important;
+}
+
 .score-selector-pane {
   width: 20rem;
   display: flex;
@@ -32,41 +97,45 @@
   padding: 0;
 }
 
+.score-list-editor {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-items: center;
+  gap: 0px;
+  width: fit-content;
+  max-width: 100%;
 
-table#score-list-editor {
-  display: block;
-  border-spacing: 0 0.25rem;
-
-  tbody {
-    width: 100%;
-    display: table;
+  .score-list-option {
+    display: contents;
+    color: var(--text-color-muted);
+    &:hover {
+      color: var(--text-color);
+    }
   }
-
-  th,
-  td {
+  
+  .score-label,
+  .score-value {
     user-select: text;
   }
-
-  th {
+  
+  .score-name {
     padding: 0;
     padding-left: 0.3rem;
-    color: var(--text-color-muted);
     font-weight: 500;
     text-align: end;
     vertical-align: middle;
+    width: auto;
     white-space: nowrap;
+    overflow: hidden;
   }
-
-  td {
+  
+  .score-value {
     padding: 0;
     padding-left: 0.5rem;
     word-break: break-word;
-
     line-height: normal;
-    display: block;
-
-    max-height: 200px;
   }
+
   .label-container {
     display: flex;
     justify-content: space-between; 
@@ -74,6 +143,8 @@ table#score-list-editor {
     width: 100%;
   }
   .count-hint {
+    padding-left: 0.5rem;
+    min-width: fit-content;
     display: inline-block;
     margin-left: auto;
     vertical-align: middle;
@@ -81,34 +152,30 @@ table#score-list-editor {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--background-color-selected)
+    color: var(--accent-color)
   }
   .score-label {
     display: inline-block;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
     text-align: start;
     vertical-align: middle;
-    max-width: 180px;
-  }
-
-  a {
-    // Remove underline for links
-    text-decoration: none;
-
-    // Limit to 3 lines
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
   }
 
   input {
+    color: var(--text-color);
     margin-top: 2px;
     margin-bottom: 2px;
     margin-right: 2px;
     height: fit-content;
-    width: 100%;
+    width: 5rem;
+  }
+}
+
+.floating-switch-side-button {
+  margin-left: auto;
+  .custom-icon {
+    width: 0.75rem;
+    height: 0.75rem;
   }
 }

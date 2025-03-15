@@ -1,9 +1,12 @@
 .floating-dialog {
   position: absolute;
+  display: table;
   width: 25rem;
   top: calc(var(--toolbar-height) + 1rem);
   left: 50%;
   transform: translate(-50%, 0);
+  overflow-y: auto;
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
 }
 
 #tag-editor {
@@ -25,6 +28,7 @@
     width: auto;
     height: auto;
     min-height: fit-content; // prevents weird slight resize when checklist shrinks when resizing parent
+    background: var(--input-color);
   }
 
   // Checklist of all available tags

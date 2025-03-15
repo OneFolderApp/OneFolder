@@ -247,13 +247,18 @@ export const FileTagMenuItems = observer(({ file, tag }: { file: ClientFile; tag
   </>
 ));
 
-export const EditorTagSummaryItems = ({ tag }: { tag: ClientTag }) => {
-  const { uiStore } = useStore();
+export const EditorTagSummaryItems = ({
+  tag,
+  beforeSelect,
+}: {
+  tag: ClientTag;
+  beforeSelect: () => void;
+}) => {
   return (
     <>
       <MenuItem
         onClick={() => {
-          uiStore.closeToolbarTagPopover();
+          beforeSelect();
           TagsTreeItemRevealer.instance.revealTag(tag);
         }}
         text="Reveal in Tags Panel"

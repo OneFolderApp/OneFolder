@@ -8,6 +8,7 @@ import FileTagEditor from '../../containers/AppToolbar/FileTagEditor';
 import { useStore } from '../../contexts/StoreContext';
 import { SortCommand, ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
+import { FloatingScoreEditor } from 'src/frontend/components/ScoreEditor';
 
 const OutlinerToggle = observer(() => {
   const { uiStore } = useStore();
@@ -41,7 +42,10 @@ const PrimaryCommands = observer(() => {
         <RemoveFilesPopover />
       ) : (
         // Only show when not viewing missing files (so it is replaced by the Delete button)
-        <FileTagEditor />
+        <>
+          <FileTagEditor />
+          <FloatingScoreEditor />
+        </>
       )}
 
       <SortCommand />
@@ -68,6 +72,7 @@ export const SlideModeCommand = observer(() => {
       <div className="spacer" />
 
       <FileTagEditor />
+      <FloatingScoreEditor />
 
       <ToolbarButton
         icon={IconSet.INFO}

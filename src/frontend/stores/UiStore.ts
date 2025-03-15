@@ -1,6 +1,6 @@
 import { shell } from 'electron';
 import fse from 'fs-extra';
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { maxNumberOfExternalFilesBeforeWarning } from 'common/config';
 import { clamp, notEmpty } from 'common/core';
@@ -99,6 +99,7 @@ type PersistentPreferenceFields =
   | 'theme'
   | 'isOutlinerOpen'
   | 'isInspectorOpen'
+  | 'isFloatingPanelToSide'
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
@@ -111,6 +112,8 @@ type PersistentPreferenceFields =
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'outlinerWidth'
+  | 'outlinerExpansion'
+  | 'outlinerHeights'
   | 'inspectorWidth'
   | 'isRememberSearchEnabled'
   // the following are only restored when isRememberSearchEnabled is enabled
@@ -142,6 +145,8 @@ class UiStore {
   @observable isSlideMode: boolean = false;
   @observable isFullScreen: boolean = false;
   @observable outlinerWidth: number = UiStore.MIN_OUTLINER_WIDTH;
+  readonly outlinerExpansion = observable<boolean>([true, true, true]);
+  readonly outlinerHeights = observable<number>([0, 0, 0]);
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
   @observable isThumbnailTagOverlayEnabled: boolean = true;
@@ -157,6 +162,7 @@ class UiStore {
   @observable upscaleMode: UpscaleMode = 'smooth';
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
 
+  @observable isFloatingPanelToSide: boolean = false;
   @observable isToolbarTagPopoverOpen: boolean = false;
   @observable isScorePopoverOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
@@ -182,6 +188,28 @@ class UiStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeObservable(this);
+    this.initReactions();
+  }
+
+  /////////////////// UI Reactions /////////////////
+  initReactions(): void {
+    reaction(
+      () => this.isToolbarTagPopoverOpen,
+      (isOpen) => {
+        if (isOpen) {
+          this.isScorePopoverOpen = false;
+        }
+      },
+    );
+
+    reaction(
+      () => this.isScorePopoverOpen,
+      (isOpen) => {
+        if (isOpen) {
+          this.isToolbarTagPopoverOpen = false;
+        }
+      },
+    );
   }
 
   /////////////////// UI Actions ///////////////////
@@ -440,6 +468,14 @@ class UiStore {
 
   @action.bound closeManyExternalFiles(): void {
     this.isManyExternalFilesOpen = false;
+  }
+
+  @action.bound toggleFloatingPanelToSide(): void {
+    this.isFloatingPanelToSide = !this.isFloatingPanelToSide;
+  }
+
+  @action.bound setFloatingPanelToSide(val: boolean): void {
+    this.isFloatingPanelToSide = val;
   }
 
   @action.bound toggleToolbarTagPopover(): void {
@@ -835,6 +871,14 @@ class UiStore {
     }
   }
 
+  @action.bound setOutlinerExpansion(newVal: boolean[]): void {
+    this.outlinerExpansion.replace(newVal);
+  }
+
+  @action.bound setOutlinerHeights(newVal: number[]): void {
+    this.outlinerHeights.replace(newVal);
+  }
+
   @action.bound moveInspectorSplitter(x: number, width: number): void {
     // The inspector is on the right side, so we need to calculate the offset.
     const offsetX = width - x;
@@ -880,9 +924,16 @@ class UiStore {
         if (prefs.galleryVideoPlaybackMode) {
           this.setGalleryVideoPlaybackMode(prefs.galleryVideoPlaybackMode);
         }
+        if (prefs.outlinerExpansion) {
+          this.setOutlinerExpansion(prefs.outlinerExpansion);
+        }
+        if (prefs.outlinerHeights) {
+          this.setOutlinerHeights(prefs.outlinerHeights);
+        }
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
+        this.isFloatingPanelToSide = Boolean(prefs.isFloatingPanelToSide ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -929,6 +980,7 @@ class UiStore {
       theme: this.theme,
       isOutlinerOpen: this.isOutlinerOpen,
       isInspectorOpen: this.isInspectorOpen,
+      isFloatingPanelToSide: this.isFloatingPanelToSide,
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,
@@ -940,6 +992,8 @@ class UiStore {
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
+      outlinerExpansion: this.outlinerExpansion.slice(),
+      outlinerHeights: this.outlinerHeights.slice(),
       outlinerWidth: this.outlinerWidth,
       inspectorWidth: this.inspectorWidth,
       isRememberSearchEnabled: this.isRememberSearchEnabled,

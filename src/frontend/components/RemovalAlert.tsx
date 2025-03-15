@@ -11,6 +11,7 @@ import { ClientFileSearchItem } from '../entities/SearchItem';
 import { ClientTag } from '../entities/Tag';
 import { AppToaster } from './Toaster';
 import { ClientScore } from '../entities/Score';
+import { ClientFile } from '../entities/File';
 
 interface IRemovalProps<T> {
   object: T;
@@ -96,34 +97,74 @@ export const ScoreRemoval = observer((props: IRemovalProps<ClientScore>) => (
   />
 ));
 
-export const ScoreUnAssign = observer((props: IRemovalProps<ClientScore>) => {
-  const { uiStore, scoreStore } = useStore();
-  const fileCount = uiStore.fileSelection.size;
-  //If the file selection has less than 2 files auto confirm
-  useEffect(() => {
-    if (fileCount < 2) {
-      props.onClose();
-      scoreStore.removeFromSelectedFiles(props.object);
-    }
-  }, [props, scoreStore, fileCount]);
-
-  if (fileCount < 2) {
-    return <></>;
-  }
-  return (
-    <RemovalAlert
-      open
-      title={`Are you sure you want to remove the "${props.object.name}" scores from ${fileCount} files?`}
-      information="This will permanently remove all of its values from those files in Allusion."
-      primaryButtonText="Remove"
-      onCancel={props.onClose}
-      onConfirm={() => {
+export const ScoreUnAssign = observer(
+  (
+    props: IRemovalProps<{
+      files: ClientFile[];
+      score: ClientScore;
+    }>,
+  ) => {
+    const { scoreStore } = useStore();
+    const fileCount = props.object.files.length;
+    //If the file selection has less than 2 files auto confirm
+    useEffect(() => {
+      if (fileCount < 2) {
         props.onClose();
-        scoreStore.removeFromSelectedFiles(props.object);
-      }}
-    />
-  );
-});
+        scoreStore.removeFromFiles(props.object.files, props.object.score);
+      }
+    }, [props, scoreStore, fileCount]);
+
+    const scoreName = props.object.score.name;
+    if (fileCount < 2) {
+      return <></>;
+    }
+    return (
+      <RemovalAlert
+        open
+        title={`Are you sure you want to remove the "${scoreName}" scores from ${fileCount} files?`}
+        information="This will permanently remove all of its values from those files in Allusion."
+        primaryButtonText="Remove"
+        onCancel={props.onClose}
+        onConfirm={() => {
+          props.onClose();
+          scoreStore.removeFromFiles(props.object.files, props.object.score);
+        }}
+      />
+    );
+  },
+);
+
+export const ScoreOverwrite = observer(
+  (props: IRemovalProps<{ files: ClientFile[]; score: ClientScore; value: number }>) => {
+    const { scoreStore } = useStore();
+    const fileCount = props.object.files.length;
+    //If the file selection has less than 2 files auto confirm
+    useEffect(() => {
+      if (fileCount < 2) {
+        props.onClose();
+        scoreStore.setOnFiles(props.object.files, props.object.score, props.object.value);
+      }
+    }, [props, scoreStore, fileCount]);
+
+    const scoreName = props.object.score.name;
+    if (fileCount < 2) {
+      return <></>;
+    }
+    return (
+      <RemovalAlert
+        open
+        title={`Are you sure you want to overwrite the "${scoreName}" scores from ${fileCount} files?`}
+        information="This will permanently overwrite all of its values from those files in Allusion."
+        primaryButtonText="Confirm"
+        onCancel={props.onClose}
+        onConfirm={() => {
+          props.onClose();
+          scoreStore.setOnFiles(props.object.files, props.object.score, props.object.value);
+        }}
+      />
+    );
+  },
+);
 
 export const FileRemoval = observer(() => {
   const { fileStore, uiStore } = useStore();

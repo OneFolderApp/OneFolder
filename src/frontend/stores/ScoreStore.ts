@@ -4,6 +4,7 @@ import { ScoreDTO } from '../../api/score';
 import { generateId, ID } from '../../api/id';
 import { ClientScore } from '../entities/Score';
 import RootStore from './RootStore';
+import { ClientFile } from '../entities/File';
 
 class ScoreStore {
   private readonly backend: DataStorage;
@@ -50,6 +51,11 @@ class ScoreStore {
     const id = generateId();
     const score = new ClientScore(this, id, scoreName, new Date(), new Date());
     this.scoreMap.set(score.id, score);
+    const sortedScores = [...this.scoreMap.entries()].sort((a, b) =>
+      a[1].name.localeCompare(b[1].name),
+    );
+    this.scoreMap.clear();
+    sortedScores.forEach(([id, score]) => this.scoreMap.set(id, score));
     await this.backend.createScore(score.serialize());
     return score;
   }
@@ -61,8 +67,12 @@ class ScoreStore {
     this.rootStore.fileStore.refetch();
   }
 
-  @action.bound removeFromSelectedFiles(score: ClientScore): void {
-    this.rootStore.uiStore.fileSelection.forEach((f) => f.removeScore(score));
+  @action.bound removeFromFiles(files: ClientFile[], score: ClientScore): void {
+    files.forEach((f) => f.removeScore(score));
+  }
+
+  @action.bound setOnFiles(files: ClientFile[], score: ClientScore, value: number): void {
+    files.forEach((f) => f.setScore(score, value));
   }
 
   save(score: ScoreDTO): void {

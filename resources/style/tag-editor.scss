@@ -1,12 +1,12 @@
 .floating-dialog {
+  --floating-dialog-width: 25rem;
   position: absolute;
   display: table;
-  width: 25rem;
+  width: var(--floating-dialog-width);
   top: calc(var(--toolbar-height) + 1rem);
-  left: 50%;
-  transform: translate(-50%, 0);
+  left: calc(50% - (var(--floating-dialog-width) / 2));
   overflow-y: auto;
-  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  transition: top 0.3s ease, left 0.3s ease, box-shadow 0.3s ease-out, width 0.3s ease, height 0.3s ease;
 }
 
 #tag-editor {
@@ -51,7 +51,7 @@
     flex: 0 0 auto;
     margin: 0.5rem;
     min-height: 1.5rem; // 1 row of tags
-    max-height: calc(1.5rem * 3.5); // 3.5 rows of tags
+    max-height: calc(1.5rem * 9.5); // 3.5 rows of tags edit: 9
     overflow: auto;
     display: flex;
     flex-wrap: wrap;

@@ -1,4 +1,4 @@
-import { action } from 'mobx';
+import { action, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -66,15 +66,16 @@ const Layout = ({ contentRect }: LayoutProps) => {
 
   // Reset selection range when number of items changes: Else you can get phantom files when continuing your selection
   useEffect(() => {
+    runInAction(() => uiStore.setFirstItem(uiStore.firstItem));
     initialSelectionIndex.current = undefined;
     lastSelectionIndex.current = undefined;
-  }, [fileStore.fileList.length]);
+  }, [fileStore.fileList.length, uiStore]);
 
   useEffect(() => {
     const onKeyDown = action((e: KeyboardEvent) => {
       let index = lastSelectionIndex.current;
       if (index === undefined) {
-        return;
+        index = uiStore.firstItem;
       }
       if (uiStore.isSlideMode) {
         return;

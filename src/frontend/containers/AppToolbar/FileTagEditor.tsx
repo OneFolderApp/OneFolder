@@ -76,8 +76,9 @@ const TagEditor = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   // Autofocus
   useAutorun(() => {
-    if (uiStore.isToolbarTagPopoverOpen) {
+    if (uiStore.focusTagEditor) {
       requestAnimationFrame(() => requestAnimationFrame(() => inputRef.current?.focus()));
+      uiStore.setFocusTagEditor(false);
     }
   });
 
@@ -393,7 +394,7 @@ export const FloatingPanel = observer(
   ({ title, dataOpen, onBlur, children }: IFloatingPanelProps) => {
     const { uiStore } = useStore();
     const [style, setStyle] = useState<React.CSSProperties | undefined>(undefined);
-    const isFreshRenderRef = useRef(true); //ref to avoid blinking when toggling slide mode
+    const [extraClassName, setExtraClassName] = useState('fresh-rendered');
 
     const handleBlur = useAction((e: React.FocusEvent) => {
       const button = e.currentTarget.previousElementSibling as HTMLElement;
@@ -437,7 +438,7 @@ export const FloatingPanel = observer(
               const header = outlinerLastChild.querySelector('header');
               const rect = outlinerLastChild.getBoundingClientRect();
               const headerHeight = header ? header.getBoundingClientRect().height : 0;
-              const style: React.CSSProperties = {
+              const newStyle: React.CSSProperties = {
                 position: 'fixed',
                 display: 'block',
                 left: rect.left,
@@ -449,26 +450,30 @@ export const FloatingPanel = observer(
                 boxShadow: 'unset',
                 transform: 'unset',
               };
-              if (isFreshRenderRef.current) {
-                style.transition = 'unset'; // Si es freshRender, añade la propiedad
-              }
-              setStyle(style);
-            } else {
-              setStyle(undefined);
+              setStyle(newStyle);
+              return;
             }
-          } else {
-            setStyle(undefined);
           }
-          if (isFreshRenderRef.current) {
-            isFreshRenderRef.current = false;
-          }
+          setStyle({});
         },
         { fireImmediately: true },
       );
 
       return () => disposer();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+      if (style === undefined) {
+        return;
+      }
+      if (dataOpen) {
+        setExtraClassName('opened');
+        const timeout = setTimeout(() => {
+          setExtraClassName('');
+        }, 300);
+        return () => clearTimeout(timeout);
+      }
+    }, [dataOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const isFloatingPanelToSide = uiStore.isFloatingPanelToSide;
 
@@ -478,12 +483,12 @@ export const FloatingPanel = observer(
         data-popover
         style={style}
         data-open={dataOpen}
-        className="floating-dialog"
+        className={`floating-dialog ${extraClassName}`}
         tabIndex={-1} //necessary for handling the onblur correctly
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
       >
-        {dataOpen && !isFreshRenderRef.current ? (
+        {dataOpen && style !== undefined ? (
           <>
             <header>
               <h2>{title}</h2>

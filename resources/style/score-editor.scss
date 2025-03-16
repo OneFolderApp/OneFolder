@@ -16,6 +16,13 @@
 }
 
 .floating-dialog {
+  &.fresh-rendered {
+    transition: unset !important;
+  }
+
+  &.opened {
+    box-shadow: 0 0 15px 5px var(--accent-color) !important;
+  }
   
   &:hover .floating-switch-side-button {
     opacity: 1;
@@ -56,6 +63,8 @@
       opacity: 0;
     }
   }
+
+  
 }
 
 //prevents data-popovers to interfier when overflow is auto

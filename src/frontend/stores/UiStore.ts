@@ -38,7 +38,6 @@ export interface IHotkeyMap {
 
   // Toolbar actions (these should only be active when the content area is focused)
   deleteSelection: string;
-  openTagEditor: string;
   selectAll: string;
   deselectAll: string;
   viewList: string;
@@ -47,7 +46,10 @@ export interface IHotkeyMap {
   viewMasonryHorizontal: string;
   viewSlide: string;
   search: string;
+  refreshSearch: string;
   advancedSearch: string;
+  openTagEditor: string;
+  toggleScoreEditor: string;
 
   // Other
   openPreviewWindow: string;
@@ -58,11 +60,12 @@ export interface IHotkeyMap {
 export const defaultHotkeyMap: IHotkeyMap = {
   toggleOutliner: '1',
   toggleInspector: '2',
-  replaceQuery: 'r',
+  openTagEditor: '3',
+  toggleScoreEditor: '4',
+  replaceQuery: 'q',
   toggleSettings: 's',
   toggleHelpCenter: 'h',
   deleteSelection: 'del',
-  openTagEditor: 't',
   selectAll: 'mod + a',
   deselectAll: 'mod + d',
   viewSlide: 'enter', // TODO: backspace and escape are hardcoded hotkeys to exist slide mode
@@ -71,6 +74,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewMasonryVertical: 'alt + 3',
   viewMasonryHorizontal: 'alt + 4',
   search: 'mod + f',
+  refreshSearch: 'r',
   advancedSearch: 'mod + shift + f',
   openPreviewWindow: 'space',
   openExternal: 'mod + enter',
@@ -164,6 +168,7 @@ class UiStore {
 
   @observable isFloatingPanelToSide: boolean = false;
   @observable isToolbarTagPopoverOpen: boolean = false;
+  @observable focusTagEditor: boolean = false;
   @observable isScorePopoverOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
@@ -268,6 +273,8 @@ class UiStore {
   @action.bound setFirstItem(index: number = 0): void {
     if (isFinite(index) && index < this.rootStore.fileStore.fileList.length) {
       this.firstItem = index;
+    } else {
+      this.firstItem = this.rootStore.fileStore.fileList.length - 1;
     }
   }
 
@@ -480,16 +487,20 @@ class UiStore {
 
   @action.bound toggleToolbarTagPopover(): void {
     this.isToolbarTagPopoverOpen = !this.isToolbarTagPopoverOpen;
+    this.focusTagEditor = true;
   }
 
   @action.bound openToolbarTagPopover(): void {
-    if (this.fileSelection.size > 0) {
-      this.isToolbarTagPopoverOpen = true;
-    }
+    this.isToolbarTagPopoverOpen = true;
+    this.focusTagEditor = true;
   }
 
   @action.bound closeToolbarTagPopover(): void {
     this.isToolbarTagPopoverOpen = false;
+  }
+
+  @action.bound setFocusTagEditor(value: boolean): void {
+    this.focusTagEditor = value;
   }
 
   @action.bound toggleScorePopover(): void {
@@ -822,7 +833,11 @@ class UiStore {
     } else if (matches(hotkeyMap.toggleInspector)) {
       this.toggleInspector();
     } else if (matches(hotkeyMap.openTagEditor)) {
-      // Windows
+      this.openToolbarTagPopover();
+    } else if (matches(hotkeyMap.toggleScoreEditor)) {
+      this.toggleScorePopover();
+    } else if (matches(hotkeyMap.refreshSearch)) {
+      this.rootStore.fileStore.refetch();
     } else if (matches(hotkeyMap.toggleSettings)) {
       this.toggleSettings();
     } else if (matches(hotkeyMap.toggleHelpCenter)) {

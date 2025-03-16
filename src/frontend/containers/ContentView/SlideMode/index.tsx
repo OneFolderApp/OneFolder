@@ -53,14 +53,14 @@ const SlideView = observer(({ width, height }: SlideViewProps) => {
   // Go to the first selected image on load
   useEffect(() => {
     return reaction(
-      () => uiStore.firstSelectedFile?.id,
+      () => uiStore.firstFileInView?.id,
       (id, _, reaction) => {
         if (id !== undefined) {
           const index = fileStore.getIndex(id);
-          uiStore.setFirstItem(index);
 
           // Also, select only this file: makes more sense for the TagEditor overlay: shows tags on selected images
           if (index !== undefined) {
+            uiStore.setFirstItem(index);
             uiStore.selectFile(fileStore.fileList[index], true);
           }
 

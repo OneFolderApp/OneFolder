@@ -119,6 +119,11 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
   // -------------------------------------------
   // Messaging with the main process
   // -------------------------------------------
+  let f5Reload: boolean | undefined = undefined;
+  RendererMessenger.onf5Reload((frontendOnly?: boolean) => {
+    f5Reload = frontendOnly;
+    RendererMessenger.reload(frontendOnly);
+  });
 
   RendererMessenger.onImportExternalImage(async ({ item }) => {
     console.log('Importing image...', item);
@@ -181,7 +186,11 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
       await rootStore.close();
       asyncOperationDone = true;
       console.log('async operation done, closing');
-      window.close();
+      if (f5Reload !== undefined) {
+        RendererMessenger.reload(f5Reload);
+      } else {
+        window.close();
+      }
     }
   };
   window.addEventListener('beforeunload', handleBeforeUnload);

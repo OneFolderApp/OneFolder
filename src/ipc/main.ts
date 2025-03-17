@@ -64,6 +64,8 @@ export class MainMessenger {
 
   static onToggleDevTools = (cb: () => void) => ipcMain.on(TOGGLE_DEV_TOOLS, cb);
 
+  static f5Reload = (wc: WebContents, frontEndOnly?: boolean) => wc.send(RELOAD, frontEndOnly);
+
   static onReload = (cb: (frontEndOnly?: boolean) => void) =>
     ipcMain.on(RELOAD, (_, frontEndOnly) => cb(frontEndOnly));
 

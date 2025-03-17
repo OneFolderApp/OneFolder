@@ -65,6 +65,9 @@ export class RendererMessenger {
 
   static reload = (frontEndOnly?: boolean) => ipcRenderer.send(RELOAD, frontEndOnly);
 
+  static onf5Reload = (cb: (frontEndOnly?: boolean) => void) =>
+    ipcRenderer.on(RELOAD, (_, frontEndOnly) => cb(frontEndOnly));
+
   static showOpenDialog = (
     options: Electron.OpenDialogOptions,
   ): Promise<Electron.OpenDialogReturnValue> => ipcRenderer.invoke(OPEN_DIALOG, options);

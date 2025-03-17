@@ -181,7 +181,6 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
       await rootStore.close();
       asyncOperationDone = true;
       console.log('async operation done, closing');
-      console.log(event);
       window.close();
     }
   };

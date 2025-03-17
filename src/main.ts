@@ -246,7 +246,7 @@ function createWindow() {
       {
         label: 'Refresh',
         accelerator: 'F5',
-        click: (_, win) => win?.webContents.reload(),
+        //click: (_, win) => win?.webContents.reload(),
       },
       { role: 'toggleDevTools' },
       { type: 'separator' },

@@ -167,11 +167,25 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
     rootStore.uiStore.closePreviewWindow();
   });
 
+  /*
   // Runs operations to run before closing the app, e.g. closing child-processes
   // TODO: for async operations, look into https://github.com/electron/electron/issues/9433#issuecomment-960635576
   window.addEventListener('beforeunload', () => {
     rootStore.close();
-  });
+  }); */
+  let asyncOperationDone = false;
+  const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+    if (!asyncOperationDone) {
+      event.preventDefault();
+      event.returnValue = false;
+      await rootStore.close();
+      asyncOperationDone = true;
+      console.log('async operation done, closing');
+      console.log(event);
+      window.close();
+    }
+  };
+  window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
 async function runPreviewApp(db: Dexie, root: Root): Promise<void> {

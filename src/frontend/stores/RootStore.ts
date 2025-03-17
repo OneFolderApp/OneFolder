@@ -65,7 +65,7 @@ class RootStore {
     const rootStore = new RootStore(backend, backup, (fileStore, uiStore) => {
       if (uiStore.isSlideMode && fileStore.fileList.length > 0) {
         const activeFile = fileStore.fileList[uiStore.firstItem];
-        return `${activeFile?.filename}.${activeFile?.extension} - Allusion`;
+        return `${activeFile?.filename}.${activeFile?.extension} - Allusion`; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       } else {
         return 'Allusion';
       }
@@ -181,7 +181,7 @@ class RootStore {
 
   async close(): Promise<void> {
     // TODO: should be able to be done more reliably by running exiftool as a child process
-    return this.exifTool.close();
+    await this.exifTool.close();
   }
 }
 

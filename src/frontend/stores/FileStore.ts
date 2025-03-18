@@ -19,7 +19,7 @@ import { ClientScore } from '../entities/Score';
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
 /** These fields are stored and recovered when the application opens up */
-type PersistentPreferenceFields = 'orderDirection' | 'orderBy';
+type PersistentPreferenceFields = 'orderDirection' | 'orderBy' | 'orderByScore';
 
 const enum Content {
   All,
@@ -47,6 +47,7 @@ class FileStore {
   @observable private content: Content = Content.All;
   @observable orderDirection: OrderDirection = OrderDirection.Desc;
   @observable orderBy: OrderBy<FileDTO> = 'dateAdded';
+  @observable orderByScore: ID = '';
   @observable numTotalFiles = 0;
   @observable numUntaggedFiles = 0;
   @observable numMissingFiles = 0;
@@ -210,6 +211,12 @@ class FileStore {
     this.refetch();
   }
 
+  @action.bound orderFilesByScore(prop: OrderBy<FileDTO> = 'dateAdded', score: ClientScore): void {
+    this.setOrderBy(prop);
+    this.setOrderByScore(score.id);
+    this.refetch();
+  }
+
   @action.bound setContentQuery(): void {
     this.content = Content.Query;
     if (this.rootStore.uiStore.isSlideMode) {
@@ -325,7 +332,11 @@ class FileStore {
   @action.bound async fetchAllFiles(): Promise<void> {
     try {
       this.rootStore.uiStore.clearSearchCriteriaList();
-      const fetchedFiles = await this.backend.fetchFiles(this.orderBy, this.orderDirection);
+      const fetchedFiles = await this.backend.fetchFiles(
+        this.orderBy,
+        this.orderDirection,
+        this.orderByScore,
+      );
       this.setContentAll();
       return this.updateFromBackend(fetchedFiles);
     } catch (err) {
@@ -343,6 +354,7 @@ class FileStore {
         criteria.toCondition(this.rootStore),
         this.orderBy,
         this.orderDirection,
+        this.orderByScore,
         uiStore.searchMatchAny,
       );
       this.setContentUntagged();
@@ -357,6 +369,7 @@ class FileStore {
       const {
         orderBy,
         orderDirection,
+        orderByScore,
         rootStore: { uiStore },
       } = this;
 
@@ -365,7 +378,7 @@ class FileStore {
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
-      const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection);
+      const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
 
       // For every new file coming in, either re-use the existing client file if it exists,
       // or construct a new client file
@@ -428,6 +441,7 @@ class FileStore {
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
         this.orderDirection,
+        this.orderByScore,
         uiStore.searchMatchAny,
       );
       this.setContentQuery();
@@ -518,6 +532,7 @@ class FileStore {
         // BACKWARDS_COMPATIBILITY: orderDirection used to be called fileOrder
         this.setOrderDirection(prefs.orderDirection ?? prefs.fileOrder);
         this.setOrderBy(prefs.orderBy);
+        this.setOrderByScore(prefs.orderByScore);
       } catch (e) {
         console.error('Cannot parse persistent preferences:', FILE_STORAGE_KEY, e);
       }
@@ -528,6 +543,7 @@ class FileStore {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
       orderBy: this.orderBy,
       orderDirection: this.orderDirection,
+      orderByScore: this.orderByScore,
     };
     return preferences;
   }
@@ -713,6 +729,10 @@ class FileStore {
 
   @action private setOrderBy(prop: OrderBy<FileDTO> = 'dateAdded') {
     this.orderBy = prop;
+  }
+
+  @action private setOrderByScore(scoreId: ID) {
+    this.orderByScore = scoreId;
   }
 
   @action private setContentMissing() {

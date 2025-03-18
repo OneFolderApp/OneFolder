@@ -23,7 +23,7 @@ export const FloatingScoreEditor = observer(() => {
   return (
     <>
       <ToolbarButton
-        icon={IconSet.FILTER_FILTER_DOWN}
+        icon={IconSet.META_INFO}
         //disabled={uiStore.fileSelection.size === 0 && !uiStore.isScorePopoverOpen}
         onClick={uiStore.toggleScorePopover}
         text="Score selected files"

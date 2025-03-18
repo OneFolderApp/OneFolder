@@ -80,15 +80,11 @@ export default class Backend implements DataStorage {
     if (order === 'random') {
       return shuffleArray(await this.#files.toArray());
     }
-    if (order === 'score' && scoreId) {
-      const files = await this.#files.toArray();
-
-      files.sort((a, b) => {
-        const scoreA = a.scores.get(scoreId) ?? 0;
-        const scoreB = b.scores.get(scoreId) ?? 0;
-        return fileOrder === OrderDirection.Desc ? scoreB - scoreA : scoreA - scoreB;
-      });
-      return files;
+    if (order === 'score') {
+      order = 'dateAdded';
+      if (scoreId) {
+        return await orderByScore(this.#files.orderBy(order), scoreId, fileOrder);
+      }
     }
 
     const collection = this.#files.orderBy(order);
@@ -132,6 +128,7 @@ export default class Backend implements DataStorage {
     criteria: ConditionDTO<FileDTO> | [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
     order: OrderBy<FileDTO>,
     fileOrder: OrderDirection,
+    scoreId?: ID,
     matchAny?: boolean,
   ): Promise<FileDTO[]> {
     console.info('IndexedDB: Searching files...', { criteria, matchAny });
@@ -140,6 +137,12 @@ export default class Backend implements DataStorage {
 
     if (order === 'random') {
       return shuffleArray(await collection.toArray());
+    }
+    if (order === 'score') {
+      order = 'dateAdded';
+      if (scoreId) {
+        return await orderByScore(collection, scoreId, fileOrder);
+      }
     }
     // table.reverse() can be an order of magnitude slower than a javascript .reverse() call
     // (tested at ~5000 items, 500ms instead of 100ms)
@@ -330,6 +333,23 @@ export default class Backend implements DataStorage {
     console.info('IndexedDB: Clearing database...');
     Dexie.delete(this.#db.name);
   }
+}
+
+async function orderByScore(
+  collection: Dexie.Collection<FileDTO, string>,
+  scoreID: ID,
+  fileOrder: OrderDirection,
+) {
+  const files = await collection.toArray();
+
+  files.sort((a, b) => {
+    const scoreA =
+      a.scores.get(scoreID) ?? (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
+    const scoreB =
+      b.scores.get(scoreID) ?? (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
+    return fileOrder === OrderDirection.Desc ? scoreB - scoreA : scoreA - scoreB;
+  });
+  return files;
 }
 
 type SearchConjunction = 'and' | 'or';

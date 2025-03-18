@@ -68,8 +68,10 @@
 }
 
 //prevents data-popovers to interfier when overflow is auto
+[data-popover="true"] [data-popover="true"],
 .score-editor [data-popover="true"] {
   position: fixed !important;
+  overflow: visible;
 }
 
 .score-selector-pane {
@@ -84,6 +86,7 @@
     width: auto;
     height: auto;
     min-height: fit-content; // prevents weird slight resize when checklist shrinks when resizing parent
+    background: var(--input-color);
   }
 
   // Checklist of all available tags
@@ -194,4 +197,10 @@
     width: 0.75rem;
     height: 0.75rem;
   }
+}
+
+li.checked,
+.checked a {
+  color: var(--text-color-strong) !important;
+  background: var(--accent-color) !important;
 }

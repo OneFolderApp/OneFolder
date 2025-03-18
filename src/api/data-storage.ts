@@ -28,6 +28,7 @@ export interface DataStorage {
     criteria: ConditionDTO<FileDTO> | [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
     order: OrderBy<FileDTO>,
     fileOrder: OrderDirection,
+    scoreId?: ID,
     matchAny?: boolean,
   ): Promise<FileDTO[]>;
   createTag(tag: TagDTO): Promise<void>;

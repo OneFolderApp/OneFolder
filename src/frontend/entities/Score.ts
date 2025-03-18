@@ -1,4 +1,4 @@
-import { IReactionDisposer, makeObservable, observable, reaction } from 'mobx';
+import { action, IReactionDisposer, makeObservable, observable, reaction } from 'mobx';
 
 import { ID } from '../../api/id';
 import ScoreStore from '../stores/ScoreStore';
@@ -34,6 +34,10 @@ export class ClientScore {
       },
       { delay: 500 },
     );
+  }
+
+  @action.bound rename(name: string): void {
+    this.name = name;
   }
 
   async delete(): Promise<void> {

@@ -273,10 +273,12 @@ export const FileScoreMenuItems = observer(
     score,
     onDelete,
     onRemove,
+    onRename,
   }: {
     score: ClientScore;
     onDelete: (score: ClientScore) => void;
     onRemove: (score: ClientScore) => void;
+    onRename: (score: ClientScore) => void;
   }) => {
     const { uiStore } = useStore();
 
@@ -288,6 +290,7 @@ export const FileScoreMenuItems = observer(
           text={`Remove score from ${isMultiple ? 'files' : 'file'}`}
           icon={IconSet.META_INFO}
         />
+        <MenuItem onClick={() => onRename(score)} text="Rename" icon={IconSet.EDIT} />
         <MenuItem
           onClick={() => onDelete(score)}
           text="Delete score and remove it from all files"

@@ -122,7 +122,6 @@
     }
   }
   
-  .score-label,
   .score-value {
     user-select: text;
   }
@@ -177,7 +176,15 @@
     margin-bottom: 2px;
     margin-right: 2px;
     height: fit-content;
+    width: 100%;
+  }
+
+  .score-value input {
     width: 5rem;
+  }
+
+  .label-container input {
+    box-shadow: 0 0 0 0.125rem var(--accent-color); //only one label will be editable at the time, so this makes it look better when auto focus don't work
   }
 }
 

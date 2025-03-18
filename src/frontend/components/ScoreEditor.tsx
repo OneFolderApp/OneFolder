@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useReducer } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '../contexts/StoreContext';
@@ -15,6 +15,8 @@ import { ScoreOverwrite, ScoreRemoval, ScoreUnAssign } from './RemovalAlert';
 import { debounce } from 'common/timeout';
 import { FloatingPanel } from '../containers/AppToolbar/FileTagEditor';
 import { ToolbarButton } from 'widgets/toolbar';
+import { IAction } from '../containers/types';
+import { ID } from 'src/api/id';
 
 export const FloatingScoreEditor = observer(() => {
   const { uiStore } = useStore();
@@ -39,7 +41,7 @@ export const FloatingScoreEditor = observer(() => {
 });
 
 const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
-  const { uiStore } = useStore();
+  const { uiStore, fileStore } = useStore();
   const [deletableScore, setDeletableScore] = useState<ClientScore>();
   const [removableScore, setRemovableScore] = useState<{
     files: ClientFile[];
@@ -50,6 +52,9 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
     score: ClientScore;
     value: number;
   }>();
+  const [editorState, dispatch] = useReducer(reducer, {
+    editableNode: undefined,
+  });
 
   useEffect(() => {
     runInAction(() => {
@@ -93,14 +98,38 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
     },
     [files],
   );
-
-  // Autofocus
-  const buttonParentRef = useRef<HTMLDivElement>(null);
-  useAutorun(() => {
-    if (uiStore.isScorePopoverOpen) {
-      requestAnimationFrame(() => requestAnimationFrame(() => buttonParentRef.current?.focus()));
-    }
-  });
+  const onRename = useCallback(
+    (score: ClientScore) =>
+      runInAction(() => {
+        let found = 0;
+        if (files.length > 0) {
+          for (const file of files) {
+            if (file.scores.has(score)) {
+              found = 1;
+              break;
+            }
+          }
+        }
+        if (found === 0) {
+          for (const file of fileStore.fileList) {
+            if (file.scores.has(score)) {
+              found = 2;
+              uiStore.selectFile(file);
+              break;
+            }
+          }
+        }
+        if (found === 0) {
+          const firstfile = uiStore.firstFileInView;
+          if (firstfile) {
+            uiStore.selectFile(firstfile);
+            firstfile.setScore(score, -1);
+          }
+        }
+        dispatch(Factory.enableEditing(score.id));
+      }),
+    [fileStore.fileList, files, uiStore],
+  );
 
   const scoreSelectorButton = useId();
   const scoreSelectorButtonMenuID = useId();
@@ -108,6 +137,15 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
     parentPopoverId: scoreSelectorButtonMenuID,
     onDeleteScore: setDeletableScore,
     onRemoveScore: onRemove,
+    onRenameScore: onRename,
+  });
+
+  // Autofocus
+  const buttonParentRef = useRef<HTMLDivElement>(null);
+  useAutorun(() => {
+    if (uiStore.isScorePopoverOpen) {
+      requestAnimationFrame(() => requestAnimationFrame(() => buttonParentRef.current?.focus()));
+    }
   });
 
   return (
@@ -140,7 +178,13 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
           />
         </MenuButton>
       </div>
-      <ScoreListEditor counter={counter} onUpdate={onUpdate} onContextMenu={handleTagContextMenu} />
+      <ScoreListEditor
+        editorState={editorState}
+        dispatch={dispatch}
+        counter={counter}
+        onUpdate={onUpdate}
+        onContextMenu={handleTagContextMenu}
+      />
     </div>
   );
 });
@@ -151,9 +195,15 @@ interface IScoreContextMenu {
   parentPopoverId: string;
   onDeleteScore: (score: ClientScore) => void;
   onRemoveScore: (score: ClientScore) => void;
+  onRenameScore: (score: ClientScore) => void;
 }
 
-const ScoreContextMenu = ({ parentPopoverId, onDeleteScore, onRemoveScore }: IScoreContextMenu) => {
+const ScoreContextMenu = ({
+  parentPopoverId,
+  onDeleteScore,
+  onRemoveScore,
+  onRenameScore,
+}: IScoreContextMenu) => {
   const getFocusableElement = useCallback(() => {
     return document
       .getElementById(parentPopoverId)
@@ -194,6 +244,16 @@ const ScoreContextMenu = ({ parentPopoverId, onDeleteScore, onRemoveScore }: ISc
     },
     [getFocusableElement, onRemoveScore],
   );
+  const handleOnRename = useCallback(
+    (score: ClientScore) => {
+      const element = getFocusableElement();
+      if (element && element instanceof HTMLElement) {
+        element.focus();
+      }
+      onRenameScore(score);
+    },
+    [getFocusableElement, onRenameScore],
+  );
   const handleOnDelete = useCallback(
     (score: ClientScore) => {
       onDeleteScore(score);
@@ -221,13 +281,18 @@ const ScoreContextMenu = ({ parentPopoverId, onDeleteScore, onRemoveScore }: ISc
         event.clientY,
         <div ref={divRef} onBlur={handleMenuBlur} onKeyDown={handleMenuKeyDown} tabIndex={-1}>
           <Menu>
-            <FileScoreMenuItems score={score} onDelete={handleOnDelete} onRemove={handleOnRemove} />
+            <FileScoreMenuItems
+              score={score}
+              onDelete={handleOnDelete}
+              onRemove={handleOnRemove}
+              onRename={handleOnRename}
+            />
           </Menu>
         </div>,
       );
       setActiveMenuId(score.id);
     },
-    [show, handleMenuBlur, handleMenuKeyDown, handleOnDelete, handleOnRemove],
+    [show, handleMenuBlur, handleMenuKeyDown, handleOnDelete, handleOnRemove, handleOnRename],
   );
 
   return handleTagContextMenu;
@@ -241,61 +306,88 @@ const compareByScoreName = (
 };
 
 interface ScoreListEditorProps {
+  editorState: State;
+  dispatch: React.Dispatch<Action>;
   counter: IComputedValue<Map<ClientScore, [number, number | undefined]>>;
   onUpdate: (score: ClientScore, value: number) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
 }
 
-const ScoreListEditor = observer(({ counter, onUpdate, onContextMenu }: ScoreListEditorProps) => {
-  const { uiStore } = useStore();
-  const scores = Array.from(counter.get()).sort(compareByScoreName);
-  const SelectionSize = uiStore.fileSelection.size;
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
-      // Prevent backspace from navigating back to main view when having an image open
-      e.stopPropagation();
-    }
-
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      // If shift key is pressed with arrow keys left/right,
-      // stop those key events from propagating to the gallery,
-      // so that the cursor in the text input can be moved without selecting the prev/next image
-      // Kind of an ugly work-around, but better than not being able to move the cursor at all
-      if (!e.ctrlKey) {
-        e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
-      } else {
-        e.preventDefault(); // don't do anything here: let the event propagate to the gallery
+const ScoreListEditor = observer(
+  ({ editorState, dispatch, counter, onUpdate, onContextMenu }: ScoreListEditorProps) => {
+    const { uiStore } = useStore();
+    const scores = Array.from(counter.get()).sort(compareByScoreName);
+    const SelectionSize = uiStore.fileSelection.size;
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace') {
+        // Prevent backspace from navigating back to main view when having an image open
+        e.stopPropagation();
       }
-    }
-  }, []);
-  return (
-    <div className="score-list-editor">
-      {scores.map(([score, [count, val]]) => (
-        <ScoreListOption
-          key={score.id}
-          score={score}
-          count={SelectionSize > 1 ? `${count}/${SelectionSize}` : ''}
-          value={val}
-          onUpdate={onUpdate}
-          onContextMenu={onContextMenu}
-          handleKeyDown={handleKeyDown}
-        />
-      ))}
-    </div>
-  );
-});
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        // If shift key is pressed with arrow keys left/right,
+        // stop those key events from propagating to the gallery,
+        // so that the cursor in the text input can be moved without selecting the prev/next image
+        // Kind of an ugly work-around, but better than not being able to move the cursor at all
+        if (!e.ctrlKey) {
+          e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
+        } else {
+          e.preventDefault(); // don't do anything here: let the event propagate to the gallery
+        }
+      }
+    }, []);
+    const handleRename = useCallback(
+      (score: ClientScore) => dispatch(Factory.enableEditing(score.id)),
+      [dispatch],
+    );
+    const onUpdateName = useRef(() => {
+      dispatch(Factory.disableEditing());
+    }).current;
+    return (
+      <div className="score-list-editor">
+        {scores.map(([score, [count, val]]) => (
+          <ScoreListOption
+            key={score.id}
+            score={score}
+            count={SelectionSize > 1 ? `${count}/${SelectionSize}` : ''}
+            value={val}
+            onUpdate={onUpdate}
+            isEditingName={editorState.editableNode === score.id}
+            onUpdateName={onUpdateName}
+            handleRename={handleRename}
+            onContextMenu={onContextMenu}
+            handleKeyDown={handleKeyDown}
+          />
+        ))}
+      </div>
+    );
+  },
+);
 
 interface IScoreListOptionProps {
   score: ClientScore;
   count: string | number;
   value?: number;
+  isEditingName: boolean;
   onUpdate: (score: ClientScore, value: number) => void;
+  onUpdateName: (target: EventTarget & HTMLInputElement) => void;
+  handleRename: (score: ClientScore) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 const ScoreListOption = observer(
-  ({ score, count, value, onUpdate, onContextMenu, handleKeyDown }: IScoreListOptionProps) => {
+  ({
+    score,
+    count,
+    value,
+    onUpdate,
+    isEditingName,
+    onUpdateName,
+    handleRename,
+    onContextMenu,
+    handleKeyDown,
+  }: IScoreListOptionProps) => {
     const [inputValue, setInputValue] = useState(value !== undefined ? value : '');
 
     useEffect(() => {
@@ -324,10 +416,14 @@ const ScoreListOption = observer(
         onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, score) : undefined}
       >
         <div className="score-name">
-          <div className="label-container">
-            <div className="score-label" data-tooltip={score.name}>
-              {score.name}
-            </div>
+          <div className="label-container" onDoubleClick={() => handleRename(score)}>
+            <Label
+              text={score.name}
+              setText={score.rename}
+              isEditing={isEditingName}
+              onSubmit={onUpdateName}
+              tooltip={score.name}
+            />
             <div className="count-hint">{count}</div>
           </div>
         </div>
@@ -346,3 +442,85 @@ const ScoreListOption = observer(
     );
   },
 );
+
+interface ILabelProps {
+  text: string;
+  setText: (value: string) => void;
+  isEditing: boolean;
+  onSubmit: (target: EventTarget & HTMLInputElement) => void;
+  tooltip?: string;
+}
+
+const Label = (props: ILabelProps) =>
+  props.isEditing ? (
+    <input
+      className="input"
+      autoFocus
+      type="text"
+      defaultValue={props.text}
+      onBlur={(e) => {
+        const value = e.currentTarget.value.trim();
+        if (value.length > 0) {
+          props.setText(value);
+        }
+        props.onSubmit(e.currentTarget);
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        const value = e.currentTarget.value.trim();
+        if (e.key === 'Enter' && value.length > 0) {
+          props.setText(value);
+          props.onSubmit(e.currentTarget);
+        } else if (e.key === 'Escape') {
+          props.onSubmit(e.currentTarget); // cancel with escape
+        }
+      }}
+      onFocus={(e) => e.target.select()}
+      onClick={(e) => e.stopPropagation()}
+    />
+  ) : (
+    <div className="score-label" data-tooltip={props.tooltip}>
+      {props.text}
+    </div>
+  );
+
+const enum Flag {
+  EnableEditing,
+  DisableEditing,
+}
+
+type Action = IAction<Flag.EnableEditing, ID> | IAction<Flag.DisableEditing, undefined>;
+
+const Factory = {
+  enableEditing: (data: ID): Action => ({
+    flag: Flag.EnableEditing,
+    data,
+  }),
+  disableEditing: (): Action => ({
+    flag: Flag.DisableEditing,
+    data: undefined,
+  }),
+};
+
+type State = {
+  editableNode: ID | undefined;
+};
+
+export function reducer(state: State, action: Action): State {
+  switch (action.flag) {
+    case Flag.EnableEditing:
+      return {
+        ...state,
+        editableNode: action.data,
+      };
+
+    case Flag.DisableEditing:
+      return {
+        ...state,
+        editableNode: action.data,
+      };
+
+    default:
+      return state;
+  }
+}

@@ -108,6 +108,7 @@ type PersistentPreferenceFields =
   | 'importDirectory'
   | 'method'
   | 'thumbnailSize'
+  | 'masonryItemPadding'
   | 'thumbnailShape'
   | 'upscaleMode'
   | 'galleryVideoPlaybackMode'
@@ -162,6 +163,7 @@ class UiStore {
   // TODO: Might be better to store the ID to the file. I believe we were storing the index for performance, but we have instant conversion between index/ID now
   @observable firstItem: number = 0;
   @observable thumbnailSize: ThumbnailSize | number = 'medium';
+  @observable masonryItemPadding: number = 8;
   @observable thumbnailShape: ThumbnailShape = 'square';
   @observable upscaleMode: UpscaleMode = 'smooth';
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
@@ -236,6 +238,12 @@ class UiStore {
 
   @action.bound setThumbnailSize(size: ThumbnailSize): void {
     this.thumbnailSize = size;
+  }
+
+  @action.bound setMasonryItemPadding(size: number): void {
+    // constrain between 0 to 20
+    const limitedValue = Math.max(0, Math.min(20, size));
+    this.masonryItemPadding = limitedValue;
   }
 
   @action.bound setThumbnailShape(shape: ThumbnailShape): void {
@@ -930,6 +938,9 @@ class UiStore {
         if (prefs.thumbnailSize) {
           this.setThumbnailSize(prefs.thumbnailSize);
         }
+        if (prefs.masonryItemPadding) {
+          this.setMasonryItemPadding(prefs.masonryItemPadding);
+        }
         if (prefs.thumbnailShape) {
           this.setThumbnailShape(prefs.thumbnailShape);
         }
@@ -1000,6 +1011,7 @@ class UiStore {
       importDirectory: this.importDirectory,
       method: this.method,
       thumbnailSize: this.thumbnailSize,
+      masonryItemPadding: this.masonryItemPadding,
       thumbnailShape: this.thumbnailShape,
       upscaleMode: this.upscaleMode,
       galleryVideoPlaybackMode: this.galleryVideoPlaybackMode,

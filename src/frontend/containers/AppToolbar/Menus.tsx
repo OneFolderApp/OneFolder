@@ -46,6 +46,7 @@ export const ViewCommand = () => {
       <MenuDivider />
 
       <ThumbnailSizeSliderMenuItem />
+      <ThumbnailPaddingSizeSliderMenuItem />
     </MenuButton>
   );
 };
@@ -141,6 +142,30 @@ const thumbnailSizeOptions = [
   { value: 608 },
 ];
 
+const thumbnailPaddingSizeOptions = [
+  { value: 0, label: '0' },
+  { value: 1 },
+  { value: 2 },
+  { value: 3 },
+  { value: 4 },
+  { value: 5 },
+  { value: 6 },
+  { value: 7 },
+  { value: 8 },
+  { value: 9 },
+  { value: 10, label: '10' },
+  { value: 11 },
+  { value: 12 },
+  { value: 13 },
+  { value: 14 },
+  { value: 15 },
+  { value: 16 },
+  { value: 17 },
+  { value: 18 },
+  { value: 19 },
+  { value: 20, label: '20' },
+];
+
 export const LayoutMenuItems = observer(() => {
   const { uiStore } = useStore();
   return (
@@ -190,6 +215,22 @@ export const ThumbnailSizeSliderMenuItem = observer(() => {
       min={thumbnailSizeOptions[0].value}
       max={thumbnailSizeOptions[thumbnailSizeOptions.length - 1].value}
       step={20}
+    />
+  );
+});
+
+export const ThumbnailPaddingSizeSliderMenuItem = observer(() => {
+  const { uiStore } = useStore();
+  return (
+    <MenuSliderItem
+      value={uiStore.masonryItemPadding}
+      label="Thumbnail padding size"
+      onChange={uiStore.setMasonryItemPadding}
+      id="thumbnail-padding-sizes"
+      options={thumbnailPaddingSizeOptions}
+      min={thumbnailPaddingSizeOptions[0].value}
+      max={thumbnailPaddingSizeOptions[thumbnailPaddingSizeOptions.length - 1].value}
+      step={1}
     />
   );
 });

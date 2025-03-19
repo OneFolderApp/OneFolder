@@ -2,11 +2,16 @@
 
 Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
 - Video support.
+  - Video and Gif playback options.
 - Implied tag relationships.
   - Automatic inheritance of implied tags.
   - Fully compatible with advanced search.
+- Scores
+  - Allows to set score categories, set multiple values to files, and custom sort them by those values
 - Quality-of-life improvements.
   - Improved thumbnail updates when files change.
+  - Tag editor can ve moved aside on the main gallery.
+  - Find tags with contextual menu in tag editor.
   - more.
         
 Thanks to the developers and the community for your hard work! ❤️

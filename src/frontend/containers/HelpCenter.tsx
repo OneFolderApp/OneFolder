@@ -443,6 +443,19 @@ const PAGE_DATA: () => IPageData[] = () => [
           </>
         ),
       },
+      {
+        title: 'Scores',
+        content: (
+          <>
+            <p>
+              You can define score categories and add values of them to files with the score editor
+              panel (key 4 shortcut) and with the inspector. Scores give you a way to assign values
+              of one or multiple categories to files and allow you to sort them based on those
+              values.
+            </p>
+          </>
+        ),
+      },
     ],
   },
   {

@@ -178,6 +178,9 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
           />
         </MenuButton>
       </div>
+      {uiStore.fileSelection.size === 0 && (
+        <div><i><b>No files selected</b></i></div> // eslint-disable-line prettier/prettier
+      )}
       <ScoreListEditor
         editorState={editorState}
         dispatch={dispatch}

@@ -51,7 +51,7 @@ const FileTagEditor = observer(() => {
 
 export default FileTagEditor;
 
-const TagEditor = () => {
+const TagEditor = observer(() => {
   const { uiStore } = useStore();
   const [inputText, setInputText] = useState('');
 
@@ -147,6 +147,8 @@ const TagEditor = () => {
     [handleGridFocus],
   );
 
+  const handleTagContextMenu = TagSummaryMenu({ parentPopoverId: 'tag-editor' });
+
   return (
     <div
       ref={panelRef}
@@ -174,21 +176,27 @@ const TagEditor = () => {
         inputText={inputText}
         counter={counter}
         resetTextBox={resetTextBox}
+        onContextMenu={handleTagContextMenu}
       />
-      <TagSummary counter={counter} removeTag={removeTag} />
+      {uiStore.fileSelection.size === 0 ? (
+        <div><i><b>No files selected</b></i></div> // eslint-disable-line prettier/prettier
+      ) : (
+        <TagSummary counter={counter} removeTag={removeTag} onContextMenu={handleTagContextMenu} />
+      )}
     </div>
   );
-};
+});
 
 interface MatchingTagsListProps {
   inputText: string;
   counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   resetTextBox: () => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
 const MatchingTagsList = observer(
   React.forwardRef(function MatchingTagsList(
-    { inputText, counter, resetTextBox }: MatchingTagsListProps,
+    { inputText, counter, resetTextBox, onContextMenu }: MatchingTagsListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
     const { tagStore, uiStore } = useStore();
@@ -226,6 +234,7 @@ const MatchingTagsList = observer(
               tag={tag}
               selected={selected}
               toggleSelection={toggleSelection}
+              onContextMenu={onContextMenu}
             />
           );
         })}
@@ -280,9 +289,10 @@ const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps
 interface TagSummaryProps {
   counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   removeTag: (tag: ClientTag) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
-const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
+const TagSummary = observer(({ counter, removeTag, onContextMenu }: TagSummaryProps) => {
   const { uiStore } = useStore();
 
   const sortedTags: ClientTag[] = Array.from(counter.get().entries())
@@ -290,11 +300,8 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
     .sort((a, b) => b[1][0] - a[1][0])
     .map((pair) => pair[0]);
 
-  const containerID = useId();
-  const handleTagContextMenu = TagSummaryMenu({ parentPopoverId: containerID });
-
   return (
-    <div id={containerID} onMouseDown={(e) => e.preventDefault()}>
+    <div onMouseDown={(e) => e.preventDefault()}>
       {sortedTags.map((t) => (
         <Tag
           key={t.id}
@@ -304,7 +311,7 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
           color={t.viewColor}
           //Only show remove button in those tags that are actually assigned to the file(s) and not only inherited
           onRemove={counter.get().get(t)?.[1] ? () => removeTag(t) : undefined}
-          onContextMenu={(e) => handleTagContextMenu(e, t)}
+          onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, t) : undefined}
         />
       ))}
       {sortedTags.length === 0 && <i>No tags added yet</i>}

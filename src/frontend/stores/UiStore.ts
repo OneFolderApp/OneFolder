@@ -104,6 +104,8 @@ type PersistentPreferenceFields =
   | 'isOutlinerOpen'
   | 'isInspectorOpen'
   | 'isFloatingPanelToSide'
+  | 'isToolbarTagPopoverOpen'
+  | 'isScorePopoverOpen'
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
@@ -960,6 +962,8 @@ class UiStore {
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isFloatingPanelToSide = Boolean(prefs.isFloatingPanelToSide ?? false);
+        this.isToolbarTagPopoverOpen = Boolean(prefs.isToolbarTagPopoverOpen ?? false);
+        this.isScorePopoverOpen = Boolean(prefs.isScorePopoverOpen ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -1007,6 +1011,8 @@ class UiStore {
       isOutlinerOpen: this.isOutlinerOpen,
       isInspectorOpen: this.isInspectorOpen,
       isFloatingPanelToSide: this.isFloatingPanelToSide,
+      isToolbarTagPopoverOpen: this.isToolbarTagPopoverOpen,
+      isScorePopoverOpen: this.isScorePopoverOpen,
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,

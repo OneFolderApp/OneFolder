@@ -267,7 +267,7 @@ class LocationStore {
         await this.backend.createFilesFromPath(location.path, newFiles);
       }
 
-      this.updateChangedFiles(dbFiles, diskFileMap);
+      await this.updateChangedFiles(dbFiles, diskFileMap);
 
       console.groupEnd();
 

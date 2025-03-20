@@ -132,16 +132,18 @@ export const Thumbnail = observer(
     const { thumbnailPath, isBroken } = file;
     const [playingGif, setPlayingGif] = useState<boolean | undefined>(undefined);
     // This will check whether a thumbnail exists, generate it if needed
+    // this arguments work as dependencies to re-execute the promise
     const imageSource = usePromise(
       file,
       isBroken,
       mounted,
-      thumbnailPath.split('?')[0],
+      thumbnailPath, // dependency to re-execute
       uiStore.isList || (!forceNoThumbnail && !playingGif),
       async (file, isBroken, mounted, thumbnailPath, useThumbnail) => {
         // If it is broken, only show thumbnail if it exists.
         if (!mounted || isBroken === true) {
-          if (await fse.pathExists(thumbnailPath)) {
+          // fse.pathExists doesn't work if the path have url parameters
+          if (await fse.pathExists(thumbnailPath.split('?')[0])) {
             return thumbnailPath;
           } else {
             throw new Error('No thumbnail available.');
@@ -175,15 +177,28 @@ export const Thumbnail = observer(
     const fileId = file.id;
     const fileIdRef = useRef(fileId);
     const [loadError, setLoadError] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [src, setSrc] = useState(thumbnailPath);
     const handleImageError = useCallback(() => {
       if (fileIdRef.current === fileId) {
         setLoadError(true);
+      }
+    }, [fileId]);
+    const handleLoad = useCallback(() => {
+      if (fileIdRef.current === fileId) {
+        setLoading(false);
       }
     }, [fileId]);
     useEffect(() => {
       fileIdRef.current = fileId;
       setLoadError(false);
     }, [fileId]);
+    useEffect(() => {
+      if (imageSource.tag === 'ready' && 'ok' in imageSource.value) {
+        setLoadError(false);
+        setSrc(imageSource.value.ok);
+      }
+    }, [imageSource.tag, imageSource]);
 
     // Plays and pauses gifs
     useEffect(() => {
@@ -249,60 +264,53 @@ export const Thumbnail = observer(
     }, [thumbnailRef, isSlideMode, file.extension, galleryVideoPlaybackMode]);
 
     const is_lowres = file.width < 320 || file.height < 320;
+    const is_pixelated = is_lowres && uiStore.upscaleMode === 'pixelated';
+    //const autoPlay = (galleryVideoPlaybackMode === 'auto' || hovered) ?? false;
+
+    const props = useMemo(() => {
+      const props = {
+        src: encodeFilePath(src),
+        'data-file-id': file.id,
+        onError: handleImageError,
+        style: {},
+      };
+      if (isFileExtensionVideo(file.extension)) {
+        return {
+          ...props,
+          muted: true,
+          loop: true,
+          onCanPlay: handleLoad,
+          //autoPlay: autoPlay, //maybe is not necesary because autoplaying is already handled with useEffect hooks
+        };
+      } else {
+        return {
+          ...props,
+          alt: '',
+          onLoad: handleLoad,
+          style: is_pixelated ? { imageRendering: 'pixelated' as any } : {},
+        };
+      }
+    }, [src, file.id, file.extension, handleImageError, handleLoad, is_pixelated]);
+
     if (!mounted) {
       return <span className="image-placeholder" />;
-    } else if (loadError) {
-      return <span className="image-loading" />;
-    } else if (imageSource.tag === 'ready') {
-      if ('ok' in imageSource.value) {
-        // TODO: add thumbnails to video for performance in gallery view
-        if (isFileExtensionVideo(file.extension)) {
-          const videoProps = {
-            src: encodeFilePath(imageSource.value.ok),
-            'data-file-id': file.id,
-            onError: handleImageError,
-            muted: true,
-            autoPlay: false,
-            loop: true,
-          };
-          if (galleryVideoPlaybackMode === 'auto' || hovered) {
-            videoProps.autoPlay = true;
-          }
-
-          return <video ref={thumbnailRef} {...videoProps} />;
-        }
-
-        return (
-          <img
-            src={encodeFilePath(imageSource.value.ok)}
-            alt=""
-            data-file-id={file.id}
-            onError={handleImageError}
-            style={
-              is_lowres && uiStore.upscaleMode == 'pixelated' ? { imageRendering: 'pixelated' } : {}
-            }
-          />
-        );
-      } else {
-        return <span className="image-error" />;
-      }
-    } else {
-      // If it's a GIF and it's not playing, try to skip the ensureThumbnail process to avoid blinking.
-      if (file.extension === 'gif' && playingGif !== undefined) {
-        return (
-          <img
-            src={encodeFilePath(file.absolutePath)}
-            alt=""
-            data-file-id={file.id}
-            onError={handleImageError}
-            style={
-              is_lowres && uiStore.upscaleMode == 'pixelated' ? { imageRendering: 'pixelated' } : {}
-            }
-          />
-        );
-      }
+    }
+    if (loadError) {
       return <span className="image-loading" />;
     }
+    if (imageSource.tag === 'ready' && 'err' in imageSource.value) {
+      return <span className="image-error" />;
+    }
+    return (
+      <>
+        {isFileExtensionVideo(file.extension) ? (
+          <video ref={thumbnailRef} {...props} style={{ display: loading ? 'none' : 'block' }} />
+        ) : (
+          <img {...props} style={{ ...props.style, display: loading ? 'none' : 'block' }} />
+        )}
+        {loading && <span className="image-loading" />}
+      </>
+    );
   },
 );
 

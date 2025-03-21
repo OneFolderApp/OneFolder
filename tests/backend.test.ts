@@ -42,6 +42,7 @@ describe('Backend', () => {
         dateAdded: new Date(),
         dateModified: new Date(),
         dateCreated: new Date(),
+        OrigDateModified: new Date(),
         dateLastIndexed: new Date(),
         extension: 'jpg',
         ino: index.toString(),

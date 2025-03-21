@@ -138,6 +138,19 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    // Version 11, 13-11-21: Added OrigDateModified date to File for recreating thumbnails and metadata
+    version: 11,
+    collections: [],
+    upgrade: (tx: Transaction): void => {
+      tx.table('files')
+        .toCollection()
+        .modify((file: FileDTO) => {
+          file.OrigDateModified = file.dateAdded;
+          return file;
+        });
+    },
+  },
 ];
 
 type DBVersioningConfig = {

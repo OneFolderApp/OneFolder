@@ -295,17 +295,43 @@ class LocationStore {
       const diskFile = diskFileMap.get(dbFile.absolutePath);
       if (
         diskFile &&
-        (dbFile.dateLastIndexed.getTime() < diskFile.dateModified.getTime() ||
-          diskFile.size !== dbFile.size ||
+        (((dbFile.dateLastIndexed.getTime() < diskFile.dateModified.getTime() ||
+          dbFile.OrigDateModified.getTime() !== diskFile.dateModified.getTime()) &&
+          diskFile.size !== dbFile.size) ||
           diskFile.ino !== dbFile.ino)
       ) {
         const newFile: FileDTO = {
           ...dbFile,
           // Recreate metadata which checks the resolution of the image
-          ino: diskFile.ino,
           ...(await getMetaData(diskFile, this.rootStore.imageLoader)),
+          ino: diskFile.ino,
+          OrigDateModified: diskFile.dateModified,
           dateLastIndexed: new Date(),
         };
+
+        console.debug(
+          `Updating modified file: ${JSON.stringify(
+            {
+              ino: dbFile.ino,
+              size: dbFile.size,
+              OrigDateModified: dbFile.OrigDateModified,
+              dateLastIndexed: dbFile.dateLastIndexed,
+              name: dbFile.absolutePath,
+            },
+            null,
+            2,
+          )} to ${JSON.stringify(
+            {
+              ino: newFile.ino,
+              size: newFile.size,
+              OrigDateModified: newFile.OrigDateModified,
+              dateLastIndexed: newFile.dateLastIndexed,
+              name: newFile.absolutePath,
+            },
+            null,
+            2,
+          )}`,
+        );
 
         updatedFiles.push(newFile);
 
@@ -599,6 +625,7 @@ export async function pathToIFile(
     scores: new Map<ID, number>(),
     dateAdded: now,
     dateModified: now,
+    OrigDateModified: stats.dateModified,
     dateLastIndexed: now,
     ...(await getMetaData(stats, imageLoader)),
   };

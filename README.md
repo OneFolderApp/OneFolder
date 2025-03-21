@@ -7,12 +7,13 @@ Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
   - Automatic inheritance of implied tags.
   - Fully compatible with advanced search.
 - Scores
-  - Allows to set score categories, set multiple values to files, and custom sort them by those values
+  - Allows you to set score categories, set multiple values to files, and custom sort them by those values.
 - Quality-of-life improvements.
+  - Refresh hotkey
   - Improved thumbnail updates when files change.
-  - Tag editor can ve moved aside on the main gallery.
-  - Find tags with contextual menu in tag editor.
-  - more.
+  - Tag editor can be moved to the side in the main gallery.
+  - Find tags with the contextual menu in tag editor.
+  - and more.
         
 Thanks to the developers and the community for your hard work! ❤️
 

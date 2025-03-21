@@ -35,6 +35,15 @@ class ScoreStore {
     return this.scoreMap.get(id);
   }
 
+  @action getByName(name: string): ClientScore | undefined {
+    for (const [, score] of this.scoreMap) {
+      if (score.name === name) {
+        return score;
+      }
+    }
+    return undefined;
+  }
+
   @computed get scoreList(): readonly ClientScore[] {
     return Array.from(this.scoreMap.values());
   }

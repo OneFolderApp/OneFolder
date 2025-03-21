@@ -332,7 +332,7 @@ const ScoreListEditor = observer(
         // stop those key events from propagating to the gallery,
         // so that the cursor in the text input can be moved without selecting the prev/next image
         // Kind of an ugly work-around, but better than not being able to move the cursor at all
-        if (!e.ctrlKey) {
+        if (!e.altKey) {
           e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
         } else {
           e.preventDefault(); // don't do anything here: let the event propagate to the gallery

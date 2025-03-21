@@ -847,6 +847,7 @@ class UiStore {
     } else if (matches(hotkeyMap.toggleScoreEditor)) {
       this.toggleScorePopover();
     } else if (matches(hotkeyMap.refreshSearch)) {
+      this.rootStore.fileStore.clearFileList();
       this.rootStore.fileStore.refetch();
     } else if (matches(hotkeyMap.toggleSettings)) {
       this.toggleSettings();

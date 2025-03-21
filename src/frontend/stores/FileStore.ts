@@ -110,6 +110,26 @@ class FileStore {
         } catch (e) {
           console.error('Could not import tags for', absolutePath, e);
         }
+        try {
+          const xmpScores = await this.rootStore.exifTool.readScores(absolutePath);
+          const { scoreStore } = this.rootStore;
+          for (const xmpScore of xmpScores) {
+            const [encodedKey, encodedValue] = xmpScore.split('=');
+            const name = decodeURIComponent(encodedKey);
+            const value = Number(decodeURIComponent(encodedValue));
+            const match = scoreStore.getByName(name);
+            if (match) {
+              // if already exists this score category set it to the file
+              file.setScore(match, value);
+            } else {
+              // if not create a new score and set it to the file
+              const newScore = await scoreStore.createScore(name);
+              file.setScore(newScore, value);
+            }
+          }
+        } catch (e) {
+          console.error('Could not import scores for', absolutePath, e);
+        }
       }
       AppToaster.show(
         {
@@ -141,6 +161,9 @@ class FileStore {
             f.tags,
             action((t) => t.path),
           ),
+          scoreValues: Array.from(f.scores).map(
+            ([s, value]) => `${encodeURIComponent(s.name)}=${value}`,
+          ),
         })),
       );
       let lastToastVal = '0';
@@ -157,9 +180,9 @@ class FileStore {
           );
         }
 
-        const { absolutePath, tagHierarchy } = tagFilePairs[i];
+        const { absolutePath, tagHierarchy, scoreValues } = tagFilePairs[i];
         try {
-          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy);
+          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy, scoreValues);
         } catch (e) {
           console.error('Could not write tags to', absolutePath, tagHierarchy, e);
         }

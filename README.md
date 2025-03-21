@@ -13,6 +13,7 @@ Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
   - Improved thumbnail updates when files change.
   - Tag editor can be moved to the side in the main gallery.
   - Find tags with the contextual menu in tag editor.
+  - Adjustable padding for thumbnails in the gallery.
   - and more.
         
 Thanks to the developers and the community for your hard work! ❤️

@@ -482,6 +482,14 @@ export const FloatingPanel = observer(
       }
     }, [dataOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    //initial enabling animations with delay to avoid ghost panel to move
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        setExtraClassName('');
+      }, 300);
+      return () => clearTimeout(timeout);
+    }, []);
+
     const isFloatingPanelToSide = uiStore.isFloatingPanelToSide;
 
     return (

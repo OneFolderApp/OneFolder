@@ -941,7 +941,7 @@ class UiStore {
         if (prefs.thumbnailSize) {
           this.setThumbnailSize(prefs.thumbnailSize);
         }
-        if (prefs.masonryItemPadding) {
+        if ('masonryItemPadding' in prefs) {
           this.setMasonryItemPadding(prefs.masonryItemPadding);
         }
         if (prefs.thumbnailShape) {

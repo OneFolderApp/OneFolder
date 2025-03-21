@@ -35,12 +35,21 @@ export function encodeFilePath(filePath: string): string {
   // edge case for #
   // TODO: there must be others edge cases like this. Why is this so hard? Is there no built-in function for this?
   basepath = basepath.replace(/#/g, '%23');
+  console.debug(
+    `Requested Encoded file path: ${basepath}${encodeURIComponent(
+      filename,
+    )}${params} from ${filePath}`,
+  );
   return `file://${basepath}${encodeURIComponent(filename)}${params}`;
 }
 
 export async function isDirEmpty(dir: string) {
   const dirContents = await fse.readdir(dir);
   return dirContents.length === 0 || (dirContents.length === 1 && dirContents[0] === '.DS_Store');
+}
+
+export function isFileExtensionVideo(fileExtension: string) {
+  return (fileExtension === 'webm' || fileExtension === 'mp4' || fileExtension === 'ogg');
 }
 
 function hashString(s: string) {

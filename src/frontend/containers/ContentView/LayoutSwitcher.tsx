@@ -1,4 +1,4 @@
-import { action } from 'mobx';
+import { action, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -66,15 +66,16 @@ const Layout = ({ contentRect }: LayoutProps) => {
 
   // Reset selection range when number of items changes: Else you can get phantom files when continuing your selection
   useEffect(() => {
+    runInAction(() => uiStore.setFirstItem(uiStore.firstItem));
     initialSelectionIndex.current = undefined;
     lastSelectionIndex.current = undefined;
-  }, [fileStore.fileList.length]);
+  }, [fileStore.fileList.length, uiStore]);
 
   useEffect(() => {
     const onKeyDown = action((e: KeyboardEvent) => {
       let index = lastSelectionIndex.current;
       if (index === undefined) {
-        return;
+        index = uiStore.firstItem;
       }
       if (uiStore.isSlideMode) {
         return;
@@ -84,12 +85,12 @@ const Layout = ({ contentRect }: LayoutProps) => {
         // When the activeElement GalleryItem goes out of view, focus will be handed over to the body element:
         // -> Gallery keyboard shortkeys stop working. So, force focus on Gallery container instead
         // But not when the TagEditor overlay is open: it will close onBlur
-        if (!uiStore.isToolbarTagPopoverOpen) {
+        if (!uiStore.isToolbarTagPopoverOpen && !uiStore.isScorePopoverOpen) {
           FocusManager.focusGallery();
         }
       } else if (e.key === 'ArrowRight' && index < fileStore.fileList.length - 1) {
         index += 1;
-        if (!uiStore.isToolbarTagPopoverOpen) {
+        if (!uiStore.isToolbarTagPopoverOpen && !uiStore.isScorePopoverOpen) {
           FocusManager.focusGallery();
         }
       } else {

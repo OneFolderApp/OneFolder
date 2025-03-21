@@ -1,10 +1,11 @@
-import { computed, IComputedValue, runInAction } from 'mobx';
+import { computed, IComputedValue, reaction, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, {
   ForwardedRef,
   ReactNode,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -21,6 +22,8 @@ import { ClientFile } from '../../entities/File';
 import { ClientTag } from '../../entities/Tag';
 import FocusManager from '../../FocusManager';
 import { useAction, useAutorun, useComputed } from '../../hooks/mobx';
+import { Menu, useContextMenu } from 'widgets/menus';
+import { EditorTagSummaryItems } from '../ContentView/menu-items';
 
 const POPUP_ID = 'tag-editor-popup';
 
@@ -30,12 +33,16 @@ const FileTagEditor = observer(() => {
     <>
       <ToolbarButton
         icon={IconSet.TAG_LINE}
-        disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
+        //disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
         onClick={uiStore.toggleToolbarTagPopover}
         text="Tag selected files"
         tooltip="Add or remove tags from selected images"
       />
-      <FloatingPanel>
+      <FloatingPanel
+        title="File Tags Editor"
+        dataOpen={uiStore.isToolbarTagPopoverOpen}
+        onBlur={uiStore.closeToolbarTagPopover}
+      >
         <TagEditor />
       </FloatingPanel>
     </>
@@ -44,17 +51,23 @@ const FileTagEditor = observer(() => {
 
 export default FileTagEditor;
 
-const TagEditor = () => {
+const TagEditor = observer(() => {
   const { uiStore } = useStore();
   const [inputText, setInputText] = useState('');
 
   const counter = useComputed(() => {
-    // Count how often tags are used
-    const counter = new Map<ClientTag, number>();
+    // Count how often tags are used // Aded las bool value indicating if is an inherited tag -> should not show delete button;
+    const counter = new Map<ClientTag, [number, boolean]>();
     for (const file of uiStore.fileSelection) {
-      for (const tag of file.tags) {
-        const count = counter.get(tag);
-        counter.set(tag, count !== undefined ? count + 1 : 1);
+      for (const tag of file.inheritedTags) {
+        const counterTag = counter.get(tag);
+        const count = counterTag?.[0];
+        const counterNotInherited = counterTag?.[1];
+        const notInherited = file.tags.has(tag);
+        counter.set(tag, [
+          count !== undefined ? count + 1 : 1,
+          counterNotInherited || notInherited,
+        ]);
       }
     }
     return counter;
@@ -63,8 +76,9 @@ const TagEditor = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   // Autofocus
   useAutorun(() => {
-    if (uiStore.isToolbarTagPopoverOpen) {
+    if (uiStore.focusTagEditor) {
       requestAnimationFrame(() => requestAnimationFrame(() => inputRef.current?.focus()));
+      uiStore.setFocusTagEditor(false);
     }
   });
 
@@ -133,6 +147,8 @@ const TagEditor = () => {
     [handleGridFocus],
   );
 
+  const handleTagContextMenu = TagSummaryMenu({ parentPopoverId: 'tag-editor' });
+
   return (
     <div
       ref={panelRef}
@@ -160,21 +176,27 @@ const TagEditor = () => {
         inputText={inputText}
         counter={counter}
         resetTextBox={resetTextBox}
+        onContextMenu={handleTagContextMenu}
       />
-      <TagSummary counter={counter} removeTag={removeTag} />
+      {uiStore.fileSelection.size === 0 ? (
+        <div><i><b>No files selected</b></i></div> // eslint-disable-line prettier/prettier
+      ) : (
+        <TagSummary counter={counter} removeTag={removeTag} onContextMenu={handleTagContextMenu} />
+      )}
     </div>
   );
-};
+});
 
 interface MatchingTagsListProps {
   inputText: string;
-  counter: IComputedValue<Map<ClientTag, number>>;
+  counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   resetTextBox: () => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
 const MatchingTagsList = observer(
   React.forwardRef(function MatchingTagsList(
-    { inputText, counter, resetTextBox }: MatchingTagsListProps,
+    { inputText, counter, resetTextBox, onContextMenu }: MatchingTagsListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
     const { tagStore, uiStore } = useStore();
@@ -203,7 +225,8 @@ const MatchingTagsList = observer(
     return (
       <Grid ref={ref} id={POPUP_ID} multiselectable>
         {matches.map((tag) => {
-          const selected = counter.get().get(tag) !== undefined;
+          //Only mark as selected those tags that are actually assigned to the file(s) and not only inherited
+          const selected = counter.get().get(tag)?.[1] ?? false;
           return (
             <TagOption
               key={tag.id}
@@ -211,6 +234,7 @@ const MatchingTagsList = observer(
               tag={tag}
               selected={selected}
               toggleSelection={toggleSelection}
+              onContextMenu={onContextMenu}
             />
           );
         })}
@@ -263,26 +287,31 @@ const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps
 };
 
 interface TagSummaryProps {
-  counter: IComputedValue<Map<ClientTag, number>>;
+  counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
   removeTag: (tag: ClientTag) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
-const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
+const TagSummary = observer(({ counter, removeTag, onContextMenu }: TagSummaryProps) => {
   const { uiStore } = useStore();
 
   const sortedTags: ClientTag[] = Array.from(counter.get().entries())
     // Sort based on count
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1][0] - a[1][0])
     .map((pair) => pair[0]);
 
   return (
-    <div>
+    <div onMouseDown={(e) => e.preventDefault()}>
       {sortedTags.map((t) => (
         <Tag
           key={t.id}
-          text={`${t.name}${uiStore.fileSelection.size > 1 ? ` (${counter.get().get(t)})` : ''}`}
+          text={`${t.name}${
+            uiStore.fileSelection.size > 1 ? ` (${counter.get().get(t)?.[0]})` : ''
+          }`}
           color={t.viewColor}
-          onRemove={() => removeTag(t)}
+          //Only show remove button in those tags that are actually assigned to the file(s) and not only inherited
+          onRemove={counter.get().get(t)?.[1] ? () => removeTag(t) : undefined}
+          onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, t) : undefined}
         />
       ))}
       {sortedTags.length === 0 && <i>No tags added yet</i>}
@@ -290,35 +319,208 @@ const TagSummary = observer(({ counter, removeTag }: TagSummaryProps) => {
   );
 });
 
-const FloatingPanel = observer(({ children }: { children: ReactNode }) => {
-  const { uiStore } = useStore();
+interface ITagSummaryMenu {
+  parentPopoverId: string;
+}
 
-  const handleBlur = useRef((e: React.FocusEvent) => {
-    const button = e.currentTarget.previousElementSibling as HTMLElement;
-    if (e.relatedTarget !== button && !e.currentTarget.contains(e.relatedTarget as Node)) {
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
-    }
-  }).current;
-
-  const handleKeyDown = useRef((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      uiStore.closeToolbarTagPopover();
-      FocusManager.focusGallery();
-    }
-  }).current;
-
-  return (
-    // FIXME: data attributes placeholder
-    <div
-      data-popover
-      data-open={uiStore.isToolbarTagPopoverOpen}
-      className="floating-dialog"
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-    >
-      {uiStore.isToolbarTagPopoverOpen ? children : null}
-    </div>
+const TagSummaryMenu = ({ parentPopoverId }: ITagSummaryMenu) => {
+  const getFocusableElement = useCallback(() => {
+    return document
+      .getElementById(parentPopoverId)
+      ?.querySelector('input, textarea, button, a, select, [tabindex]') as HTMLElement | null;
+  }, [parentPopoverId]);
+  const handleMenuBlur = useCallback(
+    (e: React.FocusEvent) => {
+      if (!e.relatedTarget?.closest('[data-popover="true"]')) {
+        const element = getFocusableElement();
+        if (element && element instanceof HTMLElement) {
+          element.focus();
+          element.blur();
+        }
+      }
+    },
+    [getFocusableElement],
   );
-});
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const element = getFocusableElement();
+        e.stopPropagation();
+        if (element && element instanceof HTMLElement) {
+          element.focus();
+          element.blur();
+        }
+      }
+    },
+    [getFocusableElement],
+  );
+  const beforeSelect = useCallback(() => {
+    const element = getFocusableElement();
+    if (element && element instanceof HTMLElement) {
+      element.focus();
+      element.blur();
+    }
+  }, [getFocusableElement]);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const divRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (activeMenuId && divRef.current) {
+      divRef.current.focus();
+    }
+  }, [activeMenuId]);
+
+  const show = useContextMenu();
+  const handleTagContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLElement>, tag: ClientTag) => {
+      event.stopPropagation();
+      show(
+        event.clientX,
+        event.clientY,
+        <div ref={divRef} onBlur={handleMenuBlur} onKeyDown={handleMenuKeyDown} tabIndex={-1}>
+          <Menu>
+            <EditorTagSummaryItems tag={tag} beforeSelect={beforeSelect} />
+          </Menu>
+        </div>,
+      );
+      setActiveMenuId(tag.id);
+    },
+    [show, handleMenuBlur, handleMenuKeyDown, beforeSelect],
+  );
+
+  return handleTagContextMenu;
+};
+
+interface IFloatingPanelProps {
+  title?: string;
+  onBlur: () => void;
+  children: ReactNode;
+  dataOpen: boolean;
+}
+
+export const FloatingPanel = observer(
+  ({ title, dataOpen, onBlur, children }: IFloatingPanelProps) => {
+    const { uiStore } = useStore();
+    const [style, setStyle] = useState<React.CSSProperties | undefined>(undefined);
+    const [extraClassName, setExtraClassName] = useState('fresh-rendered');
+
+    const handleBlur = useAction((e: React.FocusEvent) => {
+      const button = e.currentTarget.previousElementSibling as HTMLElement;
+      if (
+        e.relatedTarget !== button &&
+        !e.currentTarget.contains(e.relatedTarget as Node) &&
+        !e.relatedTarget?.closest('[data-contextmenu="true"]') &&
+        !uiStore.isFloatingPanelToSide
+      ) {
+        onBlur();
+        FocusManager.focusGallery();
+      }
+    });
+
+    const handleKeyDown = useRef((e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onBlur();
+        FocusManager.focusGallery();
+      }
+    }).current;
+
+    const handleSwitchToSide = useRef(() => {
+      uiStore.toggleFloatingPanelToSide();
+    }).current;
+
+    useEffect(() => {
+      const disposer = reaction(
+        () => ({
+          isFloatingPanelToSide: uiStore.isFloatingPanelToSide,
+          outlinerWidth: uiStore.outlinerWidth,
+          outlinerHeights: uiStore.outlinerHeights.slice(),
+          outlinerExpansion: uiStore.outlinerExpansion.slice(),
+        }),
+        ({ isFloatingPanelToSide, outlinerWidth }) => {
+          if (isFloatingPanelToSide) {
+            const outlinerLastChild = document
+              .getElementById('outliner-content')
+              ?.querySelector('.multi-split')?.lastElementChild;
+            if (outlinerLastChild) {
+              const header = outlinerLastChild.querySelector('header');
+              const rect = outlinerLastChild.getBoundingClientRect();
+              const headerHeight = header ? header.getBoundingClientRect().height : 0;
+              const newStyle: React.CSSProperties = {
+                position: 'fixed',
+                display: 'block',
+                left: rect.left,
+                top: rect.top - headerHeight,
+                width: outlinerWidth,
+                height: rect.height,
+                borderTop: 'unset',
+                borderBottom: 'unset',
+                boxShadow: 'unset',
+                transform: 'unset',
+              };
+              setStyle(newStyle);
+              return;
+            }
+          }
+          setStyle({});
+        },
+        { fireImmediately: true },
+      );
+
+      return () => disposer();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+      if (style === undefined) {
+        return;
+      }
+      if (dataOpen) {
+        setExtraClassName('opened');
+        const timeout = setTimeout(() => {
+          setExtraClassName('');
+        }, 300);
+        return () => clearTimeout(timeout);
+      }
+    }, [dataOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    //initial enabling animations with delay to avoid ghost panel to move
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        setExtraClassName('');
+      }, 300);
+      return () => clearTimeout(timeout);
+    }, []);
+
+    const isFloatingPanelToSide = uiStore.isFloatingPanelToSide;
+
+    return (
+      // FIXME: data attributes placeholder
+      <div
+        data-popover
+        style={style}
+        data-open={dataOpen}
+        className={`floating-dialog ${extraClassName}`}
+        tabIndex={-1} //necessary for handling the onblur correctly
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      >
+        {dataOpen && style !== undefined ? (
+          <>
+            <header>
+              <h2>{title}</h2>
+              <button
+                className="floating-switch-side-button"
+                data-tooltip="Switch to/from the side"
+                onClick={handleSwitchToSide}
+                aria-haspopup="menu"
+                style={isFloatingPanelToSide ? undefined : { transform: 'scaleX(-1)' }}
+              >
+                {IconSet.ARROW_RIGHT}
+              </button>
+            </header>
+            {children}
+          </>
+        ) : null}
+      </div>
+    );
+  },
+);

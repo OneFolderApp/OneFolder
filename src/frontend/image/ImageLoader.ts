@@ -11,6 +11,7 @@ import PsdLoader from './PSDLoader';
 import { generateThumbnailUsingWorker } from './ThumbnailGeneration';
 import TifLoader from './TifLoader';
 import { generateThumbnail, getBlob } from './util';
+import { isFileExtensionVideo } from 'common/fs';
 
 type FormatHandlerType =
   | 'web'
@@ -38,6 +39,9 @@ const FormatHandlers: Record<IMG_EXTENSIONS_TYPE, FormatHandlerType> = {
   // xcf: 'extractEmbeddedThumbnailOnly',
   exr: 'exrLoader',
   // avif: 'sharp',
+  mp4: 'web',
+  webm: 'web',
+  ogg: 'web',
 };
 
 type ObjectURL = string;
@@ -63,14 +67,18 @@ class ImageLoader {
 
   needsThumbnail(file: FileDTO) {
     // Not using thumbnails for gifs, since they're mostly used for animations, which doesn't get preserved in thumbnails
-    if (file.extension === 'gif') {
+    // Not using thumbnails for videos for now
+    //temporary generate thumbnails for gifs to save graphic resources
+    if (isFileExtensionVideo(file.extension)) {
       return false;
     }
 
     return (
       FormatHandlers[file.extension] !== 'web' ||
       file.width > thumbnailMaxSize ||
-      file.height > thumbnailMaxSize
+      file.height > thumbnailMaxSize ||
+      //always make thumbnail for gifs to use when not playing
+      file.extension === 'gif'
     );
   }
 
@@ -85,7 +93,7 @@ class ImageLoader {
       extension: file.extension,
       absolutePath: file.absolutePath,
       // remove ?v=1 that might have been added after the thumbnail was generated earlier
-      thumbnailPath: file.thumbnailPath.split('?v=1')[0],
+      thumbnailPath: file.thumbnailPath.split('?')[0],
     };
 
     if (await fse.pathExists(thumbnailPath)) {
@@ -231,5 +239,5 @@ export default ImageLoader;
 
 // Update the thumbnail path to re-render the image where ever it is used in React
 const updateThumbnailPath = action((file: ClientFile, thumbnailPath: string) => {
-  file.thumbnailPath = `${thumbnailPath}?v=1`;
+  file.setThumbnailPath(thumbnailPath);
 });

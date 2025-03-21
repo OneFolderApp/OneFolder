@@ -25,6 +25,7 @@ import TreeItemRevealer from '../TreeItemRevealer';
 import { TagItemContextMenu } from './ContextMenu';
 import SearchButton from './SearchButton';
 import { Action, Factory, State, reducer } from './state';
+import { TagImply } from 'src/frontend/containers/Outliner/TagsPanel/TagsImply';
 
 export class TagsTreeItemRevealer extends TreeItemRevealer {
   public static readonly instance: TagsTreeItemRevealer = new TagsTreeItemRevealer();
@@ -45,6 +46,7 @@ export class TagsTreeItemRevealer extends TreeItemRevealer {
 }
 
 interface ILabelProps {
+  isHeader?: boolean;
   text: string;
   setText: (value: string) => void;
   isEditing: boolean;
@@ -79,11 +81,11 @@ const Label = (props: ILabelProps) =>
       onFocus={(e) => e.target.select()}
       // Stop propagation so that the parent Tag element doesn't toggle selection status
       onClick={(e) => e.stopPropagation()}
-      // TODO: Visualizing errors...
-      // Only show red outline when input field is in focus and text is invalid
+    // TODO: Visualizing errors...
+    // Only show red outline when input field is in focus and text is invalid
     />
   ) : (
-    <div className="label-text" data-tooltip={props.tooltip}>
+    <div className={`label-text ${props.isHeader ? 'label-header' : ''}`} data-tooltip={props.tooltip}>
       {props.text}
     </div>
   );
@@ -301,6 +303,8 @@ const TagItem = observer((props: ITagItemProps) => {
     [dispatch],
   );
 
+  const isHeader = useMemo(() => nodeData.name.startsWith('#'), [nodeData.name]);
+
   return (
     <div
       className="tree-content-label"
@@ -317,11 +321,12 @@ const TagItem = observer((props: ITagItemProps) => {
         {nodeData.isHidden ? IconSet.HIDDEN : IconSet.TAG}
       </span>
       <Label
-        text={nodeData.name}
+        isHeader={isHeader}
+        text={isHeader ? nodeData.name.slice(1) : nodeData.name}
         setText={nodeData.rename}
         isEditing={isEditing}
         onSubmit={submit}
-        tooltip={`${nodeData.path.join(' › ')} (${nodeData.fileCount})`}
+        tooltip={`${nodeData.path.map((v) => v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v).join(' › ')} (${nodeData.fileCount})`}
       />
       {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />}
     </div>
@@ -425,7 +430,7 @@ const mapTag = (tag: ClientTag): ITreeItem => ({
   nodeData: tag,
   isExpanded,
   isSelected,
-  className: tag.isSearched ? 'searched' : undefined,
+  className: `${tag.isSearched ? 'searched' : undefined} ${tag.name.startsWith('#') ? 'tag-header' : ''}`,
 });
 
 const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
@@ -436,6 +441,7 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     editableNode: undefined,
     deletableNode: undefined,
     mergableNode: undefined,
+    impliedTags: undefined,
   });
   const dndData = useTagDnD();
 
@@ -628,6 +634,10 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
 
       {state.mergableNode && (
         <TagMerge tag={state.mergableNode} onClose={() => dispatch(Factory.abortMerge())} />
+      )}
+
+      {state.impliedTags && (
+        <TagImply tag={state.impliedTags} onClose={() => dispatch(Factory.disableModifyImpliedTags())} />
       )}
     </MultiSplitPane>
   );

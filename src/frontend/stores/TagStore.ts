@@ -169,8 +169,8 @@ class TagStore {
       this.tagGraph.set(tag.id, tag);
     }
 
-    // Set parent and add sub tags
-    for (const { id, subTags } of backendTags) {
+    // Set parent and add sub and implied tags
+    for (const { id, subTags, impliedTags } of backendTags) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tag = this.tagGraph.get(id)!;
 
@@ -179,6 +179,14 @@ class TagStore {
         if (subTag !== undefined) {
           subTag.setParent(tag);
           tag.subTags.push(subTag);
+        }
+      }
+
+      for (const id of impliedTags) {
+        const impliedTag = this.get(id);
+        if (impliedTag !== undefined) {
+          impliedTag.addImpliedByTag(tag);
+          tag.impliedTags.push(impliedTag);
         }
       }
     }

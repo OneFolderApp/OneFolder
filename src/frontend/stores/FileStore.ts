@@ -14,11 +14,12 @@ import { ClientLocation } from '../entities/Location';
 import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
+import { ClientScore } from '../entities/Score';
 
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
 /** These fields are stored and recovered when the application opens up */
-type PersistentPreferenceFields = 'orderDirection' | 'orderBy';
+type PersistentPreferenceFields = 'orderDirection' | 'orderBy' | 'orderByScore';
 
 const enum Content {
   All,
@@ -46,6 +47,7 @@ class FileStore {
   @observable private content: Content = Content.All;
   @observable orderDirection: OrderDirection = OrderDirection.Desc;
   @observable orderBy: OrderBy<FileDTO> = 'dateAdded';
+  @observable orderByScore: ID = '';
   @observable numTotalFiles = 0;
   @observable numUntaggedFiles = 0;
   @observable numMissingFiles = 0;
@@ -108,6 +110,26 @@ class FileStore {
         } catch (e) {
           console.error('Could not import tags for', absolutePath, e);
         }
+        try {
+          const xmpScores = await this.rootStore.exifTool.readScores(absolutePath);
+          const { scoreStore } = this.rootStore;
+          for (const xmpScore of xmpScores) {
+            const [encodedKey, encodedValue] = xmpScore.split('=');
+            const name = decodeURIComponent(encodedKey);
+            const value = Number(decodeURIComponent(encodedValue));
+            const match = scoreStore.getByName(name);
+            if (match) {
+              // if already exists this score category set it to the file
+              file.setScore(match, value);
+            } else {
+              // if not create a new score and set it to the file
+              const newScore = await scoreStore.createScore(name);
+              file.setScore(newScore, value);
+            }
+          }
+        } catch (e) {
+          console.error('Could not import scores for', absolutePath, e);
+        }
       }
       AppToaster.show(
         {
@@ -139,6 +161,9 @@ class FileStore {
             f.tags,
             action((t) => t.path),
           ),
+          scoreValues: Array.from(f.scores).map(
+            ([s, value]) => `${encodeURIComponent(s.name)}=${value}`,
+          ),
         })),
       );
       let lastToastVal = '0';
@@ -155,9 +180,9 @@ class FileStore {
           );
         }
 
-        const { absolutePath, tagHierarchy } = tagFilePairs[i];
+        const { absolutePath, tagHierarchy, scoreValues } = tagFilePairs[i];
         try {
-          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy);
+          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy, scoreValues);
         } catch (e) {
           console.error('Could not write tags to', absolutePath, tagHierarchy, e);
         }
@@ -209,6 +234,12 @@ class FileStore {
     this.refetch();
   }
 
+  @action.bound orderFilesByScore(prop: OrderBy<FileDTO> = 'dateAdded', score: ClientScore): void {
+    this.setOrderBy(prop);
+    this.setOrderByScore(score.id);
+    this.refetch();
+  }
+
   @action.bound setContentQuery(): void {
     this.content = Content.Query;
     if (this.rootStore.uiStore.isSlideMode) {
@@ -257,9 +288,11 @@ class FileStore {
 
       // Move thumbnail
       const { thumbnailDirectory } = this.rootStore.uiStore; // TODO: make a config store for this?
-      const oldThumbnailPath = file.thumbnailPath.replace('?v=1', '');
+      const oldThumbnailPath = file.thumbnailPath.split('?')[0];
       const newThumbPath = getThumbnailPath(newData.absolutePath, thumbnailDirectory);
-      fse.move(oldThumbnailPath, newThumbPath).catch(() => {});
+      fse
+        .move(oldThumbnailPath, newThumbPath)
+        .catch((err) => console.error('Error moving file:', err));
 
       const newClientFile = new ClientFile(this, newIFile);
       newClientFile.thumbnailPath = newThumbPath;
@@ -322,7 +355,11 @@ class FileStore {
   @action.bound async fetchAllFiles(): Promise<void> {
     try {
       this.rootStore.uiStore.clearSearchCriteriaList();
-      const fetchedFiles = await this.backend.fetchFiles(this.orderBy, this.orderDirection);
+      const fetchedFiles = await this.backend.fetchFiles(
+        this.orderBy,
+        this.orderDirection,
+        this.orderByScore,
+      );
       this.setContentAll();
       return this.updateFromBackend(fetchedFiles);
     } catch (err) {
@@ -340,6 +377,7 @@ class FileStore {
         criteria.toCondition(this.rootStore),
         this.orderBy,
         this.orderDirection,
+        this.orderByScore,
         uiStore.searchMatchAny,
       );
       this.setContentUntagged();
@@ -354,6 +392,7 @@ class FileStore {
       const {
         orderBy,
         orderDirection,
+        orderByScore,
         rootStore: { uiStore },
       } = this;
 
@@ -362,7 +401,7 @@ class FileStore {
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
-      const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection);
+      const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
 
       // For every new file coming in, either re-use the existing client file if it exists,
       // or construct a new client file
@@ -425,6 +464,7 @@ class FileStore {
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
         this.orderDirection,
+        this.orderByScore,
         uiStore.searchMatchAny,
       );
       this.setContentQuery();
@@ -471,6 +511,17 @@ class FileStore {
     return tags;
   }
 
+  getScores(dtoScores: Map<ID, number>): Map<ClientScore, number> {
+    const scores = new Map<ClientScore, number>();
+    for (const [id, value] of dtoScores.entries()) {
+      const clientScore = this.rootStore.scoreStore.get(id);
+      if (clientScore !== undefined) {
+        scores.set(clientScore, value);
+      }
+    }
+    return scores;
+  }
+
   getLocation(location: ID): ClientLocation {
     const loc = this.rootStore.locationStore.get(location);
     if (!loc) {
@@ -504,6 +555,7 @@ class FileStore {
         // BACKWARDS_COMPATIBILITY: orderDirection used to be called fileOrder
         this.setOrderDirection(prefs.orderDirection ?? prefs.fileOrder);
         this.setOrderBy(prefs.orderBy);
+        this.setOrderByScore(prefs.orderByScore);
       } catch (e) {
         console.error('Cannot parse persistent preferences:', FILE_STORAGE_KEY, e);
       }
@@ -514,6 +566,7 @@ class FileStore {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
       orderBy: this.orderBy,
       orderDirection: this.orderDirection,
+      orderByScore: this.orderByScore,
     };
     return preferences;
   }
@@ -620,6 +673,21 @@ class FileStore {
         ) {
           existingFile.updateTagsFromBackend(newTags);
         }
+        // Update scores (might have changes, e.g. removed)
+        const newScores = new Map<ClientScore, number>();
+        f.scores.forEach((value, id) => {
+          const clientScore = this.rootStore.scoreStore.get(id);
+          if (clientScore) {
+            newScores.set(clientScore, value);
+          }
+        });
+        if (
+          existingFile.scores.size !== newScores.size ||
+          Array.from(existingFile.scores).some((t) => t[1] !== newScores.get(t[0]))
+        ) {
+          existingFile.updateScoresFromBackend(newScores);
+        }
+
         return existingFile;
       }
 
@@ -631,9 +699,11 @@ class FileStore {
       const file = new ClientFile(this, f);
       // Initialize the thumbnail path so the image can be loaded immediately when it mounts.
       // To ensure the thumbnail actually exists, the `ensureThumbnail` function should be called
-      file.thumbnailPath = this.rootStore.imageLoader.needsThumbnail(f)
-        ? getThumbnailPath(f.absolutePath, this.rootStore.uiStore.thumbnailDirectory)
-        : f.absolutePath;
+      file.setThumbnailPath(
+        this.rootStore.imageLoader.needsThumbnail(f)
+          ? getThumbnailPath(f.absolutePath, this.rootStore.uiStore.thumbnailDirectory)
+          : f.absolutePath,
+      );
       return file;
     });
 
@@ -682,6 +752,10 @@ class FileStore {
 
   @action private setOrderBy(prop: OrderBy<FileDTO> = 'dateAdded') {
     this.orderBy = prop;
+  }
+
+  @action private setOrderByScore(scoreId: ID) {
+    this.orderByScore = scoreId;
   }
 
   @action private setContentMissing() {

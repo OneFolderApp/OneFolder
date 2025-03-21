@@ -65,9 +65,9 @@ export class MasonryWorkerAdapter implements Layouter {
 
     await worker.compute(
       containerWidth,
-      opts.type || defaultOpts.type,
-      opts.thumbSize || defaultOpts.thumbSize,
-      opts.padding || defaultOpts.padding,
+      opts.type ?? defaultOpts.type,
+      opts.thumbSize ?? defaultOpts.thumbSize,
+      opts.padding ?? defaultOpts.padding,
     );
     return worker.get_height();
   }
@@ -81,9 +81,9 @@ export class MasonryWorkerAdapter implements Layouter {
     }
     await this.worker.compute(
       containerWidth,
-      opts.type || defaultOpts.type,
-      opts.thumbSize || defaultOpts.thumbSize,
-      opts.padding || defaultOpts.padding,
+      opts.type ?? defaultOpts.type,
+      opts.thumbSize ?? defaultOpts.thumbSize,
+      opts.padding ?? defaultOpts.padding,
     );
     return this.worker.get_height();
   }

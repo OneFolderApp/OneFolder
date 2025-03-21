@@ -29,6 +29,17 @@ import BackupScheduler from './backend/backup-scheduler';
 import { DB_NAME, dbInit } from './backend/config';
 
 async function main(): Promise<void> {
+  // Override console methods in the renderer process
+  const originalConsole = { ...console };
+
+  for (const method of ['log', 'error', 'warn', 'info', 'debug'] as const) {
+    console[method] = (...args) => {
+      originalConsole[method](...args); // Log to original console
+      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '); // Stringify objects
+      RendererMessenger.sendConsoleMessage(method, message); // Send to main process
+    };
+  }
+
   // Render our react components in the div with id 'app' in the html file
   const container = document.getElementById('app');
 
@@ -108,6 +119,11 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
   // -------------------------------------------
   // Messaging with the main process
   // -------------------------------------------
+  let f5Reload: boolean | undefined = undefined;
+  RendererMessenger.onf5Reload((frontendOnly?: boolean) => {
+    f5Reload = frontendOnly;
+    RendererMessenger.reload(frontendOnly);
+  });
 
   RendererMessenger.onImportExternalImage(async ({ item }) => {
     console.log('Importing image...', item);
@@ -156,15 +172,32 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
     rootStore.uiStore.closePreviewWindow();
   });
 
+  /*
   // Runs operations to run before closing the app, e.g. closing child-processes
   // TODO: for async operations, look into https://github.com/electron/electron/issues/9433#issuecomment-960635576
   window.addEventListener('beforeunload', () => {
     rootStore.close();
-  });
+  }); */
+  let asyncOperationDone = false;
+  const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+    if (!asyncOperationDone) {
+      event.preventDefault();
+      event.returnValue = false;
+      await rootStore.close();
+      asyncOperationDone = true;
+      console.log('async operation done, closing');
+      if (f5Reload !== undefined) {
+        RendererMessenger.reload(f5Reload);
+      } else {
+        window.close();
+      }
+    }
+  };
+  window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
 async function runPreviewApp(db: Dexie, root: Root): Promise<void> {
-  const backend = new Backend(db, () => {});
+  const backend = new Backend(db, () => { });
   const rootStore = await RootStore.preview(backend, new BackupScheduler(db, ''));
 
   RendererMessenger.initialized();

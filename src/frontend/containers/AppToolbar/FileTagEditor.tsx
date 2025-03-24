@@ -205,13 +205,19 @@ const MatchingTagsList = observer(
       () =>
         computed(() => {
           if (inputText.length === 0) {
-            return tagStore.tagList;
+            if (tagStore.count > 50) {
+              return Array.from(counter.get().keys());
+            } else {
+              return tagStore.tagList;
+            }
           } else {
             const textLower = inputText.toLowerCase();
-            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower));
+            return tagStore.tagList
+              .filter((t) => t.name.toLowerCase().includes(textLower))
+              .slice(0, 50);
           }
         }),
-      [inputText, tagStore],
+      [counter, inputText, tagStore.count, tagStore.tagList],
     ).get();
 
     const toggleSelection = useAction((isSelected: boolean, tag: ClientTag) => {
@@ -238,6 +244,9 @@ const MatchingTagsList = observer(
             />
           );
         })}
+        {matches.length === 0 && inputText.length === 0 && tagStore.count > 50 && (
+          <> Type to select tags</>
+        )}
         <CreateOption
           inputText={inputText}
           hasMatches={matches.length > 0}
@@ -314,7 +323,8 @@ const TagSummary = observer(({ counter, removeTag, onContextMenu }: TagSummaryPr
           onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, t) : undefined}
         />
       ))}
-      {sortedTags.length === 0 && <i>No tags added yet</i>}
+      {sortedTags.length === 0 && <i><b>No tags added yet</b></i> // eslint-disable-line prettier/prettier
+      }
     </div>
   );
 });

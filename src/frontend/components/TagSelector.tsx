@@ -253,12 +253,17 @@ const SuggestedTagsList = observer(
       () =>
         computed(() => {
           if (query.length === 0) {
-            return tagStore.tagList.filter(filter);
+            if (tagStore.count > 50) {
+              return selection;
+            } else {
+              return tagStore.tagList.filter(filter);
+            }
           } else {
             const textLower = query.toLowerCase();
             return tagStore.tagList
               .filter((t) => t.name.toLowerCase().includes(textLower))
-              .filter(filter);
+              .filter(filter)
+              .slice(0, 50);
           }
         }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -279,7 +284,10 @@ const SuggestedTagsList = observer(
             />
           );
         })}
-        {suggestions.length === 0 && renderCreateOption?.(query, resetTextBox)}
+        {suggestions.length === 0 &&
+          (query.length > 0
+            ? renderCreateOption?.(query, resetTextBox)
+            : tagStore.count > 50 && <span className="text-muted">Type to select tags</span>)}
       </Grid>
     );
   }),

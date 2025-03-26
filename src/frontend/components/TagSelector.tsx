@@ -4,6 +4,7 @@ import React, {
   ForwardedRef,
   ReactElement,
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -16,6 +17,7 @@ import { Flyout } from 'widgets/popovers';
 import { useStore } from '../contexts/StoreContext';
 import { ClientTag } from '../entities/Tag';
 import { useComputed } from '../hooks/mobx';
+import { debounce } from 'common/timeout';
 
 export interface TagSelectorProps {
   selection: ClientTag[];
@@ -56,6 +58,16 @@ const TagSelector = (props: TagSelectorProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [dobuncedQuery, setDebQuery] = useState('');
+
+  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
+  useEffect(() => {
+    if (query.length > 2) {
+      setDebQuery(query);
+    }
+    // allways call the debounced version to avoud old calls with outdated query values to be set
+    debounceSetDebQuery(query);
+  }, [debounceSetDebQuery, query]);
 
   const handleChange = useRef((e: React.ChangeEvent<HTMLInputElement>) => {
     setIsOpen(true);
@@ -184,7 +196,7 @@ const TagSelector = (props: TagSelectorProps) => {
           ref={gridRef}
           id={gridId}
           filter={filter}
-          query={query}
+          query={dobuncedQuery}
           selection={selection}
           toggleSelection={toggleSelection}
           resetTextBox={resetTextBox.current}
@@ -262,8 +274,7 @@ const SuggestedTagsList = observer(
             const textLower = query.toLowerCase();
             return tagStore.tagList
               .filter((t) => t.name.toLowerCase().includes(textLower))
-              .filter(filter)
-              .slice(0, 50);
+              .filter(filter);
           }
         }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -287,7 +298,7 @@ const SuggestedTagsList = observer(
         {suggestions.length === 0 &&
           (query.length > 0
             ? renderCreateOption?.(query, resetTextBox)
-            : tagStore.count > 50 && <span className="text-muted">Type to select tags</span>)}
+            : tagStore.count > 50 && <span>Type to select tags</span>)}
       </Grid>
     );
   }),

@@ -5,7 +5,6 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -54,6 +53,16 @@ export default FileTagEditor;
 const TagEditor = observer(() => {
   const { uiStore } = useStore();
   const [inputText, setInputText] = useState('');
+  const [dobuncedQuery, setDebQuery] = useState('');
+
+  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
+  useEffect(() => {
+    if (inputText.length > 2) {
+      setDebQuery(inputText);
+    }
+    // allways call the debounced version to avoud old calls with outdated query values to be set
+    debounceSetDebQuery(inputText);
+  }, [debounceSetDebQuery, inputText]);
 
   const counter = useComputed(() => {
     // Count how often tags are used // Aded las bool value indicating if is an inherited tag -> should not show delete button;
@@ -173,7 +182,7 @@ const TagEditor = observer(() => {
       />
       <MatchingTagsList
         ref={gridRef}
-        inputText={inputText}
+        inputText={dobuncedQuery}
         counter={counter}
         resetTextBox={resetTextBox}
         onContextMenu={handleTagContextMenu}
@@ -212,9 +221,7 @@ const MatchingTagsList = observer(
             }
           } else {
             const textLower = inputText.toLowerCase();
-            return tagStore.tagList
-              .filter((t) => t.name.toLowerCase().includes(textLower))
-              .slice(0, 50);
+            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower));
           }
         }),
       [counter, inputText, tagStore.count, tagStore.tagList],
@@ -245,7 +252,7 @@ const MatchingTagsList = observer(
           );
         })}
         {matches.length === 0 && inputText.length === 0 && tagStore.count > 50 && (
-          <> Type to select tags</>
+          <div style={{ marginLeft: '0.25rem' }}>Type to select tags</div>
         )}
         <CreateOption
           inputText={inputText}

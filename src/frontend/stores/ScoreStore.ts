@@ -45,7 +45,7 @@ class ScoreStore {
   }
 
   @computed get scoreList(): readonly ClientScore[] {
-    return Array.from(this.scoreMap.values());
+    return Array.from(this.scoreMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   @computed get count(): number {
@@ -60,11 +60,6 @@ class ScoreStore {
     const id = generateId();
     const score = new ClientScore(this, id, scoreName, new Date(), new Date());
     this.scoreMap.set(score.id, score);
-    const sortedScores = [...this.scoreMap.entries()].sort((a, b) =>
-      a[1].name.localeCompare(b[1].name),
-    );
-    this.scoreMap.clear();
-    sortedScores.forEach(([id, score]) => this.scoreMap.set(id, score));
     await this.backend.createScore(score.serialize());
     return score;
   }

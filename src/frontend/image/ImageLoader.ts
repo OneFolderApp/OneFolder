@@ -100,8 +100,10 @@ class ImageLoader {
       // Files like PSDs have a tendency to change: Check if thumbnail needs an update
       const fileStats = await fse.stat(absolutePath);
       const thumbStats = await fse.stat(thumbnailPath);
-      if (fileStats.mtime < thumbStats.ctime) {
-        return false; // if file mod date is before thumbnail creation date, keep using the same thumbnail
+      // if file mod date is before thumbnail creation date, keep using the same thumbnail
+      // sometimes files like psd have wrong modified date, like a mtime in the future, which causes an infinite loop of re-render thumbnails
+      if (fileStats.mtime < thumbStats.ctime || fileStats.mtime.getTime() > Date.now()) {
+        return false;
       }
     }
 

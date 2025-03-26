@@ -108,7 +108,11 @@ class ImageLoader {
     const handlerType = FormatHandlers[extension];
     switch (handlerType) {
       case 'web':
-        await generateThumbnailUsingWorker(file, thumbnailPath);
+        // If the third argument of `generateThumbnailUsingWorker`, "timeoutReject", is set to true,
+        // it will cause a reject/throw and return an error inside the imageSource promise when the timeout finishes.
+        // If it is set to false, it will resolve the await, causing a "retry-like" behavior by triggering a rerender
+        // and calling `updateThumbnailPath` after each timeout until the thumbnail is generated.
+        await generateThumbnailUsingWorker(file, thumbnailPath, false);
         updateThumbnailPath(file, thumbnailPath);
         break;
       case 'tifLoader':

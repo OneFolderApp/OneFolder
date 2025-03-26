@@ -151,15 +151,8 @@ export const Thumbnail = observer(
         }
 
         if (useThumbnail) {
-          const freshlyGenerated = await imageLoader.ensureThumbnail(file);
-          // The thumbnailPath of an image is always set, but may not exist yet.
-          // When the thumbnail is finished generating, the path will be changed to `${thumbnailPath}?v=`.
-          if (freshlyGenerated) {
-            await when(() => file.thumbnailPath.includes('?'), { timeout: 10000 });
-            if (!getThumbnail(file).includes('?')) {
-              throw new Error('Thumbnail generation timeout.');
-            }
-          }
+          //this line will throw an exception if the thumbnail generation gets rejected / throw
+          await imageLoader.ensureThumbnail(file);
           return getThumbnail(file);
         } else {
           const src = await imageLoader.getImageSrc(file);
@@ -194,9 +187,11 @@ export const Thumbnail = observer(
       setLoadError(false);
     }, [fileId]);
     useEffect(() => {
-      if (imageSource.tag === 'ready' && 'ok' in imageSource.value) {
+      if (imageSource.tag === 'ready') {
+        if ('ok' in imageSource.value) {
+          setSrc(imageSource.value.ok);
+        }
         setLoadError(false);
-        setSrc(imageSource.value.ok);
       }
     }, [imageSource.tag, imageSource]);
 

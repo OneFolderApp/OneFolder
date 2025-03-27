@@ -107,6 +107,12 @@ class TagStore {
     } = this;
     const ids: ID[] = [];
     tag.parent.subTags.remove(tag);
+    for (const t of tag.impliedByTags.slice()) {
+      t.removeImpliedTag(tag);
+    }
+    for (const t of tag.impliedTags.slice()) {
+      tag.removeImpliedTag(t);
+    }
     for (const t of tag.getSubTree()) {
       t.dispose();
       tagGraph.delete(t.id);
@@ -125,6 +131,12 @@ class TagStore {
     const ids: ID[] = [];
     const remove = action((tag: ClientTag): ID[] => {
       tag.parent.subTags.remove(tag);
+      for (const t of tag.impliedByTags.slice()) {
+        t.removeImpliedTag(tag);
+      }
+      for (const t of tag.impliedTags.slice()) {
+        tag.removeImpliedTag(t);
+      }
       for (const t of tag.getSubTree()) {
         t.dispose();
         tagGraph.delete(t.id);

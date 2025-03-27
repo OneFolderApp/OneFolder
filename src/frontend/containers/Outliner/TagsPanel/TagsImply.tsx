@@ -169,7 +169,7 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
 
           <br />
 
-          <label htmlFor="tag-implyBy-picker">Implied by tags</label>
+          <label htmlFor="tag-implyBy-picker">Tags that imply this tag</label>
           <TagSelector
             disabled={false}
             selection={impliedByTags}

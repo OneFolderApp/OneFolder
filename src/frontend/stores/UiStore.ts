@@ -429,7 +429,7 @@ class UiStore {
     }
 
     const absolutePaths = Array.from(this.fileSelection, (file) => file.absolutePath);
-    absolutePaths.forEach((path) => shell.openExternal(`file://${path}`).catch(console.error));
+    absolutePaths.forEach((path) => shell.openPath(`file://${path}`).catch(console.error));
   }
 
   @action.bound toggleInspector(): void {

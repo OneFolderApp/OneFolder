@@ -108,49 +108,65 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
     tag.replaceImpliedByTags(impliedByTags);
 
     if (impliedTags.length > 0) {
-      AppToaster.show({
-        message: `Tag "${tag.name}" now implies "${impliedTags.map((v) => v.name).join('", "')}"`,
-        timeout: 3000,
-        type: 'success',
-      }, "imply-toast");
+      AppToaster.show(
+        {
+          message: `Tag "${tag.name}" now implies "${impliedTags.map((v) => v.name).join('", "')}"`,
+          timeout: 3000,
+          type: 'success',
+        },
+        'imply-toast',
+      );
     } else {
-      AppToaster.show({
-        message: `Tag "${tag.name}" no longer implies any tags`,
-        timeout: 3000,
-        type: 'success',
-      }, "imply-toast");
+      AppToaster.show(
+        {
+          message: `Tag "${tag.name}" no longer implies any tags`,
+          timeout: 3000,
+          type: 'success',
+        },
+        'imply-toast',
+      );
     }
     if (impliedByTags.length > 0) {
-      AppToaster.show({
-        message: `Tag "${tag.name}" now is implied by "${impliedByTags.map((v) => v.name).join('", "')}"`,
-        timeout: 3000,
-        type: 'success',
-      }, "imply-toast");
+      AppToaster.show(
+        {
+          message: `Tag "${tag.name}" now is implied by "${impliedByTags
+            .map((v) => v.name)
+            .join('", "')}"`,
+          timeout: 3000,
+          type: 'success',
+        },
+        'imply-by-toast',
+      );
     } else {
-      AppToaster.show({
-        message: `Tag "${tag.name}" no longer is implied by any tags`,
-        timeout: 3000,
-        type: 'success',
-      }, "imply-toast");
+      AppToaster.show(
+        {
+          message: `Tag "${tag.name}" no longer is implied by any tags`,
+          timeout: 3000,
+          type: 'success',
+        },
+        'imply-by-toast',
+      );
     }
   });
 
   return (
     <Dialog
       open
-      title={`Modify Implied Tags`}
+      title={'Modify Implied Tags'}
       icon={IconSet.TAG_GROUP}
       onCancel={onClose}
       describedby="imply-info"
     >
       <p id="imply-info">
         This allows you to modify the implied tags for a tag. <br />
-        Note: You cannot imply a parent, child, inherited implied, or implied-by tag, to avoid circular relationships and maintain a clearer structure.
+        Note: You cannot imply a parent, child, inherited implied, or implied-by tag, to avoid
+        circular relationships and maintain a clearer structure.
       </p>
       <form method="dialog" onSubmit={(e) => e.preventDefault()}>
         <fieldset>
           <div id="tag-imply-overview">
-            <span>Changing implied tags for </span><Tag key={tag.id} text={tag.name} color={tag.viewColor} />
+            <span>Changing implied tags for </span>
+            <Tag key={tag.id} text={tag.name} color={tag.viewColor} />
           </div>
 
           <br />
@@ -186,13 +202,12 @@ export const TagImply = observer(({ tag, onClose }: TagImplyProps) => {
           <Button
             text="Save"
             styling="filled"
-            onClick={() => { save(); onClose() }}
+            onClick={() => {
+              save();
+              onClose();
+            }}
           />
-          <Button
-            text="Cancel"
-            styling="filled"
-            onClick={onClose}
-          />
+          <Button text="Cancel" styling="filled" onClick={onClose} />
         </fieldset>
       </form>
     </Dialog>

@@ -163,18 +163,19 @@ const TagItem = observer((props: ITagItemProps) => {
   );
 
   // Don't expand immediately on drag-over, only after hovering over it for a second or so
-  const [expandTimeoutId, setExpandTimeoutId] = useState<number>();
+  const expandTimeoutRef = useRef<number | undefined>();
   const expandDelayed = useCallback(
     (nodeId: string) => {
-      if (expandTimeoutId) {
-        clearTimeout(expandTimeoutId);
+      if (expandTimeoutRef.current) {
+        clearTimeout(expandTimeoutRef.current);
       }
       const t = window.setTimeout(() => {
         dispatch(Factory.expandNode(nodeId));
+        expandTimeoutRef.current = undefined;
       }, HOVER_TIME_TO_EXPAND);
-      setExpandTimeoutId(t);
+      expandTimeoutRef.current = t;
     },
-    [expandTimeoutId, dispatch],
+    [dispatch],
   );
 
   const handleDragOver = useCallback(
@@ -195,16 +196,16 @@ const TagItem = observer((props: ITagItemProps) => {
         // Don't expand when hovering over top/bottom border
         const targetClasses = event.currentTarget.classList;
         if (targetClasses.contains('top') || targetClasses.contains('bottom')) {
-          if (expandTimeoutId) {
-            clearTimeout(expandTimeoutId);
-            setExpandTimeoutId(undefined);
+          if (expandTimeoutRef.current) {
+            clearTimeout(expandTimeoutRef.current);
+            expandTimeoutRef.current = undefined;
           }
-        } else if (!expansion[nodeData.id] && !expandTimeoutId) {
+        } else if (!expansion[nodeData.id] && !expandTimeoutRef.current) {
           expandDelayed(nodeData.id);
         }
       });
     },
-    [dndData, expandDelayed, expandTimeoutId, expansion, nodeData],
+    [dndData, expandDelayed, expansion, nodeData],
   );
 
   const handleDragLeave = useCallback(
@@ -212,13 +213,13 @@ const TagItem = observer((props: ITagItemProps) => {
       if (runInAction(() => dndData.source !== undefined)) {
         DnDHelper.onDragLeave(event);
 
-        if (expandTimeoutId) {
-          clearTimeout(expandTimeoutId);
-          setExpandTimeoutId(undefined);
+        if (expandTimeoutRef.current) {
+          clearTimeout(expandTimeoutRef.current);
+          expandTimeoutRef.current = undefined;
         }
       }
     },
-    [dndData, expandTimeoutId],
+    [dndData],
   );
 
   const handleDrop = useCallback(
@@ -227,7 +228,7 @@ const TagItem = observer((props: ITagItemProps) => {
         const relativeMovePos = DnDHelper.onDrop(event);
 
         // Expand the tag if it's not already expanded
-        if (!expansion[nodeData.id]) {
+        if (!expansion[nodeData.id] && relativeMovePos === 'middle') {
           dispatch(Factory.setExpansion((val) => ({ ...val, [nodeData.id]: true })));
         }
 
@@ -247,12 +248,12 @@ const TagItem = observer((props: ITagItemProps) => {
         }
       });
 
-      if (expandTimeoutId) {
-        clearTimeout(expandTimeoutId);
-        setExpandTimeoutId(undefined);
+      if (expandTimeoutRef.current) {
+        clearTimeout(expandTimeoutRef.current);
+        expandTimeoutRef.current = undefined;
       }
     },
-    [dispatch, dndData, expandTimeoutId, expansion, nodeData, pos, uiStore],
+    [dispatch, dndData, expansion, nodeData, pos, uiStore],
   );
 
   const handleSelect = useCallback(

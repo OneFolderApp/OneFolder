@@ -10,7 +10,9 @@ Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
   - Allows you to set score categories, set multiple values to files, and custom sort them by those values.
 - Quality-of-life improvements.
   - Refresh hotkey
+  - Fixed weird behavior in the tags tree when dragging/dropping or expanding items
   - Improved thumbnail updates when files change.
+  - Retry thumbnail generation when it takes too long.
   - Tag editor can be moved to the side in the main gallery.
   - Find tags with the contextual menu in tag editor.
   - Adjustable padding for thumbnails in the gallery.

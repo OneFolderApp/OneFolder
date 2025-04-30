@@ -135,5 +135,14 @@ async function processMessage(data: IThumbnailMessage) {
 
 // Respond to message from parent thread
 ctx.addEventListener('message', async (event) => {
+  // Remove the image from the queue when timeout occurs
+  if (event.data.type === 'cancel') {
+    const index = queue.findIndex((item) => item.fileId === event.data.fileId);
+    if (index !== -1) {
+      queue.splice(index, 1);
+      console.log(`Cancelled request for fileId: ${event.data.fileId}`);
+    }
+    return;
+  }
   await processMessage(event.data);
 });

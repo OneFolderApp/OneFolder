@@ -5,40 +5,68 @@ import { IThumbnailMessage, IThumbnailMessageResponse } from '../image/Thumbnail
 
 // TODO: Merge this with the generateThumbnail func from frontend/image/utils.ts, it's duplicate code
 const generateThumbnailData = async (filePath: string): Promise<ArrayBuffer | null> => {
-  const inputBuffer = await fse.readFile(filePath);
-  const inputBlob = new Blob([inputBuffer]);
-  const img = await createImageBitmap(inputBlob);
+  let inputBuffer = null;
+  let inputBlob = null;
+  let img = null;
+  let canvas = null;
+  let ctx2D = null;
+  let thumbBlob = null;
+  let buffer = null;
 
-  // Scale the image so that either width or height becomes `thumbnailMaxSize`
-  let width = img.width;
-  let height = img.height;
-  if (img.width >= img.height) {
-    width = thumbnailMaxSize;
-    height = (thumbnailMaxSize * img.height) / img.width;
-  } else {
-    height = thumbnailMaxSize;
-    width = (thumbnailMaxSize * img.width) / img.height;
-  }
+  try {
+    inputBuffer = await fse.readFile(filePath);
+    inputBlob = new Blob([inputBuffer]);
+    img = await createImageBitmap(inputBlob);
 
-  const canvas = new OffscreenCanvas(width, height);
+    // Scale the image so that either width or height becomes `thumbnailMaxSize`
+    let width = img.width;
+    let height = img.height;
+    if (img.width >= img.height) {
+      width = thumbnailMaxSize;
+      height = (thumbnailMaxSize * img.height) / img.width;
+    } else {
+      height = thumbnailMaxSize;
+      width = (thumbnailMaxSize * img.width) / img.height;
+    }
 
-  const ctx2D = canvas.getContext('2d');
-  if (!ctx2D) {
-    console.warn('No canvas context 2D (should never happen)');
+    canvas = new OffscreenCanvas(width, height);
+
+    ctx2D = canvas.getContext('2d');
+    if (!ctx2D) {
+      console.warn('No canvas context 2D (should never happen)');
+      return null;
+    }
+
+    // Todo: Take into account rotation. Can be found with https://www.npmjs.com/package/node-exiftool
+
+    // TODO: Could maybe use https://www.electronjs.org/docs/api/native-image#imageresizeoptions
+
+    ctx2D.drawImage(img, 0, 0, width, height);
+
+    thumbBlob = await canvas.convertToBlob({ type: `image/${thumbnailFormat}`, quality: 0.75 });
+    // TODO: is canvas.toDataURL faster?
+    const reader = new FileReaderSync();
+    buffer = reader.readAsArrayBuffer(thumbBlob);
+    return buffer;
+  } catch (error) {
+    console.error('Error generating thumbnail data:', error);
     return null;
+  } finally {
+    // Explicit Memory Deallocation
+    if (img) {
+      try {
+        img.close();
+      } catch (e) {
+        console.warn('Failed to close ImageBitmap:', e);
+      }
+    }
+
+    inputBuffer = null;
+    inputBlob = null;
+    canvas = null;
+    ctx2D = null;
+    thumbBlob = null;
   }
-
-  // Todo: Take into account rotation. Can be found with https://www.npmjs.com/package/node-exiftool
-
-  // TODO: Could maybe use https://www.electronjs.org/docs/api/native-image#imageresizeoptions
-
-  ctx2D.drawImage(img, 0, 0, width, height);
-
-  const thumbBlob = await canvas.convertToBlob({ type: `image/${thumbnailFormat}`, quality: 0.75 });
-  // TODO: is canvas.toDataURL faster?
-  const reader = new FileReaderSync();
-  const buffer = reader.readAsArrayBuffer(thumbBlob);
-  return buffer;
 };
 
 const generateAndStoreThumbnail = async (filePath: string, thumbnailFilePath: string) => {

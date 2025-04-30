@@ -94,7 +94,17 @@ const ctx: Worker = self as any;
 // (-> discard old requests)
 const queue: IThumbnailMessage[] = [];
 const MAX_PARALLEL_THUMBNAILS = 4; // Related to amount of workers. Currently 4 workers with 4 thumbs in parallel = 16 thumbs parallel total
+const MAX_QUEUE_LENGTH = 8;
 let curParallelThumbnails = 0;
+
+const addToQueue = (data: IThumbnailMessage) => {
+  if (queue.length >= MAX_QUEUE_LENGTH) {
+    queue.shift();
+    console.log(`Queue full (${MAX_QUEUE_LENGTH}). Removed oldest request.`);
+  }
+
+  addToQueue(data);
+};
 
 async function processMessage(data: IThumbnailMessage) {
   const { filePath, thumbnailFilePath, fileId } = data;

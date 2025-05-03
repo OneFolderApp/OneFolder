@@ -1,4 +1,5 @@
 import fse from 'fs-extra';
+import * as path from 'path';
 import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 
 import { getThumbnailPath } from 'common/fs';
@@ -18,7 +19,7 @@ import RootStore from './RootStore';
 export const FILE_STORAGE_KEY = 'OneFolder_File';
 
 /** These fields are stored and recovered when the application opens up */
-type PersistentPreferenceFields = 'orderDirection' | 'orderBy';
+type PersistentPreferenceFields = 'orderDirection' | 'orderBy' | 'aiTagUrl';
 
 const enum Content {
   All,
@@ -30,6 +31,15 @@ const enum Content {
 class FileStore {
   private readonly backend: DataStorage;
   private readonly rootStore: RootStore;
+
+  private fileQueue: { file: ClientFile; resolve: () => void; reject: (err: Error) => void }[] = [];
+  private filesQueued: Set<string> = new Set<string>();
+  private activeCount = 0;
+  private readonly maxConcurrent: number = 4;
+  private startTime: number = 0;
+  private totalTasks: number = 0;
+  private completedTasks: number = 0;
+  private taskTimestamps: number[] = [];
 
   readonly fileList = observable<ClientFile>([]);
   /**
@@ -46,6 +56,7 @@ class FileStore {
   @observable private content: Content = Content.All;
   @observable orderDirection: OrderDirection = OrderDirection.Desc;
   @observable orderBy: OrderBy<FileDTO> = 'dateAdded';
+  @observable aiTagUrl: string = 'http://localhost:5000/api/v1/tag';
   @observable numTotalFiles = 0;
   @observable numUntaggedFiles = 0;
   @observable numMissingFiles = 0;
@@ -125,6 +136,74 @@ class FileStore {
         },
         toastKey,
       );
+    }
+  }
+
+  @action.bound async aiTagFile(file: ClientFile): Promise<void> {
+    // const toastKey = 'ai-tag-file';
+    try {
+      // const tagsNameHierarchies = await this.rootStore.exifTool.readTags(file.absolutePath);
+      let tagsNameHierarchies: string[][] = [];
+      const config = {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({file: file.absolutePath})
+      }
+      const response = await fetch(this.aiTagUrl, config);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.error){
+          console.error(data.error);
+        } else {
+          console.log(data.file, data.tags);
+          if (data.tags && data.tags.length) {
+            let tag: any;
+            for (tag of data.tags) {
+              if (tag?.name) tagsNameHierarchies.push([tag.name]);
+            }
+            // file.markAiTagged();
+          }
+        }
+      } else {
+          console.error(response);
+          try {
+            const data = await response.json();
+            throw new Error(`${response.status}: ${data.error}`);
+          } catch { }
+          throw new Error(`${response.status}`);
+      }
+      // console.info('tagsNameHierarchies', tagsNameHierarchies);
+
+      // Now that we know the tag names in file metadata, add them to the files in OneFolder
+      // Main idea: Find matching tag with same name, otherwise, insert new
+      //   for now, just match by the name at the bottom of the hierarchy
+
+      const { tagStore } = this.rootStore;
+      for (const tagHierarchy of tagsNameHierarchies) {
+        const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1], true);
+        if (match) {
+          // If there is a match to the leaf tag, just add it to the file
+          file.addTag(match);
+        } else {
+          // If there is no direct match to the leaf, insert it in the tag hierarchy: first check if any of its parents exist
+          let curTag = tagStore.root;
+          for (const nodeName of tagHierarchy) {
+            const nodeMatch = tagStore.findByName(nodeName, true);
+            if (nodeMatch) {
+              curTag = nodeMatch;
+            } else {
+              curTag = await tagStore.create(curTag, nodeName, true);
+            }
+          }
+          file.addTag(curTag);
+        }
+      }
+    } catch (err) {
+      console.error('Could not import tags for', file.absolutePath, err);
+      throw new Error(`${err.message}`);
     }
   }
 
@@ -566,6 +645,7 @@ class FileStore {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
       orderBy: this.orderBy,
       orderDirection: this.orderDirection,
+      aiTagUrl: this.aiTagUrl,
     };
     return preferences;
   }
@@ -719,6 +799,246 @@ class FileStore {
     }
   }
 
+  public enqueueFile(file: ClientFile): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.totalTasks++;
+      
+      // Initialize startTime on first enqueue if not already set
+      if (this.startTime === 0) {
+        this.startTime = Date.now();
+      }
+      
+      this.filesQueued.add(file.id);
+      this.fileQueue.push({ file, resolve, reject });
+      this.processQueue();
+    });
+  }
+  
+  public async processFiles(files: ClientFile[]): Promise<void> {
+    await Promise.all(files.map(file => this.enqueueFile(file)));
+  }
+  
+  // Add a public method to retrieve progress information
+  public getProgress(): {
+    totalTasks: number;
+    remaining: number;
+    completed: number;
+    tasksPerMinute: number;
+    eta: string;
+  } {
+    const tasksPerMinute = this.getTasksPerMinute();
+    const remaining = this.fileQueue.length + this.activeCount;
+    
+    // Calculate ETA
+    let eta = "Unknown";
+    if (tasksPerMinute > 0) {
+      const minutesRemaining = remaining / tasksPerMinute;
+      eta = this.formatTimeRemaining(minutesRemaining);
+    } else if (this.completedTasks === 0) {
+      eta = "Calculating...";
+    } else if (remaining === 0) {
+      eta = "Done";
+    }
+    
+    return {
+      totalTasks: this.totalTasks,
+      remaining: remaining,
+      completed: this.completedTasks,
+      tasksPerMinute: tasksPerMinute,
+      eta: eta
+    };
+  }
+  
+  // Format time remaining as a human-readable string
+  private formatTimeRemaining(minutes: number): string {
+    if (minutes < 0.1) {
+      return "Less than 6 seconds";
+    }
+    
+    if (minutes < 1) {
+      return `${Math.round(minutes * 60)} seconds`;
+    }
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    
+    if (hours === 0) {
+      return `${mins} minute${mins !== 1 ? 's' : ''}`;
+    } else {
+      return `${hours} hour${hours !== 1 ? 's' : ''} ${mins} minute${mins !== 1 ? 's' : ''}`;
+    }
+  }
+  
+  private getTasksPerMinute(): number {
+    const now = Date.now();
+    const elapsedMs = now - this.startTime;
+    const minutesElapsed = elapsedMs / 60000;
+    
+    // No tasks completed or no time elapsed
+    if (this.completedTasks === 0 || minutesElapsed <= 0) {
+      return 0;
+    }
+    
+    // If we have enough data from the last minute, use that
+    if (minutesElapsed >= 1) {
+      const oneMinuteAgo = now - 60000;
+      const recentTasks = this.taskTimestamps.filter(timestamp => timestamp >= oneMinuteAgo);
+      
+      if (recentTasks.length > 0) {
+        return recentTasks.length;
+      }
+    }
+    
+    // Otherwise, extrapolate from all data so far
+    return this.completedTasks / minutesElapsed;
+  }  
+  
+  private processQueue(): void {
+    // if (this.activeCount) return;
+    while (this.fileQueue.length > 0 && this.activeCount < this.maxConcurrent) {
+      const task = this.fileQueue.shift();
+      if (!task) break;
+      
+      this.activeCount++;
+      
+      this.aiTagFile(task.file)
+        .then(() => {
+          this.completedTasks++;
+          this.taskTimestamps.push(Date.now());
+          
+          // Keep only the last 10 minutes of timestamps to avoid memory issues
+          const tenMinutesAgo = Date.now() - 600000;
+          this.taskTimestamps = this.taskTimestamps.filter(t => t >= tenMinutesAgo);
+          
+          // Log progress with ETA
+          const progress = this.getProgress();;
+
+          AppToaster.show(
+            {
+              message: `${progress.completed}/${progress.totalTasks} completed (${progress.remaining} remaining)\n${progress.tasksPerMinute.toFixed(2)} tasks/min\nETA: ${progress.eta}`,
+              timeout: 5000,
+            },
+            'ai-tag-processing',
+          );
+
+          if (progress.completed === progress.totalTasks) {
+            this.totalTasks = 0;
+            this.completedTasks = 0;
+          }
+          
+          task.resolve();
+        })
+        .catch(err => {
+          AppToaster.show(
+            {
+              message: `AI tag error ${err.message}`,
+              timeout: 5000,
+            },
+            'ai-tag-error',
+          );
+          task.reject(err);
+        })
+        .finally(() => {
+          this.activeCount--;
+          this.processQueue();
+        });
+    }
+  }
+
+  async aiTagFiles(fileSelection: Array<ClientFile>): Promise<any> {
+    const fileDirList = fileSelection.filter((f) => {
+      // might emmit a lot of Observable browser warnings
+      return !this.filesQueued.has(f.id) && !f.hasAiTags;
+    });
+
+    if (!fileDirList.length){
+      AppToaster.show(
+        {
+          message: `No files to process or already tagged`,
+          timeout: 5000,
+        },
+        'ai-tag-files',
+      );
+      return;
+    }
+
+    AppToaster.show(
+      {
+        message: `Added ${fileDirList.length} items to process`,
+        timeout: 5000,
+      },
+      'ai-tag-files',
+    );
+
+    try {
+      await this.processFiles(fileDirList);
+      AppToaster.show(
+        {
+          message: `Completed tagging items`,
+          timeout: 5000,
+        },
+        'ai-tag-files',
+      );
+    } catch (error) {
+      console.error('Batch processing failed:', error);
+      AppToaster.show(
+        {
+          message: `AI tagging error: ${error.message}`,
+          timeout: 5000,
+        },
+        'ai-tag-files',
+      );
+    }
+  }
+
+  async aiTagDirectory(dirPath: string): Promise<any> {
+    const fetchedFiles = await this.backend.fetchFiles(this.orderBy, this.orderDirection);
+    const [newClientFiles, reusedStatus] = this.filesFromBackend(fetchedFiles);
+    const fileDirList = newClientFiles.filter((f) => {
+      // might emmit a lot of Observable browser warnings
+      return !this.filesQueued.has(f.id) && f.absolutePath.startsWith(dirPath) && !f.hasAiTags;
+    });
+
+    if (!fileDirList.length){
+      AppToaster.show(
+        {
+          message: `No files to process or already tagged`,
+          timeout: 5000,
+        },
+        'ai-tag-directory',
+      );
+      return;
+    }
+
+    AppToaster.show(
+      {
+        message: `Added ${fileDirList.length} items to process`,
+        timeout: 5000,
+      },
+      'ai-tag-directory',
+    );
+
+    try {
+      await this.processFiles(fileDirList);
+      AppToaster.show(
+        {
+          message: `Completed tagging ${path.basename(dirPath)}`,
+          timeout: 5000,
+        },
+        'ai-tag-directory',
+      );
+    } catch (error) {
+      console.error('Batch processing failed:', error);
+      AppToaster.show(
+        {
+          message: `AI tagging error: ${error.message}`,
+          timeout: 5000,
+        },
+        'ai-tag-directory',
+      );
+    }
+  }
+
   /** Initializes the total and untagged file counters by querying the database with count operations */
   async refetchFileCounts(): Promise<void> {
     const [numTotalFiles, numUntaggedFiles] = await this.backend.countFiles();
@@ -734,6 +1054,10 @@ class FileStore {
 
   @action private setOrderBy(prop: OrderBy<FileDTO> = 'dateAdded') {
     this.orderBy = prop;
+  }
+
+  @action.bound setAiTagUrl(event: React.ChangeEvent<HTMLInputElement>): void {
+    this.aiTagUrl = event.target.value;
   }
 
   @action private setContentMissing() {

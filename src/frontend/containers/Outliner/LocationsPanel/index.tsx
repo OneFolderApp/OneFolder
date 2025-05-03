@@ -142,7 +142,7 @@ const DirectoryMenu = observer(
     location: ClientLocation | ClientSubLocation;
     onExclude: (subLocation: ClientSubLocation) => void;
   }) => {
-    const { uiStore } = useStore();
+    const { uiStore, fileStore } = useStore();
 
     const path = location instanceof ClientLocation ? location.path : location.path;
 
@@ -158,6 +158,11 @@ const DirectoryMenu = observer(
       [path, uiStore],
     );
 
+    const handleAiTagDirectory = useCallback(
+      () => fileStore.aiTagDirectory(path),
+      [path, fileStore],
+    );
+
     return (
       <>
         <MenuItem onClick={handleAddToSearch} text="Add to Search Query" icon={IconSet.SEARCH} />
@@ -165,6 +170,12 @@ const DirectoryMenu = observer(
           onClick={handleReplaceSearch}
           text="Replace Search Query"
           icon={IconSet.REPLACE}
+        />
+        <MenuDivider />
+        <MenuItem
+          onClick={handleAiTagDirectory}
+          text="AI Tag this Directory"
+          icon={IconSet.TAG_GROUP}
         />
         <MenuDivider />
         {location instanceof ClientSubLocation && (

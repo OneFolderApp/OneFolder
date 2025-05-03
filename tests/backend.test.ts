@@ -22,6 +22,7 @@ describe('Backend', () => {
     color: '',
     subTags: [],
     isHidden: false,
+    isAi: false,
   };
 
   const mockLocationPath = 'c:/test';

@@ -82,6 +82,11 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
         icon={IconSet.TAG}
       />
       <MenuItem
+        onClick={uiStore.aiTagSelection}
+        text="AI Tag Selection"
+        icon={IconSet.TAG}
+      />
+      <MenuItem
         onClick={handleRemoveAllTags}
         text="Remove All Tags"
         icon={IconSet.DELETE}

@@ -11,4 +11,5 @@ export type TagDTO = {
   subTags: ID[];
   /** Whether any files with this tag should be hidden */
   isHidden: boolean;
+  isAi: boolean;
 };

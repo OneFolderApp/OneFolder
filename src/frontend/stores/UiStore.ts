@@ -163,6 +163,7 @@ class UiStore {
   @observable isRememberSearchEnabled: boolean = true;
   /** Index of the first item in the viewport. Also acts as the current item shown in slide mode */
   // TODO: Might be better to store the ID to the file. I believe we were storing the index for performance, but we have instant conversion between index/ID now
+  // Changing the firstItem to store it's ID will make that if the file gets out of the FileList, the scroll position will be lost. This affects the refresh feature for example or when changing the query.
   @observable firstItem: number = 0;
   @observable thumbnailSize: ThumbnailSize | number = 'medium';
   @observable masonryItemPadding: number = 8;
@@ -281,10 +282,11 @@ class UiStore {
   }
 
   @action.bound setFirstItem(index: number = 0): void {
-    if (isFinite(index) && index < this.rootStore.fileStore.fileList.length) {
+    const maxIndex = this.rootStore.fileStore.fileList.length - 1;
+    if (isFinite(index) && index >= 0 && index <= maxIndex) {
       this.firstItem = index;
     } else {
-      this.firstItem = this.rootStore.fileStore.fileList.length - 1;
+      this.firstItem = Math.max(0, maxIndex);
     }
   }
 
@@ -565,9 +567,12 @@ class UiStore {
   }
 
   /////////////////// Selection actions ///////////////////
-  @action.bound selectFile(file: ClientFile, clear?: boolean): void {
+  @action.bound selectFile(file?: ClientFile, clear?: boolean): void {
     if (clear === true) {
       this.clearFileSelection();
+    }
+    if (!file) {
+      return;
     }
     this.fileSelection.add(file);
     this.setFirstItem(this.rootStore.fileStore.getIndex(file.id));
@@ -593,12 +598,15 @@ class UiStore {
       this.fileSelection.clear();
     }
     for (let i = start; i <= end; i++) {
-      this.fileSelection.add(this.rootStore.fileStore.fileList[i]);
+      const file = this.rootStore.fileStore.fileList[i];
+      if (file) {
+        this.fileSelection.add(file);
+      }
     }
   }
 
   @action.bound selectAllFiles(): void {
-    this.fileSelection.replace(this.rootStore.fileStore.fileList);
+    this.fileSelection.replace(this.rootStore.fileStore.definedFiles);
   }
 
   @action.bound clearFileSelection(): void {

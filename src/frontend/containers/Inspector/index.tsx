@@ -21,13 +21,11 @@ const Inspector = observer(() => {
   }
 
   const first = fileStore.fileList[uiStore.firstItem];
-  const path = first.absolutePath;
+  const path = first ? first.absolutePath : '...';
 
   return (
     <aside id="inspector">
-      <section>
-        <ImageInfo file={first} />
-      </section>
+      <section>{first && <ImageInfo file={first} />}</section>
       <section>
         <header>
           <h2>Path to file</h2>

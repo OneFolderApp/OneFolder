@@ -144,7 +144,7 @@ class LocationStore {
         );
       }, 20000);
 
-      console.groupCollapsed(`Initializing location ${location.name}`);
+      console.group(`Initializing location ${location.name}`);
       const diskFiles = await location.init();
       const diskFileMap = new Map<string, FileStats>(
         diskFiles?.map((f) => [f.absolutePath, f]) ?? [],
@@ -499,7 +499,7 @@ class LocationStore {
     const file = await pathToIFile(fileStats, location, this.rootStore.imageLoader);
 
     // Check if file is being moved/renamed (which is detected as a "add" event followed by "remove" event)
-    const match = runInAction(() => fileStore.fileList.find((f) => f.ino === fileStats.ino));
+    const match = runInAction(() => fileStore.fileList.find((f) => f && f.ino === fileStats.ino));
     const dbMatch = match
       ? undefined
       : (await this.backend.fetchFilesByKey('ino', fileStats.ino))[0];
@@ -551,7 +551,7 @@ class LocationStore {
     // Could also mean that a file was renamed or moved, in which case addFile was called already:
     // its path will have changed, so we won't find it here, which is fine, it'll be detected as missing later.
     const fileStore = this.rootStore.fileStore;
-    const clientFile = fileStore.fileList.find((f) => f.absolutePath === path);
+    const clientFile = fileStore.fileList.find((f) => f && f.absolutePath === path);
 
     if (clientFile) {
       fileStore.hideFile(clientFile);

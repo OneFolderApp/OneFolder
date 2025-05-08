@@ -32,6 +32,11 @@ interface IMetaData {
   dateCreated: Date;
 }
 
+export interface Dimensions {
+  width: number;
+  height: number;
+}
+
 /**
  * A File as it is stored in the Client.
  * It is stored in a MobX store, which can observe changed made to it and subsequently

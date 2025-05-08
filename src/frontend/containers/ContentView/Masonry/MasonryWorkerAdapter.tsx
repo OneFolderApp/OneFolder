@@ -1,6 +1,6 @@
 import { runInAction } from 'mobx';
 
-import { ClientFile } from '../../../entities/File';
+import { Dimensions } from '../../../entities/File';
 // Force Webpack to include worker and WASM file in the build folder!
 import { MasonryType, MasonryWorker, default as init } from 'wasm/packages/masonry';
 import { ITransform, Layouter } from './layout-helpers';
@@ -42,7 +42,7 @@ export class MasonryWorkerAdapter implements Layouter {
   }
 
   async compute(
-    imgs: ClientFile[],
+    imgs: Dimensions[],
     numImgs: number,
     containerWidth: number,
     opts: Partial<MasonryOptions>,

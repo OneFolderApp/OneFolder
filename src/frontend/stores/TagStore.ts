@@ -34,10 +34,12 @@ class TagStore {
     }
   }
 
-  @action.bound initializeFileCounts(files: ClientFile[]): void {
+  @action.bound initializeFileCounts(files: (ClientFile | undefined)[]): void {
     for (const file of files) {
-      for (const fileTag of file.tags) {
-        fileTag.incrementFileCount();
+      if (file) {
+        for (const fileTag of file.tags) {
+          fileTag.incrementFileCount();
+        }
       }
     }
   }

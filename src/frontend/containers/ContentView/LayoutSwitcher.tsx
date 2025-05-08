@@ -30,7 +30,10 @@ const Layout = ({ contentRect }: LayoutProps) => {
   const lastSelectionIndex = useRef<number>();
 
   const handleFileSelect = useCallback(
-    (selectedFile: ClientFile, toggleSelection: boolean, rangeSelection: boolean) => {
+    (selectedFile: ClientFile | undefined, toggleSelection: boolean, rangeSelection: boolean) => {
+      if (!selectedFile) {
+        return;
+      }
       /** The index of the actived item */
       const i = fileStore.getIndex(selectedFile.id);
 
@@ -66,6 +69,7 @@ const Layout = ({ contentRect }: LayoutProps) => {
 
   // Reset selection range when number of items changes: Else you can get phantom files when continuing your selection
   useEffect(() => {
+    // Ensure a valid firstItem assigning it again
     runInAction(() => uiStore.setFirstItem(uiStore.firstItem));
     initialSelectionIndex.current = undefined;
     lastSelectionIndex.current = undefined;

@@ -112,7 +112,7 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
         }
         if (found === 0) {
           for (const file of fileStore.fileList) {
-            if (file.scores.has(score)) {
+            if (file && file.scores.has(score)) {
               found = 2;
               uiStore.selectFile(file);
               break;

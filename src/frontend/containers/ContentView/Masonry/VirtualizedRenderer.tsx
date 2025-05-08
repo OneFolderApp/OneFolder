@@ -13,7 +13,7 @@ import { Layouter, findViewportEdge } from './layout-helpers';
 interface IRendererProps {
   containerHeight: number;
   containerWidth: number;
-  images: ClientFile[];
+  images: (ClientFile | undefined)[];
   layout: Layouter;
   className?: string;
   /** Render images outside of the viewport within this margin (pixels) */
@@ -46,7 +46,7 @@ const VirtualizedRenderer = observer(
     const scrollAnchor = useRef<HTMLDivElement>(null);
     const [startRenderIndex, setStartRenderIndex] = useState(0);
     const [endRenderIndex, setEndRenderIndex] = useState(0);
-    const numImages = images.length;
+    const numImages = fileStore.fileDimensions.length;
     const { isSlideMode, firstItem } = uiStore;
 
     const determineRenderRegion = useCallback(
@@ -166,10 +166,13 @@ const VirtualizedRenderer = observer(
           {images.slice(startRenderIndex, endRenderIndex + 1).map((im, index) => {
             const fileListIndex = startRenderIndex + index;
             const transform = layout.getTransform(fileListIndex);
+            if (!im) {
+              return null;
+            }
             return (
               <MasonryCell
                 key={im.id}
-                file={fileStore.fileList[fileListIndex]}
+                file={im}
                 mounted
                 transform={transform}
                 // Force to load the full resolution image when the img dimensions on screen are larger than the thumbnail image resolution

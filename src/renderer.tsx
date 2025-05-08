@@ -148,7 +148,7 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
   async function addTagsToFile(filePath: string, tagNames: string[]) {
     const { fileStore, tagStore } = rootStore;
     const clientFile = runInAction(() =>
-      fileStore.fileList.find((file) => file.absolutePath === filePath),
+      fileStore.definedFiles.find((file) => file.absolutePath === filePath),
     );
     if (clientFile) {
       const tags = await Promise.all(

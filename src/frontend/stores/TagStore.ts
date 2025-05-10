@@ -89,7 +89,7 @@ class TagStore {
 
   @action.bound async create(parent: ClientTag, tagName: string): Promise<ClientTag> {
     const id = generateId();
-    const tag = new ClientTag(this, id, tagName, new Date(), '', false);
+    const tag = new ClientTag(this, id, tagName, new Date(), undefined, false);
     this.tagGraph.set(tag.id, tag);
     tag.setParent(parent);
     parent.subTags.push(tag);

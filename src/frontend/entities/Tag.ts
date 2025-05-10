@@ -38,16 +38,16 @@ export class ClientTag {
     id: ID,
     name: string,
     dateAdded: Date,
-    color: string,
-    isHidden: boolean,
+    color?: string,
+    isHidden?: boolean,
   ) {
     this.store = store;
     this.id = id;
     this.dateAdded = dateAdded;
     this.name = name;
-    this.color = color;
+    this.color = color ?? 'inherit';
     this.fileCount = 0;
-    this.isHidden = isHidden;
+    this.isHidden = isHidden ?? false;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(

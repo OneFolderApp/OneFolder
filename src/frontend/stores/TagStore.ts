@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 
 import { DataStorage } from '../../api/data-storage';
 import { generateId, ID } from '../../api/id';
@@ -7,6 +7,7 @@ import { ClientFile } from '../entities/File';
 import { ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
+import { AppToaster, IToastProps } from '../components/Toaster';
 
 /**
  * Based on https://mobx.js.org/best/store.html
@@ -203,6 +204,30 @@ class TagStore {
       }
     }
     this.root.setParent(this.root);
+  }
+
+  showTagToast(
+    tag: ClientTag,
+    context: string,
+    toastId: string,
+    type?: IToastProps['type'],
+    timeout = 10000,
+  ): void {
+    if (tag.id === ROOT_TAG_ID) {
+      return;
+    }
+    setTimeout(() => {
+      runInAction(() => {
+        AppToaster.show(
+          {
+            message: `Tag "${tag.name}" ( ${tag.path.join(' › ')} ) ${context}`,
+            timeout: timeout,
+            type: type,
+          },
+          `${toastId}-${tag.id}`,
+        );
+      });
+    });
   }
 }
 

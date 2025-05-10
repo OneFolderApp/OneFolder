@@ -1,18 +1,9 @@
-import {
-  IReactionDisposer,
-  action,
-  computed,
-  makeObservable,
-  observable,
-  reaction,
-  runInAction,
-} from 'mobx';
+import { IReactionDisposer, action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { MAX_TAG_DEPTH } from '../../../common/config';
 import { ID } from '../../api/id';
 import { ROOT_TAG_ID, TagDTO } from '../../api/tag';
 import TagStore from '../stores/TagStore';
-import { AppToaster } from '../components/Toaster';
 
 /**
  * A Tag as it is stored in the Client.
@@ -86,24 +77,6 @@ export class ClientTag {
     return this._impliedByTags;
   }
 
-  private static showTagDepthErrorToast(tag: ClientTag, context: string): void {
-    if (tag.id === ROOT_TAG_ID) {
-      return;
-    }
-    setTimeout(() => {
-      runInAction(() => {
-        AppToaster.show(
-          {
-            message: `Tag "${tag.name}" ( ${tag.path.join(' › ')} ) ${context}`,
-            timeout: 10000,
-            type: 'error',
-          },
-          `tag-depth-error-toast-${tag.id}`,
-        );
-      });
-    });
-  }
-
   /** Returns this tag and all of its sub-tags ordered depth-first */
   @action getSubTree(): Generator<ClientTag> {
     function* tree(
@@ -113,7 +86,12 @@ export class ClientTag {
       path = new Set<string>(),
     ): Generator<ClientTag> {
       if (path.has(tag.id)) {
-        ClientTag.showTagDepthErrorToast(tag, 'has circular relations with other tags');
+        tag.store.showTagToast(
+          tag,
+          'has circular relations with other tags',
+          'tag-cicle-err',
+          'error',
+        );
         console.error(`Tag "${tag.name}" has circular relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
@@ -140,7 +118,12 @@ export class ClientTag {
       path = new Set<string>(),
     ): Generator<ClientTag> {
       if (path.has(tag.id)) {
-        ClientTag.showTagDepthErrorToast(tag, 'has circular implied relations with other tags');
+        tag.store.showTagToast(
+          tag,
+          'has circular implied relations with other tags',
+          'tag-cicle-err',
+          'error',
+        );
         console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
@@ -169,7 +152,12 @@ export class ClientTag {
       path = new Set<string>(),
     ): Generator<ClientTag> {
       if (path.has(tag.id)) {
-        ClientTag.showTagDepthErrorToast(tag, 'has circular relations with other tags');
+        tag.store.showTagToast(
+          tag,
+          'has circular relations with other tags',
+          'tag-cicle-err',
+          'error',
+        );
         console.error(`Tag "${tag.name}" has circular relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
@@ -193,7 +181,12 @@ export class ClientTag {
       path = new Set<string>(),
     ): Generator<ClientTag> {
       if (path.has(tag.id)) {
-        ClientTag.showTagDepthErrorToast(tag, 'has circular implied relations with other tags');
+        tag.store.showTagToast(
+          tag,
+          'has circular implied relations with other tags',
+          'tag-cicle-err',
+          'error',
+        );
         console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
@@ -282,9 +275,28 @@ export class ClientTag {
   }
 
   @action.bound insertSubTag(tag: ClientTag, at: number): boolean {
-    if (this === tag || this.isAncestor(tag) || tag.id === ROOT_TAG_ID) {
+    if (this === tag || tag.id === ROOT_TAG_ID) {
+      return false;
+    } else if (this.isAncestor(tag)) {
+      this.store.showTagToast(
+        tag,
+        'You cannot insert a tag into one of its own sub-tags',
+        'tag-insert-err',
+        'error',
+        6000,
+      );
+      return false;
+    } else if (this.isImpliedAncestor(tag)) {
+      this.store.showTagToast(
+        tag,
+        'You cannot insert a tag into another that already implies it',
+        'tag-insert-err',
+        'error',
+        6000,
+      );
       return false;
     }
+
     // Move to different pos in same parent: Reorder tag.subTags and return
     if (this === tag.parent) {
       const currentIndex = this.subTags.indexOf(tag);

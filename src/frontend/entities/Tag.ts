@@ -1,9 +1,18 @@
-import { IReactionDisposer, action, computed, makeObservable, observable, reaction } from 'mobx';
+import {
+  IReactionDisposer,
+  action,
+  computed,
+  makeObservable,
+  observable,
+  reaction,
+  runInAction,
+} from 'mobx';
 
 import { MAX_TAG_DEPTH } from '../../../common/config';
 import { ID } from '../../api/id';
 import { ROOT_TAG_ID, TagDTO } from '../../api/tag';
 import TagStore from '../stores/TagStore';
+import { AppToaster } from '../components/Toaster';
 
 /**
  * A Tag as it is stored in the Client.
@@ -77,17 +86,46 @@ export class ClientTag {
     return this._impliedByTags;
   }
 
+  private static showTagDepthErrorToast(tag: ClientTag, context: string): void {
+    if (tag.id === ROOT_TAG_ID) {
+      return;
+    }
+    setTimeout(() => {
+      runInAction(() => {
+        AppToaster.show(
+          {
+            message: `Tag "${tag.name}" ( ${tag.path.join(' › ')} ) ${context}`,
+            timeout: 10000,
+            type: 'error',
+          },
+          `tag-depth-error-toast-${tag.id}`,
+        );
+      });
+    });
+  }
+
   /** Returns this tag and all of its sub-tags ordered depth-first */
   @action getSubTree(): Generator<ClientTag> {
-    function* tree(tag: ClientTag, depth: number): Generator<ClientTag> {
-      if (depth > MAX_TAG_DEPTH) {
-        console.error('Subtree has too many tags. Is there a cycle in the tag tree?', tag);
+    function* tree(
+      tag: ClientTag,
+      depth: number,
+      visited = new Set<string>(),
+      path = new Set<string>(),
+    ): Generator<ClientTag> {
+      if (path.has(tag.id)) {
+        ClientTag.showTagDepthErrorToast(tag, 'has circular relations with other tags');
+        console.error(`Tag "${tag.name}" has circular relations with other tags`, tag);
+      } else if (depth > MAX_TAG_DEPTH) {
+        console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
         return;
-      }
-
-      yield tag;
-      for (const subTag of tag.subTags) {
-        yield* tree(subTag, depth + 1);
+      } else if (!visited.has(tag.id)) {
+        path.add(tag.id);
+        visited.add(tag.id);
+        yield tag;
+        for (const subTag of tag.subTags) {
+          yield* tree(subTag, depth + 1, visited, path);
+        }
+        path.delete(tag.id);
       }
     }
     return tree(this, 0);
@@ -95,18 +133,28 @@ export class ClientTag {
 
   /** Returns this tag and all of its "implied By" sub-tags and their sub-tags ordered depth-first */
   @action getImpliedSubTree(): Generator<ClientTag> {
-    function* tree(tag: ClientTag, depth: number): Generator<ClientTag> {
-      if (depth > MAX_TAG_DEPTH) {
-        console.error('Subtree has too many tags. Is there a cycle in the tag tree?', tag);
-        return;
-      }
-
-      yield tag;
-      for (const subTag of tag.subTags) {
-        yield* tree(subTag, depth + 1);
-      }
-      for (const subTag of tag._impliedByTags) {
-        yield* tree(subTag, depth + 1);
+    function* tree(
+      tag: ClientTag,
+      depth: number,
+      visited = new Set<string>(),
+      path = new Set<string>(),
+    ): Generator<ClientTag> {
+      if (path.has(tag.id)) {
+        ClientTag.showTagDepthErrorToast(tag, 'has circular implied relations with other tags');
+        console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
+      } else if (depth > MAX_TAG_DEPTH) {
+        console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
+      } else if (!visited.has(tag.id)) {
+        path.add(tag.id);
+        visited.add(tag.id);
+        yield tag;
+        for (const subTag of tag.subTags) {
+          yield* tree(subTag, depth + 1, visited, path);
+        }
+        for (const subTag of tag._impliedByTags) {
+          yield* tree(subTag, depth + 1, visited, path);
+        }
+        path.delete(tag.id);
       }
     }
     return tree(this, 0);
@@ -114,12 +162,23 @@ export class ClientTag {
 
   /** Returns this tag and all its ancestors (excluding root tag). */
   @action getAncestors(): Generator<ClientTag> {
-    function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
-      if (depth > MAX_TAG_DEPTH) {
-        console.error('Tag has too many ancestors. Is there a cycle in the tag tree?', tag.name);
-      } else if (tag.id !== ROOT_TAG_ID) {
+    function* ancestors(
+      tag: ClientTag,
+      depth: number,
+      visited = new Set<string>(),
+      path = new Set<string>(),
+    ): Generator<ClientTag> {
+      if (path.has(tag.id)) {
+        ClientTag.showTagDepthErrorToast(tag, 'has circular relations with other tags');
+        console.error(`Tag "${tag.name}" has circular relations with other tags`, tag);
+      } else if (depth > MAX_TAG_DEPTH) {
+        console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
+      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag.id)) {
+        path.add(tag.id);
+        visited.add(tag.id);
         yield tag;
-        yield* ancestors(tag.parent, depth + 1);
+        yield* ancestors(tag.parent, depth + 1, visited, path);
+        path.delete(tag.id);
       }
     }
     return ancestors(this, 0);
@@ -127,18 +186,26 @@ export class ClientTag {
 
   /** Returns this tag and all its implied ancestors (excluding root tag). */
   @action getImpliedAncestors(): Generator<ClientTag> {
-    function* ancestors(tag: ClientTag, depth: number): Generator<ClientTag> {
-      if (depth > MAX_TAG_DEPTH) {
-        console.error(
-          'Tag has too many ancestors. Is there a cycle in the implied tag tree?',
-          tag.name,
-        );
-      } else if (tag.id !== ROOT_TAG_ID) {
+    function* ancestors(
+      tag: ClientTag,
+      depth: number,
+      visited = new Set<string>(),
+      path = new Set<string>(),
+    ): Generator<ClientTag> {
+      if (path.has(tag.id)) {
+        ClientTag.showTagDepthErrorToast(tag, 'has circular implied relations with other tags');
+        console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
+      } else if (depth > MAX_TAG_DEPTH) {
+        console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
+      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag.id)) {
+        path.add(tag.id);
+        visited.add(tag.id);
         yield tag;
-        yield* ancestors(tag.parent, depth + 1);
+        yield* ancestors(tag.parent, depth + 1, visited, path);
         for (const impliedTag of tag.impliedTags) {
-          yield* ancestors(impliedTag, depth + 1);
+          yield* ancestors(impliedTag, depth + 1, visited, path);
         }
+        path.delete(tag.id);
       }
     }
     return ancestors(this, 0);

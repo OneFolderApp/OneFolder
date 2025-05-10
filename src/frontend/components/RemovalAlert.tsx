@@ -56,7 +56,9 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
   const { uiStore } = useStore();
   const { object } = props;
   const tagsToRemove = Array.from(
-    object.isSelected ? uiStore.tagSelection : object.getSubTree(),
+    object.isSelected
+      ? [...uiStore.tagSelection].flatMap((obj) => [...obj.getSubTree()])
+      : object.getSubTree(),
     (t) => <Tag key={t.id} text={t.name} color={t.viewColor} />,
   );
 

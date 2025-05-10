@@ -54,7 +54,7 @@ class ToastManager {
 // Create a singleton toaster - we should only be needing one
 export const AppToaster = new ToastManager();
 
-interface IToastProps {
+export interface IToastProps {
   message: string;
   // "action" apparently is a reserverd keyword, it gets removed by mobx...
   clickAction?: {

@@ -29,17 +29,6 @@ import BackupScheduler from './backend/backup-scheduler';
 import { DB_NAME, dbInit } from './backend/config';
 
 async function main(): Promise<void> {
-  // Override console methods in the renderer process
-  const originalConsole = { ...console };
-
-  for (const method of ['log', 'error', 'warn', 'info', 'debug'] as const) {
-    console[method] = (...args) => {
-      originalConsole[method](...args); // Log to original console
-      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '); // Stringify objects
-      RendererMessenger.sendConsoleMessage(method, message); // Send to main process
-    };
-  }
-
   // Render our react components in the div with id 'app' in the html file
   const container = document.getElementById('app');
 

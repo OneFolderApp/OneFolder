@@ -46,22 +46,6 @@ let previewWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let clipServer: ClipServer | null = null;
 
-// Setup logging to file
-const logStream = fse.createWriteStream(logFilePath, { flags: 'a' });
-
-// Override console methods
-const originalConsole = { ...console };
-
-for (const method of ['log', 'error', 'warn', 'info', 'debug'] as const) {
-  console[method] = (...args: any[]) => {
-    originalConsole[method](...args); // Log to original console
-    const message = args
-      .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : arg))
-      .join(' '); // Stringify objects
-    logStream.write(`[${method.toUpperCase().padEnd(5)}][BACKEND ] ${message}\n`); // Write to log file
-  };
-}
-
 function initialize() {
   console.log('Initializing Allusion...');
 
@@ -761,10 +745,6 @@ MainMessenger.onToggleCheckUpdatesOnStartup(() => {
 });
 
 MainMessenger.onIsCheckUpdatesOnStartupEnabled(() => preferences.checkForUpdatesOnStartup === true);
-
-MainMessenger.onConsoleMessage((type, message) => {
-  logStream.write(`[${type.toUpperCase().padEnd(5)}][FRONTEND] ${message}\n`);
-});
 
 // Helper functions and variables/constants
 

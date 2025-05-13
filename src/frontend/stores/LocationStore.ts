@@ -122,7 +122,7 @@ class LocationStore {
       AppToaster.show(
         {
           message: `Looking for new images... [${i + 1} / ${len}]`,
-          timeout: 0,
+          timeout: 6000,
         },
         progressToastKey,
       );
@@ -133,8 +133,15 @@ class LocationStore {
       const readyTimeout = setTimeout(() => {
         AppToaster.show(
           {
+            message: `Looking for new images... [${i + 1} / ${len}]`,
+            timeout: 6000,
+          },
+          progressToastKey,
+        );
+        AppToaster.show(
+          {
             message: 'This appears to be taking longer than usual.',
-            timeout: 0,
+            timeout: 10000,
             clickAction: {
               onClick: RendererMessenger.reload,
               label: 'Retry?',

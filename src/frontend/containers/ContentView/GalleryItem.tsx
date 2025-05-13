@@ -1,5 +1,5 @@
 import fse from 'fs-extra';
-import { action, when } from 'mobx';
+import { action } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -41,10 +41,10 @@ export const MasonryCell = observer(
     const style = { height, width, transform: `translate(${left}px,${top}px)` };
     const eventManager = useMemo(() => new CommandDispatcher(file), [file]);
 
-    const handleMouseEnter = useCallback((e: React.MouseEvent): void => {
+    const handleMouseEnter = useCallback((): void => {
       setIsHovered(true);
     }, []);
-    const handleMouseLeave = useCallback((e: React.MouseEvent): void => {
+    const handleMouseLeave = useCallback((): void => {
       setIsHovered(false);
     }, []);
 
@@ -71,13 +71,13 @@ export const MasonryCell = observer(
             uiStore.galleryVideoPlaybackMode === 'hover' &&
             (isFileExtensionVideo(file.extension) || file.extension === 'gif')
               ? handleMouseEnter
-              : (e: React.MouseEvent): void => {}
+              : (): void => {}
           }
           onMouseLeave={
             uiStore.galleryVideoPlaybackMode === 'hover' &&
             (isFileExtensionVideo(file.extension) || file.extension === 'gif')
               ? handleMouseLeave
-              : (e: React.MouseEvent): void => {}
+              : (): void => {}
           }
         >
           <Thumbnail
@@ -104,12 +104,12 @@ export const MasonryCell = observer(
 
         {(uiStore.isThumbnailFilenameOverlayEnabled ||
           uiStore.isThumbnailResolutionOverlayEnabled) && (
-            <ThumbnailOverlay
-              file={file}
-              showFilename={uiStore.isThumbnailFilenameOverlayEnabled}
-              showResolution={uiStore.isThumbnailResolutionOverlayEnabled}
-            />
-          )}
+          <ThumbnailOverlay
+            file={file}
+            showFilename={uiStore.isThumbnailFilenameOverlayEnabled}
+            showResolution={uiStore.isThumbnailResolutionOverlayEnabled}
+          />
+        )}
 
         {/* Show tags when the option is enabled, or when the file is selected */}
         {(uiStore.isThumbnailTagOverlayEnabled || uiStore.fileSelection.has(file)) &&
@@ -353,7 +353,9 @@ const TagWithHint = observer(
       <Tag
         text={tag.name}
         color={tag.viewColor}
-        tooltip={tag.path.map((v) => v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v).join(' › ')}
+        tooltip={tag.path
+          .map((v) => (v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v))
+          .join(' › ')}
         onContextMenu={(e) => onContextMenu(e, tag)}
       />
     );
@@ -369,8 +371,9 @@ const ThumbnailOverlay = ({
   showFilename: boolean;
   showResolution: boolean;
 }) => {
-  const title = `${ellipsize(file.absolutePath, 80, 'middle')}, ${file.width}x${file.height
-    }, ${humanFileSize(file.size)}`;
+  const title = `${ellipsize(file.absolutePath, 80, 'middle')}, ${file.width}x${
+    file.height
+  }, ${humanFileSize(file.size)}`;
 
   return (
     <div className="thumbnail-overlay" data-tooltip={title}>

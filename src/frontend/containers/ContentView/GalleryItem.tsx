@@ -48,8 +48,14 @@ export const MasonryCell = observer(
       setIsHovered(false);
     }, []);
 
-    return (
+    const cellContent = () => (
       <div data-masonrycell aria-selected={uiStore.fileSelection.has(file)} style={style}>
+        {uiStore.isRefreshing ? null : renderThumbnailContent()}
+      </div>
+    );
+
+    const renderThumbnailContent = () => (
+      <>
         <div
           className={`thumbnail${file.isBroken ? ' thumbnail-broken' : ''}`}
           onClick={eventManager.select}
@@ -112,8 +118,9 @@ export const MasonryCell = observer(
           ) : (
             <ThumbnailTags file={file} eventManager={eventManager} />
           ))}
-      </div>
+      </>
     );
+    return cellContent();
   },
 );
 

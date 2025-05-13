@@ -39,6 +39,8 @@ export const ListItem = observer((props: ListItemProps) => {
     }
   }, [isScrolling]);
 
+  const showData = !uiStore.isRefreshing;
+
   return (
     <div
       ref={row}
@@ -59,28 +61,30 @@ export const ListItem = observer((props: ListItemProps) => {
     >
       {/* Filename */}
       <div role="gridcell" className="col-name">
-        {file && <Thumbnail mounted={isMounted} file={file} />}
-        {file?.name}
+        {showData && file && <Thumbnail mounted={isMounted} file={file} />}
+        {showData && file?.name}
       </div>
 
       {/* Dimensions */}
       <div role="gridcell" className="col-dimensions">
-        {file?.width} x {file?.height}
+        {showData && file?.width} x {showData && file?.height}
       </div>
 
       {/* Import date */}
       <div role="gridcell" className="col-date-added">
-        {file && formatDateTime(file.dateAdded)}
+        {showData && file && formatDateTime(file.dateAdded)}
       </div>
 
       {/* Size */}
       <div role="gridcell" className="col-size">
-        {file && humanFileSize(file.size)}
+        {showData && file && humanFileSize(file.size)}
       </div>
 
       {/* Tags */}
       <div role="gridcell" className="col-tags">
-        {file && eventManager && <ThumbnailTags eventManager={eventManager} file={file} />}
+        {showData && file && eventManager && (
+          <ThumbnailTags eventManager={eventManager} file={file} />
+        )}
       </div>
     </div>
   );

@@ -51,6 +51,11 @@ export class MasonryWorkerAdapter implements Layouter {
     if (worker === undefined) {
       return Promise.reject('Worker is uninitialized.');
     }
+    // Skip calculation when numImgs is 0 to avoid bugs caused by spamming refreshes.
+    // This method should return 0 when numImgs is 0 anyway.
+    if (numImgs === 0) {
+      return 0;
+    }
 
     if (this.prevNumImgs !== numImgs) {
       worker.resize(numImgs);

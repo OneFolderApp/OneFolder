@@ -1,5 +1,5 @@
 import fse from 'fs-extra';
-import { action, computed, makeObservable, observable, reaction, runInAction } from 'mobx';
+import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 
 import { getThumbnailPath } from 'common/fs';
 import { promiseAllLimit } from 'common/promise';
@@ -59,6 +59,10 @@ class FileStore {
   @observable numLoadedFiles = 0;
   @observable numUntaggedFiles = 0;
   @observable numMissingFiles = 0;
+  /**
+   * FFBETaskIdPair: ID pair for the current backend fetch task.
+   * Helps identify if a new task has started and allows aborting previous ones. */
+  readonly FFBETaskIdPair = observable<[number, number]>([0, 0]);
 
   debouncedRefetch: () => void;
   debouncedSaveFilesToSave: () => Promise<void>;
@@ -71,27 +75,6 @@ class FileStore {
     this.debouncedRefetch = debounce(this.refetch, 200).bind(this);
     this.debouncedSaveFilesToSave = debounce(this.saveFilesToSave, 100).bind(this);
     // reaction to keep updated properties "related" to fileList
-    reaction(
-      () => this.fileList.length,
-      (len) => {
-        if (len != this.fileDimensions.length) {
-          this.fileDimensions.replace(
-            this.definedFiles.map((f) => ({
-              width: f.width,
-              height: f.height,
-            })),
-          );
-          this.index.clear();
-          for (let index = 0; index < this.fileList.length; index++) {
-            const file = this.fileList[index];
-            if (file) {
-              this.index.set(file.id, index);
-            }
-          }
-          this.numLoadedFiles = len;
-        }
-      },
-    );
   }
 
   @action.bound async readTagsFromFiles(): Promise<void> {
@@ -373,6 +356,11 @@ class FileStore {
     }
   }
 
+  @action.bound newfilesFromBackendTaskId(): void {
+    this.numLoadedFiles = 0;
+    this.FFBETaskIdPair[0] = Date.now();
+  }
+
   @action.bound async refetch(): Promise<void> {
     if (this.showsAllContent) {
       return this.fetchAllFiles();
@@ -387,6 +375,8 @@ class FileStore {
 
   @action.bound async fetchAllFiles(): Promise<void> {
     try {
+      // Indicate a new fetch process
+      this.newfilesFromBackendTaskId();
       this.rootStore.uiStore.clearSearchCriteriaList();
       const fetchedFiles = await this.backend.fetchFiles(
         this.orderBy,
@@ -402,6 +392,8 @@ class FileStore {
 
   @action.bound async fetchUntaggedFiles(): Promise<void> {
     try {
+      // Indicate a new fetch process
+      this.newfilesFromBackendTaskId();
       const { uiStore } = this.rootStore;
       uiStore.clearSearchCriteriaList();
       const criteria = new ClientTagSearchCriteria('tags');
@@ -429,40 +421,42 @@ class FileStore {
         rootStore: { uiStore },
       } = this;
 
+      // Indicate a new fetch process
+      this.newfilesFromBackendTaskId();
       uiStore.searchCriteriaList.clear();
       this.setContentMissing();
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
       const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
-      runInAction(() => {
-        this.fileDimensions.replace(
-          backendFiles.map((bf) => ({
-            width: bf.width,
-            height: bf.height,
-          })),
-        );
-      });
 
       // For every new file coming in, either re-use the existing client file if it exists,
       // or construct a new client file
-      await this.filesFromBackend(backendFiles);
+      const { newFiles, status } = await this.filesFromBackend(backendFiles, false);
 
       // We don't store whether files are missing (since they might change at any time)
       // So we have to check all files and check their existence them here
       const existenceCheckPromises = runInAction(() => {
-        return this.definedFiles.map((clientFile) => async () => {
-          const exists = await fse.pathExists(clientFile.absolutePath);
-          clientFile.setBroken(!exists);
-        });
+        return newFiles
+          .filter((clientFile): clientFile is ClientFile => !!clientFile)
+          .map((clientFile) => async () => {
+            const exists = await fse.pathExists(clientFile.absolutePath);
+            clientFile.setBroken(!exists);
+          });
       });
 
       const N = 50; // TODO: same here as in fetchFromBackend: number of concurrent checks should be system dependent
       await promiseAllLimit(existenceCheckPromises, N);
+      // If filesFromBackend was aborted or the user changed the content while checking for
+      // missing files, do not replace the fileList
+      const content = runInAction(() => this.content);
+      if (content !== Content.Missing || status != Status.success) {
+        return;
+      }
 
       runInAction(() => {
-        const missingClientFiles = this.definedFiles.filter((file) => file.isBroken);
-        this.fileList.replace(missingClientFiles);
+        const missingClientFiles = newFiles.filter((file) => file && file.isBroken);
+        this.replaceFileList(missingClientFiles);
         this.numMissingFiles = missingClientFiles.length;
         this.fileListLastModified = new Date();
       });
@@ -490,6 +484,8 @@ class FileStore {
 
     const criterias = uiStore.searchCriteriaList.map((c) => c.toCondition(this.rootStore));
     try {
+      // Indicate a new fetch process
+      this.newfilesFromBackendTaskId();
       const fetchedFiles = await this.backend.searchFiles(
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
@@ -521,6 +517,30 @@ class FileStore {
     this.fileDimensions.clear();
     this.fileList.clear();
     this.index.clear();
+  }
+
+  /**
+   * Replaces the current file list with a new one and updates:
+   * - Dimensions (defaulting to 100x100 if undefined)
+   * - Index mapping from file ID to its position
+   * - Count of loaded (defined) files
+   */
+  @action.bound replaceFileList(newFiles: (ClientFile | undefined)[]): void {
+    this.fileList.replace(newFiles);
+    this.fileDimensions.replace(
+      this.fileList.map((f) => ({
+        width: f ? f.width : 100,
+        height: f ? f.height : 100,
+      })),
+    );
+    this.index.clear();
+    for (let index = 0; index < this.fileList.length; index++) {
+      const file = this.fileList[index];
+      if (file) {
+        this.index.set(file.id, index);
+      }
+    }
+    this.numLoadedFiles = this.definedFiles.length;
   }
 
   @action get(id: ID): ClientFile | undefined {
@@ -641,7 +661,7 @@ class FileStore {
 
     // For every new file coming in, either re-use the existing client file if it exists,
     // or construct a new client file
-    await this.filesFromBackend(backendFiles);
+    await this.filesFromBackend(backendFiles, true);
 
     // Check existence of new files asynchronously, no need to wait until they can be shown
     // we can simply check whether they exist after they start rendering
@@ -679,7 +699,6 @@ class FileStore {
     }
   }
 
-  private filesFromBackendAbortController?: AbortController;
   /**
    * Populates "fileList" and "index" with backendFiles, reusing existing ClientFiles when possible,
    * else creating new ones and disposes unused files.
@@ -687,26 +706,37 @@ class FileStore {
    * Files are processed in prioritized batches, favoring the batch nearest to uiStore.firstItem
    *
    * @param backendFiles Array of files from the backend to process.
+   * @param updateObservable If true, updates the `fileList` observable and `index`, if false, still disposes unused files.
    * @param batchSize Number of files to process per batch (default: 256).
+   * @returns The processed file list, index and status result.
    */
-  @action private async filesFromBackend(backendFiles: FileDTO[], batchSize = 256): Promise<void> {
-    // Cancel previus calculation if a new refetch is made
-    if (this.filesFromBackendAbortController) {
-      this.filesFromBackendAbortController.abort();
-    }
-    const abortController = new AbortController();
-    this.filesFromBackendAbortController = abortController;
-    const signal = abortController.signal;
+  @action private async filesFromBackend(
+    backendFiles: FileDTO[],
+    updateObservable = true,
+    batchSize = 256,
+  ): Promise<{
+    newFiles: (ClientFile | undefined)[];
+    newIndex: Map<string, number>;
+    status: Status;
+  }> {
+    // get current task Id and update the sub Id
+    const taskId: [number, number] = [this.FFBETaskIdPair[0], Date.now()];
+    this.FFBETaskIdPair[1] = taskId[1];
 
     // Copy of the current fileList and index to process reused and dispose unused ClienFiles
-    const transitionFileList = this.fileList.slice();
-    const transitionIndex = new Map(this.index);
-    this.index.clear();
+    // if updateObservables is false use as reference the original observables to avoid creating unnecessary copies
+    const transitionFileList = updateObservable ? this.fileList.slice() : this.fileList;
+    const transitionIndex = updateObservable ? new Map(this.index) : this.index;
+    const newArray = new Array<ClientFile | undefined>(backendFiles.length);
+    const targetList = updateObservable ? this.fileList : newArray;
+    const targeIndex = updateObservable ? this.index : new Map<string, number>();
+    if (updateObservable) {
+      this.fileList.replace(newArray);
+      targeIndex.clear();
+    }
     this.numLoadedFiles = 0;
-
     const reusedStatus = new Set<ID>();
-    //const clientFiles = new Array<ClientFile>(backendFiles.length);
-    this.fileList.replace(new Array<ClientFile | undefined>(backendFiles.length));
+    let status: Status = Status.success;
     const initialIndex = this.rootStore.uiStore.firstItem;
     const total = backendFiles.length;
 
@@ -742,11 +772,17 @@ class FileStore {
 
       runInAction(() => {
         for (let i = start; i <= end; i++) {
+          //Stop processing the batch if FFBETaskIds changed
+          if (taskId[0] !== this.FFBETaskIdPair[0] || taskId[1] !== this.FFBETaskIdPair[1]) {
+            status = Status.aborted;
+            break;
+          }
           const f = backendFiles[i];
           const idx = i;
           // Might already exist!
           const eFileIndex = transitionIndex.get(f.id);
-          const existingFile = eFileIndex ? transitionFileList[eFileIndex] : undefined;
+          const existingFile =
+            eFileIndex !== undefined ? transitionFileList[eFileIndex] : undefined;
           if (existingFile) {
             reusedStatus.add(existingFile.id);
             // Update tags (might have changes, e.g. removed/merged)
@@ -777,8 +813,8 @@ class FileStore {
             ) {
               existingFile.updateScoresFromBackend(newScores);
             }
-            this.fileList[idx] = existingFile;
-            this.index.set(existingFile.id, idx);
+            targetList[idx] = existingFile;
+            targeIndex.set(existingFile.id, idx);
             this.numLoadedFiles++;
           } else {
             // Otherwise, create new one.
@@ -795,40 +831,38 @@ class FileStore {
                   : f.absolutePath,
               );
             });
-            this.fileList[idx] = file;
-            this.index.set(file.id, idx);
+            targetList[idx] = file;
+            targeIndex.set(file.id, idx);
             this.numLoadedFiles++;
-          }
-          //Stop processing the batch if this promise is aborted
-          if (signal.aborted) {
-            break;
           }
         }
       });
       //Stop processing all batches if this promise is aborted
-      if (signal.aborted) {
+      if (status.valueOf() === Status.aborted) {
         console.debug('FILES FROM BACKEND ABORTED');
         break;
       }
-      // Ensure numLoadedFiles is not bigger than the total of files, this can happen when
-      // this funcion is called again before finishing or aborting the previous one.
-      runInAction(() => {
-        if (this.numLoadedFiles > this.fileList.length) {
-          this.numLoadedFiles = this.fileList.length;
-        }
-      });
 
       // Wait to allow mobx reaction to complete and propagated changes to fileList and index
       // if initial batch wait more to ensure it's propagated before the next batch
-      const delay = batchIndex === initialBatchIndex ? 500 : 10;
+      const delay = batchIndex === initialBatchIndex ? 500 : 0;
       await new Promise((r) => setTimeout(r, delay));
     }
-    // Dispose of Clientfiles that are not re-used (to get rid of MobX observers)
-    for (const file of transitionFileList) {
-      if (file && !reusedStatus.has(file.id)) {
-        file.dispose();
+
+    runInAction(() => {
+      // Ensure numLoadedFiles is not bigger than the total of files, this can happen when
+      // this funcion is called again before finishing or aborting the previous one.
+      if (this.numLoadedFiles > targetList.length) {
+        this.numLoadedFiles = targetList.length;
       }
-    }
+      // Dispose of Clientfiles that are not re-used (to get rid of MobX observers)
+      for (const file of transitionFileList) {
+        if (file && !reusedStatus.has(file.id)) {
+          file.dispose();
+        }
+      }
+    });
+    return { newFiles: targetList, newIndex: targeIndex, status: status };
   }
 
   /** Derive fields from `fileList`
@@ -889,6 +923,12 @@ class FileStore {
   @action private incrementNumMissingFiles() {
     this.numMissingFiles++;
   }
+}
+
+enum Status {
+  success = 'success',
+  error = 'error',
+  aborted = 'aborted',
 }
 
 export default FileStore;

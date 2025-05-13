@@ -70,7 +70,11 @@ const Layout = ({ contentRect }: LayoutProps) => {
   // Reset selection range when number of items changes: Else you can get phantom files when continuing your selection
   useEffect(() => {
     // Ensure a valid firstItem assigning it again
-    runInAction(() => uiStore.setFirstItem(uiStore.firstItem));
+    runInAction(() => {
+      if (fileStore.fileList.length > 0) {
+        uiStore.setFirstItem(uiStore.firstItem);
+      }
+    });
     initialSelectionIndex.current = undefined;
     lastSelectionIndex.current = undefined;
   }, [fileStore.fileList.length, uiStore]);

@@ -170,6 +170,7 @@ class UiStore {
   @observable thumbnailShape: ThumbnailShape = 'square';
   @observable upscaleMode: UpscaleMode = 'smooth';
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
+  @observable isRefreshing: boolean = false;
 
   @observable isFloatingPanelToSide: boolean = false;
   @observable isToolbarTagPopoverOpen: boolean = false;
@@ -279,6 +280,22 @@ class UiStore {
 
   @action.bound setGalleryVideoPlaybackMode(mode: GalleryVideoPlaybackMode): void {
     this.galleryVideoPlaybackMode = mode;
+  }
+
+  @action private setIsRefreshing(val: boolean) {
+    this.isRefreshing = val;
+  }
+
+  @action.bound async refresh(): Promise<void> {
+    if (this.isRefreshing) {
+      return;
+    }
+    this.setIsRefreshing(true);
+    // await to make mobx reaction take effect.
+    await new Promise((r) => setTimeout(r, 0));
+    this.setIsRefreshing(false);
+    await new Promise((r) => setTimeout(r, 0));
+    this.rootStore.fileStore.refetch();
   }
 
   @action.bound setFirstItem(index: number = 0): void {
@@ -855,8 +872,7 @@ class UiStore {
     } else if (matches(hotkeyMap.toggleScoreEditor)) {
       this.toggleScorePopover();
     } else if (matches(hotkeyMap.refreshSearch)) {
-      this.rootStore.fileStore.clearFileList();
-      this.rootStore.fileStore.refetch();
+      this.refresh();
     } else if (matches(hotkeyMap.toggleSettings)) {
       this.toggleSettings();
     } else if (matches(hotkeyMap.toggleHelpCenter)) {

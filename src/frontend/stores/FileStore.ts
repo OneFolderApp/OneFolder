@@ -222,6 +222,29 @@ class FileStore {
     }
   }
 
+  @action private setContent(content: Content): void {
+    this.content = content;
+    if (this.rootStore.uiStore.isSlideMode) {
+      this.rootStore.uiStore.disableSlideMode();
+    }
+  }
+
+  private setContentQuery(): void {
+    this.setContent(Content.Query);
+  }
+
+  private setContentAll(): void {
+    this.setContent(Content.All);
+  }
+
+  private setContentUntagged(): void {
+    this.setContent(Content.Untagged);
+  }
+
+  private setContentMissing() {
+    this.setContent(Content.Missing);
+  }
+
   @computed get showsAllContent(): boolean {
     return this.content === Content.All;
   }
@@ -254,27 +277,6 @@ class FileStore {
     this.setOrderBy(prop);
     this.setOrderByScore(score.id);
     this.refetch();
-  }
-
-  @action.bound setContentQuery(): void {
-    this.content = Content.Query;
-    if (this.rootStore.uiStore.isSlideMode) {
-      this.rootStore.uiStore.disableSlideMode();
-    }
-  }
-
-  @action.bound setContentAll(): void {
-    this.content = Content.All;
-    if (this.rootStore.uiStore.isSlideMode) {
-      this.rootStore.uiStore.disableSlideMode();
-    }
-  }
-
-  @action.bound setContentUntagged(): void {
-    this.content = Content.Untagged;
-    if (this.rootStore.uiStore.isSlideMode) {
-      this.rootStore.uiStore.disableSlideMode();
-    }
   }
 
   /**
@@ -914,10 +916,6 @@ class FileStore {
 
   @action private setOrderByScore(scoreId: ID) {
     this.orderByScore = scoreId;
-  }
-
-  @action private setContentMissing() {
-    this.content = Content.Missing;
   }
 
   @action private incrementNumMissingFiles() {

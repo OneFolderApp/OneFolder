@@ -20,9 +20,13 @@ import { Dimensions } from '@floating-ui/core';
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
 /** These fields are stored and recovered when the application opens up */
-type PersistentPreferenceFields = 'orderDirection' | 'orderBy' | 'orderByScore';
+type PersistentPreferenceFields =
+  | 'orderDirection'
+  | 'orderBy'
+  | 'orderByScore'
+  | 'averageFetchTimes';
 
-const enum Content {
+export const enum Content {
   All,
   Missing,
   Untagged,
@@ -63,6 +67,7 @@ class FileStore {
    * FFBETaskIdPair: ID pair for the current backend fetch task.
    * Helps identify if a new task has started and allows aborting previous ones. */
   readonly FFBETaskIdPair = observable<[number, number]>([0, 0]);
+  readonly averageFetchTimes = observable(new Map<Content, number>([]));
 
   debouncedRefetch: () => void;
   debouncedSaveFilesToSave: () => Promise<void>;
@@ -279,6 +284,21 @@ class FileStore {
     this.refetch();
   }
 
+  @action.bound setAverageFetchTime(content: Content, duration: number, numItems: number): void {
+    // Avoid divide with 0
+    duration = duration / (numItems || 1);
+    const prev = this.averageFetchTimes.get(content) ?? duration;
+    const average = (prev + duration) / 2;
+    console.debug(
+      `Adjusted average time for content type (${content}): avg: ${average} new: ${duration} prev: ${prev}`,
+    );
+    this.averageFetchTimes.set(content, average);
+  }
+
+  @action.bound setNumLoadedFiles(val: number): void {
+    this.numLoadedFiles = val;
+  }
+
   /**
    * Marks file as missing
    *
@@ -377,15 +397,18 @@ class FileStore {
 
   @action.bound async fetchAllFiles(): Promise<void> {
     try {
+      this.setContentAll();
       // Indicate a new fetch process
       this.newfilesFromBackendTaskId();
       this.rootStore.uiStore.clearSearchCriteriaList();
+      const start = performance.now();
       const fetchedFiles = await this.backend.fetchFiles(
         this.orderBy,
         this.orderDirection,
         this.orderByScore,
       );
-      this.setContentAll();
+      const end = performance.now();
+      this.setAverageFetchTime(Content.All, end - start, fetchedFiles.length);
       return this.updateFromBackend(fetchedFiles);
     } catch (err) {
       console.error('Could not load all files', err);
@@ -394,12 +417,14 @@ class FileStore {
 
   @action.bound async fetchUntaggedFiles(): Promise<void> {
     try {
+      this.setContentUntagged();
       // Indicate a new fetch process
       this.newfilesFromBackendTaskId();
       const { uiStore } = this.rootStore;
       uiStore.clearSearchCriteriaList();
       const criteria = new ClientTagSearchCriteria('tags');
       uiStore.searchCriteriaList.push(criteria);
+      const start = performance.now();
       const fetchedFiles = await this.backend.searchFiles(
         criteria.toCondition(this.rootStore),
         this.orderBy,
@@ -407,7 +432,8 @@ class FileStore {
         this.orderByScore,
         uiStore.searchMatchAny,
       );
-      this.setContentUntagged();
+      const end = performance.now();
+      this.setAverageFetchTime(Content.Untagged, end - start, fetchedFiles.length);
       return this.updateFromBackend(fetchedFiles);
     } catch (err) {
       console.error('Could not load all files', err);
@@ -423,28 +449,42 @@ class FileStore {
         rootStore: { uiStore },
       } = this;
 
+      this.setContentMissing();
       // Indicate a new fetch process
       this.newfilesFromBackendTaskId();
       uiStore.searchCriteriaList.clear();
-      this.setContentMissing();
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
+      const start = performance.now();
       const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
+      const end = performance.now();
+      this.setAverageFetchTime(Content.All, end - start, backendFiles.length);
 
       // For every new file coming in, either re-use the existing client file if it exists,
       // or construct a new client file
       const { newFiles, status } = await this.filesFromBackend(backendFiles, false);
+      if (status != Status.success) {
+        return;
+      }
 
       // We don't store whether files are missing (since they might change at any time)
       // So we have to check all files and check their existence them here
       const existenceCheckPromises = runInAction(() => {
-        return newFiles
-          .filter((clientFile): clientFile is ClientFile => !!clientFile)
-          .map((clientFile) => async () => {
-            const exists = await fse.pathExists(clientFile.absolutePath);
-            clientFile.setBroken(!exists);
-          });
+        this.numLoadedFiles = 0;
+        const definedFiles = newFiles.filter(
+          (clientFile): clientFile is ClientFile => !!clientFile,
+        );
+        const total = definedFiles.length;
+        const step = Math.ceil(total / 20);
+
+        return definedFiles.map((clientFile, i) => async () => {
+          const exists = await fse.pathExists(clientFile.absolutePath);
+          clientFile.setBroken(!exists);
+          if (i % step === 0 || i === total - 1) {
+            this.setNumLoadedFiles(i);
+          }
+        });
       });
 
       const N = 50; // TODO: same here as in fetchFromBackend: number of concurrent checks should be system dependent
@@ -452,7 +492,7 @@ class FileStore {
       // If filesFromBackend was aborted or the user changed the content while checking for
       // missing files, do not replace the fileList
       const content = runInAction(() => this.content);
-      if (content !== Content.Missing || status != Status.success) {
+      if (content !== Content.Missing) {
         return;
       }
 
@@ -486,8 +526,10 @@ class FileStore {
 
     const criterias = uiStore.searchCriteriaList.map((c) => c.toCondition(this.rootStore));
     try {
+      this.setContentQuery();
       // Indicate a new fetch process
       this.newfilesFromBackendTaskId();
+      const start = performance.now();
       const fetchedFiles = await this.backend.searchFiles(
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
@@ -495,7 +537,8 @@ class FileStore {
         this.orderByScore,
         uiStore.searchMatchAny,
       );
-      this.setContentQuery();
+      const end = performance.now();
+      this.setAverageFetchTime(Content.Query, end - start, fetchedFiles.length);
       return this.updateFromBackend(fetchedFiles);
     } catch (e) {
       console.log('Could not find files based on criteria', e);
@@ -609,7 +652,12 @@ class FileStore {
         // BACKWARDS_COMPATIBILITY: orderDirection used to be called fileOrder
         this.setOrderDirection(prefs.orderDirection ?? prefs.fileOrder);
         this.setOrderBy(prefs.orderBy);
-        this.setOrderByScore(prefs.orderByScore);
+        if (prefs.orderByScore) {
+          this.setOrderByScore(prefs.orderByScore);
+        }
+        if (prefs.averageFetchTimes) {
+          this.averageFetchTimes.replace(new Map(prefs.averageFetchTimes));
+        }
       } catch (e) {
         console.error('Cannot parse persistent preferences:', FILE_STORAGE_KEY, e);
       }
@@ -621,6 +669,7 @@ class FileStore {
       orderBy: this.orderBy,
       orderDirection: this.orderDirection,
       orderByScore: this.orderByScore,
+      averageFetchTimes: Array.from(this.averageFetchTimes.entries()),
     };
     return preferences;
   }
@@ -663,7 +712,10 @@ class FileStore {
 
     // For every new file coming in, either re-use the existing client file if it exists,
     // or construct a new client file
-    await this.filesFromBackend(backendFiles, true);
+    const { status } = await this.filesFromBackend(backendFiles, true);
+    if (status != Status.success) {
+      return;
+    }
 
     // Check existence of new files asynchronously, no need to wait until they can be shown
     // we can simply check whether they exist after they start rendering
@@ -914,7 +966,7 @@ class FileStore {
     this.orderBy = prop;
   }
 
-  @action private setOrderByScore(scoreId: ID) {
+  @action private setOrderByScore(scoreId: ID = '') {
     this.orderByScore = scoreId;
   }
 

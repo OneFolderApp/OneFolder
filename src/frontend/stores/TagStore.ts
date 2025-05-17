@@ -30,6 +30,7 @@ class TagStore {
     try {
       const fetchedTags = await this.backend.fetchTags();
       this.createTagGraph(fetchedTags);
+      this.fixStrayTags();
     } catch (err) {
       console.log('Could not load tags', err);
     }
@@ -204,6 +205,51 @@ class TagStore {
       }
     }
     this.root.setParent(this.root);
+  }
+
+  @action private fixStrayTags(): void {
+    const verifiedTags = new Set<ClientTag>(this.tagList);
+    verifiedTags.add(this.root);
+    if (verifiedTags.size === this.tagGraph.size) {
+      console.debug('No stray tags detected.');
+      return;
+    }
+
+    console.debug('Stray tags detected, attempting to insert them into the root tag.');
+    for (const [, tag] of this.tagGraph) {
+      if (verifiedTags.has(tag)) {
+        continue;
+      }
+      const ancestors = Array.from(tag.getAncestors());
+      const subroot = ancestors.at(-1);
+      if (subroot) {
+        const subtree = Array.from(subroot.getSubTree());
+        for (const subtag of subtree) {
+          verifiedTags.add(subtag);
+        }
+      }
+
+      if (subroot && !this.root.subTags.includes(subroot)) {
+        this.root.subTags.push(subroot);
+        subroot.setParent(this.root);
+        console.warn(
+          `Tag "${subroot.name}" was disconnected from the main tree and has been added under the root.`,
+          subroot,
+        );
+        this.showTagToast(
+          subroot,
+          'was disconnected from the main tree and has been added under the root.',
+          'stray-tag',
+          'warning',
+          20000,
+        );
+      } else {
+        console.error(
+          `Tag "${tag.name}" was disconnected from the main tree and could not be added under the root.`,
+          tag,
+        );
+      }
+    }
   }
 
   showTagToast(

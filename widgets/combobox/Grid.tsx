@@ -30,6 +30,10 @@ export function useGridFocus(
     if (gridRef.current === null || gridRef.current.childElementCount === 0) {
       return;
     }
+    if (event.altKey) {
+      event.preventDefault();
+      return;
+    }
 
     const scrollOpts: ScrollIntoViewOptions = { block: 'nearest' };
     const options = gridRef.current.querySelectorAll(

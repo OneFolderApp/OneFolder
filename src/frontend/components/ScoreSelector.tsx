@@ -14,6 +14,7 @@ import { useStore } from '../contexts/StoreContext';
 import { computed, IComputedValue, runInAction } from 'mobx';
 import { IconSet } from 'widgets/icons';
 import { debounce } from 'common/timeout';
+import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 
 interface IScoreSelectorProps {
   counter?: IComputedValue<Map<ClientScore, [number, number | undefined]>>;
@@ -42,30 +43,18 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
     inputRef.current?.focus();
   }).current;
 
+  const baseHandleKeyDown = useGalleryInputKeydownHandler();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace') {
-        // Prevent backspace from navigating back to main view when having an image open
-        e.stopPropagation();
-      }
-
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        // If shift key is pressed with arrow keys left/right,
-        // stop those key events from propagating to the gallery,
-        // so that the cursor in the text input can be moved without selecting the prev/next image
-        // Kind of an ugly work-around, but better than not being able to move the cursor at all
-        if (e.shiftKey) {
-          e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
-        } else {
-          e.preventDefault(); // don't do anything here: let the event propagate to the gallery
-        }
-      } else if (e.key === 'Escape') {
+      if (e.key === 'Escape') {
         e.preventDefault();
         setInputText('');
+      } else {
+        baseHandleKeyDown(e);
       }
       handleGridFocus(e);
     },
-    [handleGridFocus],
+    [baseHandleKeyDown, handleGridFocus],
   );
 
   const handleBlur = useRef((e: React.FocusEvent<HTMLDivElement>) => {

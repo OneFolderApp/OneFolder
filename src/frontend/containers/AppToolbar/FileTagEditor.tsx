@@ -23,6 +23,7 @@ import FocusManager from '../../FocusManager';
 import { useAction, useAutorun, useComputed } from '../../hooks/mobx';
 import { Menu, useContextMenu } from 'widgets/menus';
 import { EditorTagSummaryItems } from '../ContentView/menu-items';
+import { useGalleryInputKeydownHandler } from 'src/frontend/hooks/useHandleInputKeydown';
 
 const POPUP_ID = 'tag-editor-popup';
 
@@ -55,7 +56,7 @@ const TagEditor = observer(() => {
   const [inputText, setInputText] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
 
-  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
+  const debounceSetDebQuery = useRef(debounce(setDebQuery, 500)).current;
   useEffect(() => {
     if (inputText.length > 2) {
       setDebQuery(inputText);
@@ -133,27 +134,13 @@ const TagEditor = observer(() => {
     inputRef.current?.focus();
   });
 
+  const baseHandleKeydown = useGalleryInputKeydownHandler();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace') {
-        // Prevent backspace from navigating back to main view when having an image open
-        e.stopPropagation();
-      }
-
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        // If shift key is pressed with arrow keys left/right,
-        // stop those key events from propagating to the gallery,
-        // so that the cursor in the text input can be moved without selecting the prev/next image
-        // Kind of an ugly work-around, but better than not being able to move the cursor at all
-        if (e.shiftKey) {
-          e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
-        } else {
-          e.preventDefault(); // don't do anything here: let the event propagate to the gallery
-        }
-      }
+      baseHandleKeydown(e);
       handleGridFocus(e);
     },
-    [handleGridFocus],
+    [baseHandleKeydown, handleGridFocus],
   );
 
   const handleTagContextMenu = TagSummaryMenu({ parentPopoverId: 'tag-editor' });

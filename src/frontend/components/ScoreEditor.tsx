@@ -17,6 +17,7 @@ import { FloatingPanel } from '../containers/AppToolbar/FileTagEditor';
 import { ToolbarButton } from 'widgets/toolbar';
 import { IAction } from '../containers/types';
 import { ID } from 'src/api/id';
+import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 
 export const FloatingScoreEditor = observer(() => {
   const { uiStore } = useStore();
@@ -321,24 +322,7 @@ const ScoreListEditor = observer(
     const { uiStore } = useStore();
     const scores = Array.from(counter.get()).sort(compareByScoreName);
     const SelectionSize = uiStore.fileSelection.size;
-    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace') {
-        // Prevent backspace from navigating back to main view when having an image open
-        e.stopPropagation();
-      }
-
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        // If shift key is pressed with arrow keys left/right,
-        // stop those key events from propagating to the gallery,
-        // so that the cursor in the text input can be moved without selecting the prev/next image
-        // Kind of an ugly work-around, but better than not being able to move the cursor at all
-        if (!e.altKey) {
-          e.stopPropagation(); // move text cursor as expected (and select text because shift is pressed)
-        } else {
-          e.preventDefault(); // don't do anything here: let the event propagate to the gallery
-        }
-      }
-    }, []);
+    const handleKeyDown = useGalleryInputKeydownHandler();
     const handleRename = useCallback(
       (score: ClientScore) => dispatch(Factory.enableEditing(score.id)),
       [dispatch],

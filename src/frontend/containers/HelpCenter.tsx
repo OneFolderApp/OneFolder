@@ -368,10 +368,10 @@ const PAGE_DATA: () => IPageData[] = () => [
           <>
             <p>
               You can set implied relationships to a tag through the tag's contextual menu option
-              "Modify implied tags." When you tag a file, it also inherits all its ancestor and
-              implied tags, and inherits those from them too, automatically, to be used in search.
-              For example, if the tag dog implies mammal, and mammal implies animal, if you search
-              for animal, the dog will also be included because of the implied relationship.
+              "Modify implied tags". When you tag a file, it also inherits all its ancestor tags and
+              implied tags and inherits those from them too automatically, to be used in search. For
+              example, if the tag dog implies mammal, and mammal implies animal, if you search for
+              animal, files with tag dog will also be included because of the implied relationship.
             </p>
             <p>
               Inherited tags can't be removed from a file unless you remove all the tags that cause
@@ -392,7 +392,7 @@ const PAGE_DATA: () => IPageData[] = () => [
             <p>
               There are several ways to tag an image. First, you can drag a tag from the outliner
               onto an image. This also works on a selection of multiple images. Next, you can select
-              an image, press T to open the tag editor, and assign or remove tags from the list.
+              an image, press 3 to open the tag editor, and assign or remove tags from the list.
               This method also allows you to tag multiple images at once. Finally, you can add tags
               by adding them to the list in the inspector panel - the sidebar on the right when
               viewing images at at full size.
@@ -401,6 +401,10 @@ const PAGE_DATA: () => IPageData[] = () => [
               To remove tags from one or more images, you have to access either the tag editor or
               the inspector. In both places you will be able to remove individual tags or clear the
               entire set of tags on the selected image(s).
+            </p>
+            <p>
+              When using the tag editor, you can hold ALT + arrow keys to navigate through the
+              gallery items while keeping focus on the tag editor.
             </p>
           </>
         ),

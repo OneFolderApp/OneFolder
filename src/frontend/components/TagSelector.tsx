@@ -18,6 +18,7 @@ import { useStore } from '../contexts/StoreContext';
 import { ClientTag } from '../entities/Tag';
 import { useComputed } from '../hooks/mobx';
 import { debounce } from 'common/timeout';
+import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 
 export interface TagSelectorProps {
   selection: ClientTag[];
@@ -60,7 +61,7 @@ const TagSelector = (props: TagSelectorProps) => {
   const [query, setQuery] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
 
-  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
+  const debounceSetDebQuery = useRef(debounce(setDebQuery, 500)).current;
   useEffect(() => {
     if (query.length > 2) {
       setDebQuery(query);
@@ -87,6 +88,7 @@ const TagSelector = (props: TagSelectorProps) => {
 
   const gridRef = useRef<HTMLDivElement>(null);
   const [activeDescendant, handleGridFocus] = useGridFocus(gridRef);
+  const handleGalleryInput = useGalleryInputKeydownHandler();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Backspace') {
@@ -101,10 +103,11 @@ const TagSelector = (props: TagSelectorProps) => {
         setQuery('');
         setIsOpen(false);
       } else {
+        handleGalleryInput(e);
         handleGridFocus(e);
       }
     },
-    [handleGridFocus, onDeselect, isInputEmpty, selection],
+    [handleGridFocus, onDeselect, isInputEmpty, selection, handleGalleryInput],
   );
 
   const handleBlur = useRef((e: React.FocusEvent<HTMLDivElement>) => {

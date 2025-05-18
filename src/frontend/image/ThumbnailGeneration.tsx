@@ -53,6 +53,11 @@ export const generateThumbnailUsingWorker = action(
     return new Promise<void>((resolve, reject) => {
       setTimeout(() => {
         if (listeners.has(msg.fileId)) {
+          // Remove the image from the queue when timeout occurs
+          workers[lastSubmittedWorker].postMessage({
+            type: 'cancel',
+            fileId: msg.fileId,
+          });
           timeoutReject ? reject() : resolve();
           listeners.delete(msg.fileId);
           console.debug(

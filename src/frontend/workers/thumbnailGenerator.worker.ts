@@ -76,11 +76,12 @@ const generateAndStoreThumbnail = async (filePath: string, thumbnailFilePath: st
     return thumbnailFilePath;
   }
 
-  const thumbnailData = await generateThumbnailData(filePath);
+  let thumbnailData = await generateThumbnailData(filePath);
   if (thumbnailData) {
     await fse.outputFile(thumbnailFilePath, Buffer.from(thumbnailData));
     return thumbnailFilePath;
   }
+  thumbnailData = null;
   return '';
 };
 

@@ -32,7 +32,7 @@ const ContentProgressBar = observer(() => {
   } else {
     return null;
   }
-  let fakeTotal = total / 2;
+  let simulatedTotal = total / 2;
   let content = Content.All;
   if (showsQueryContent) {
     content = Content.Query;
@@ -50,17 +50,17 @@ const ContentProgressBar = observer(() => {
    */
   if (!showsMissingContent) {
     total = Math.min(total, 1);
-    // reasignin fakeTotal to make the simulated fetch time take 19/20 of the bar exactly
-    fakeTotal = total ? 19 : 0;
+    // reasignin simulatedTotal to make the simulated fetch time take 19/20 of the bar exactly
+    simulatedTotal = total ? 19 : 0;
   }
 
   return (
     <ProgressBar
       current={current}
       total={total}
-      fakeTotal={fakeTotal}
-      fakeDurationMs={AverageTime}
-      fakeResetKey={fileStore.FFBETaskIdPair[0]}
+      simulatedTotal={simulatedTotal}
+      simulatedDurationMs={AverageTime}
+      simulatedResetKey={fileStore.FFBETaskIdPair[0]}
       height={'3px'}
     />
   );

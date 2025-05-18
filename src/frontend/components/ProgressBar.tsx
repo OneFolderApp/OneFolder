@@ -3,9 +3,9 @@ import React, { CSSProperties, memo, useEffect, useRef, useState } from 'react';
 interface ProgressBarProps {
   current?: number;
   total?: number;
-  fakeTotal?: number;
-  fakeDurationMs?: number;
-  fakeResetKey?: string | number;
+  simulatedTotal?: number;
+  simulatedDurationMs?: number;
+  simulatedResetKey?: string | number;
   height?: CSSProperties['height'];
 }
 
@@ -15,19 +15,19 @@ const ProgressBar = memo(
   ({
     current = 0,
     total = 0,
-    fakeTotal = 0,
-    fakeDurationMs = 5000,
-    fakeResetKey,
+    simulatedTotal = 0,
+    simulatedDurationMs = 5000,
+    simulatedResetKey,
     height = '10px',
   }: ProgressBarProps) => {
     const [visible, setVisible] = useState(false);
-    const [fakeCurrent, setFakeCurrent] = useState(0);
+    const [simulatedCurrent, setSimulatedCurrent] = useState(0);
     const [reseting, setReseting] = useState(false);
     const [transitionTime, setTransTime] = useState<number | undefined>(DEFAULT_MS);
-    const fakeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const totalUnits = total + fakeTotal;
+    const simulatedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const totalUnits = total + simulatedTotal;
     const realProgress = total > 0 ? (current / total) * 100 : 0;
-    const totalProgress = totalUnits > 0 ? ((current + fakeCurrent) / totalUnits) * 100 : 100;
+    const totalProgress = totalUnits > 0 ? ((current + simulatedCurrent) / totalUnits) * 100 : 100;
 
     const resultProgress = realProgress >= 100 ? 100 : totalProgress;
 
@@ -39,36 +39,36 @@ const ProgressBar = memo(
       });
     };
 
-    //reset fake progress and start it
+    //reset simulated progress and start it
     useEffect(() => {
-      const runFakeProgress = async () => {
-        setFakeCurrent(0);
+      const runsimulatedProgress = async () => {
+        setSimulatedCurrent(0);
         setReseting(true);
         setVisible(false);
 
         await waitNextFrame();
 
         setReseting(false);
-        setTransTime(fakeDurationMs);
+        setTransTime(simulatedDurationMs);
 
         await waitNextFrame();
 
         setVisible(true);
-        setFakeCurrent(fakeTotal);
-        fakeTimeoutRef.current = setTimeout(() => {
+        setSimulatedCurrent(simulatedTotal);
+        simulatedTimeoutRef.current = setTimeout(() => {
           setTransTime(DEFAULT_MS);
-          fakeTimeoutRef.current = null;
-        }, fakeDurationMs);
+          simulatedTimeoutRef.current = null;
+        }, simulatedDurationMs);
       };
 
-      runFakeProgress();
+      runsimulatedProgress();
       return () => {
-        if (fakeTimeoutRef.current !== null) {
-          clearTimeout(fakeTimeoutRef.current);
-          fakeTimeoutRef.current = null;
+        if (simulatedTimeoutRef.current !== null) {
+          clearTimeout(simulatedTimeoutRef.current);
+          simulatedTimeoutRef.current = null;
         }
       };
-    }, [fakeResetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [simulatedResetKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // If there are current real progress, reset the transition time to reflect actual progress
     useEffect(() => {
@@ -80,14 +80,14 @@ const ProgressBar = memo(
     //hide progress bar after finish or show it if it should be visible
     useEffect(() => {
       if (resultProgress >= 100) {
-        const time = total <= 0 && fakeTotal > 0 ? transitionTime : DEFAULT_MS;
+        const time = total <= 0 && simulatedTotal > 0 ? transitionTime : DEFAULT_MS;
         const timeout = setTimeout(() => setVisible(false), time);
         return () => clearTimeout(timeout);
       } else {
         const timeout = setTimeout(() => setVisible(true), DEFAULT_MS);
         return () => clearTimeout(timeout);
       }
-    }, [fakeTotal, resultProgress, total, transitionTime]);
+    }, [simulatedTotal, resultProgress, total, transitionTime]);
 
     const style: CSSProperties = {
       width: `${reseting ? 0 : resultProgress}%`,

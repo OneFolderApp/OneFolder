@@ -1092,7 +1092,9 @@ class UiStore {
   }
 
   @action private viewAllContent(): void {
-    this.rootStore.fileStore.fetchAllFiles();
+    if (this.rootStore.fileStore.showsQueryContent) {
+      this.rootStore.fileStore.fetchAllFiles();
+    }
   }
 
   @action private viewQueryContent(): void {

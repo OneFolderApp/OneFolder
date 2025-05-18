@@ -60,7 +60,7 @@ const ContentProgressBar = observer(() => {
       total={total}
       simulatedTotal={simulatedTotal}
       simulatedDurationMs={AverageTime}
-      simulatedResetKey={fileStore.FFBETaskIdPair[0]}
+      simulatedResetKey={fileStore.fetchTaskIdPair[0]}
       height={'3px'}
     />
   );

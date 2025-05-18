@@ -64,9 +64,12 @@ class FileStore {
   @observable numUntaggedFiles = 0;
   @observable numMissingFiles = 0;
   /**
-   * FFBETaskIdPair: ID pair for the current backend fetch task.
-   * Helps identify if a new task has started and allows aborting previous ones. */
-  readonly FFBETaskIdPair = observable<[number, number]>([0, 0]);
+   * ID pair for the current backend fetch task.
+   * Helps identify if a new task has started and allows aborting previous ones.
+   * - First element: fetch ID
+   * - Second element: filesFromBackend ID
+   * */
+  readonly fetchTaskIdPair = observable<[number, number]>([0, 0]);
   readonly averageFetchTimes = observable(new Map<Content, number>([]));
 
   debouncedRefetch: () => void;
@@ -378,9 +381,16 @@ class FileStore {
     }
   }
 
-  @action.bound newfilesFromBackendTaskId(): void {
+  /**
+   * Resets the number of loaded files and updates the first element
+   * of `fetchTaskIdPair` with the current timestamp to uniquely identify the task.
+   * @returns The generated fetch ID (timestamp)
+   */
+  @action.bound newFetchTaskId(): number {
     this.numLoadedFiles = 0;
-    this.FFBETaskIdPair[0] = Date.now();
+    const now = performance.now();
+    this.fetchTaskIdPair[0] = now;
+    return now;
   }
 
   @action.bound async refetch(): Promise<void> {
@@ -399,9 +409,8 @@ class FileStore {
     try {
       this.setContentAll();
       // Indicate a new fetch process
-      this.newfilesFromBackendTaskId();
+      const start = this.newFetchTaskId();
       this.rootStore.uiStore.clearSearchCriteriaList();
-      const start = performance.now();
       const fetchedFiles = await this.backend.fetchFiles(
         this.orderBy,
         this.orderDirection,
@@ -409,7 +418,13 @@ class FileStore {
       );
       const end = performance.now();
       this.setAverageFetchTime(Content.All, end - start, fetchedFiles.length);
-      return this.updateFromBackend(fetchedFiles);
+      // continue if the current taskId is the same else abort the fetch
+      const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
+      if (start === currentFetchId) {
+        return this.updateFromBackend(fetchedFiles);
+      } else {
+        console.debug('FETCH All ABORTED');
+      }
     } catch (err) {
       console.error('Could not load all files', err);
     }
@@ -419,12 +434,11 @@ class FileStore {
     try {
       this.setContentUntagged();
       // Indicate a new fetch process
-      this.newfilesFromBackendTaskId();
+      const start = this.newFetchTaskId();
       const { uiStore } = this.rootStore;
       uiStore.clearSearchCriteriaList();
       const criteria = new ClientTagSearchCriteria('tags');
       uiStore.searchCriteriaList.push(criteria);
-      const start = performance.now();
       const fetchedFiles = await this.backend.searchFiles(
         criteria.toCondition(this.rootStore),
         this.orderBy,
@@ -434,7 +448,13 @@ class FileStore {
       );
       const end = performance.now();
       this.setAverageFetchTime(Content.Untagged, end - start, fetchedFiles.length);
-      return this.updateFromBackend(fetchedFiles);
+      // continue if the current taskId is the same else abort the fetch
+      const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
+      if (start === currentFetchId) {
+        return this.updateFromBackend(fetchedFiles);
+      } else {
+        console.debug('FETCH UNTAGGED ABORTED');
+      }
     } catch (err) {
       console.error('Could not load all files', err);
     }
@@ -451,15 +471,20 @@ class FileStore {
 
       this.setContentMissing();
       // Indicate a new fetch process
-      this.newfilesFromBackendTaskId();
-      uiStore.searchCriteriaList.clear();
+      const start = this.newFetchTaskId();
+      uiStore.clearSearchCriteriaList();
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
-      const start = performance.now();
       const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
       const end = performance.now();
       this.setAverageFetchTime(Content.All, end - start, backendFiles.length);
+      // continue if the current taskId is the same else abort the fetch
+      const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
+      if (!(start === currentFetchId)) {
+        console.debug('FETCH MISSING ABORTED');
+        return;
+      }
 
       // For every new file coming in, either re-use the existing client file if it exists,
       // or construct a new client file
@@ -491,8 +516,9 @@ class FileStore {
       await promiseAllLimit(existenceCheckPromises, N);
       // If filesFromBackend was aborted or the user changed the content while checking for
       // missing files, do not replace the fileList
-      const content = runInAction(() => this.content);
-      if (content !== Content.Missing) {
+      const [content, currentFetchId2] = runInAction(() => [this.content, this.fetchTaskIdPair[0]]);
+      if (content !== Content.Missing || !(start === currentFetchId2)) {
+        console.debug('FETCH MISSING ABORTED');
         return;
       }
 
@@ -528,8 +554,7 @@ class FileStore {
     try {
       this.setContentQuery();
       // Indicate a new fetch process
-      this.newfilesFromBackendTaskId();
-      const start = performance.now();
+      const start = this.newFetchTaskId();
       const fetchedFiles = await this.backend.searchFiles(
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
@@ -539,7 +564,13 @@ class FileStore {
       );
       const end = performance.now();
       this.setAverageFetchTime(Content.Query, end - start, fetchedFiles.length);
-      return this.updateFromBackend(fetchedFiles);
+      // continue if the current taskId is the same else abort the fetch
+      const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
+      if (start === currentFetchId) {
+        return this.updateFromBackend(fetchedFiles);
+      } else {
+        console.debug('FETCH BY QUERY ABORTED');
+      }
     } catch (e) {
       console.log('Could not find files based on criteria', e);
     }
@@ -774,8 +805,8 @@ class FileStore {
     status: Status;
   }> {
     // get current task Id and update the sub Id
-    const taskId: [number, number] = [this.FFBETaskIdPair[0], Date.now()];
-    this.FFBETaskIdPair[1] = taskId[1];
+    const taskId: [number, number] = [this.fetchTaskIdPair[0], performance.now()];
+    this.fetchTaskIdPair[1] = taskId[1];
 
     // Copy of the current fileList and index to process reused and dispose unused ClienFiles
     // if updateObservables is false use as reference the original observables to avoid creating unnecessary copies
@@ -827,7 +858,7 @@ class FileStore {
       runInAction(() => {
         for (let i = start; i <= end; i++) {
           //Stop processing the batch if FFBETaskIds changed
-          if (taskId[0] !== this.FFBETaskIdPair[0] || taskId[1] !== this.FFBETaskIdPair[1]) {
+          if (taskId[0] !== this.fetchTaskIdPair[0] || taskId[1] !== this.fetchTaskIdPair[1]) {
             status = Status.aborted;
             break;
           }

@@ -231,16 +231,16 @@ export const ExternalAppMenuItems = observer(({ file }: { file: ClientFile }) =>
   );
 });
 
-export const FileTagMenuItems = observer(({ file, tag }: { file: ClientFile; tag: ClientTag }) => (
+export const FileTagMenuItems = observer(({ file, tag }: { file?: ClientFile; tag: ClientTag }) => (
   <>
     <MenuItem
       onClick={() => TagsTreeItemRevealer.instance.revealTag(tag)}
       text="Reveal in Tags Panel"
       icon={IconSet.TREE_LIST}
-      disabled={file.isBroken}
+      disabled={file ? file.isBroken : false}
     />
     <MenuItem
-      onClick={() => file.removeTag(tag)}
+      onClick={() => file && file.removeTag(tag)}
       text="Unassign Tag from File"
       icon={IconSet.TAG_BLANCO}
     />

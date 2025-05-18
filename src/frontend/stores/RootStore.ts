@@ -130,7 +130,7 @@ class RootStore {
       const index = uiStore.firstItem;
       if (index >= 0 && index < fileStore.fileList.length) {
         const file = fileStore.fileList[index];
-        return `${file.absolutePath} • ${PREVIEW_WINDOW_BASENAME}`;
+        return `${file ? file.absolutePath : ''} • ${PREVIEW_WINDOW_BASENAME}`;
       } else {
         return PREVIEW_WINDOW_BASENAME;
       }

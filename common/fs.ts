@@ -35,11 +35,6 @@ export function encodeFilePath(filePath: string): string {
   // edge case for #
   // TODO: there must be others edge cases like this. Why is this so hard? Is there no built-in function for this?
   basepath = basepath.replace(/#/g, '%23');
-  console.debug(
-    `Requested Encoded file path: ${basepath}${encodeURIComponent(
-      filename,
-    )}${params} from ${filePath}`,
-  );
   return `file://${basepath}${encodeURIComponent(filename)}${params}`;
 }
 

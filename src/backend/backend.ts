@@ -18,6 +18,8 @@ import { LocationDTO } from '../api/location';
 import { ROOT_TAG_ID, TagDTO } from '../api/tag';
 import { ScoreDTO } from '../api/score';
 
+const USE_TIMING_PROXY = true;
+
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
  * This helps code organization by enforcing a clear separation between backend/frontend logic.
@@ -63,7 +65,7 @@ export default class Backend implements DataStorage {
         });
       }
     });
-    return backend;
+    return USE_TIMING_PROXY ? createTimingProxy(backend) : backend;
   }
 
   async fetchTags(): Promise<TagDTO[]> {
@@ -333,6 +335,29 @@ export default class Backend implements DataStorage {
     console.info('IndexedDB: Clearing database...');
     Dexie.delete(this.#db.name);
   }
+}
+
+// Creates a proxy that wraps the Backend instance to log the execution time of its methods.
+function createTimingProxy(obj: Backend): Backend {
+  console.log('Creating timing proxy for Backend');
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const original = Reflect.get(target, prop, receiver);
+      if (typeof original === 'function') {
+        return (...args: any[]) => {
+          const startTime = performance.now();
+          const result = original.apply(target, args);
+          // Ensure both synchronous and asynchronous results are handled uniformly
+          return Promise.resolve(result).then((res) => {
+            const endTime = performance.now();
+            console.log(`[Timing] ${String(prop)} took ${(endTime - startTime).toFixed(2)}ms`);
+            return res;
+          });
+        };
+      }
+      return original;
+    },
+  });
 }
 
 async function orderByScore(

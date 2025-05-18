@@ -88,7 +88,7 @@ export const SlideModeCommand = observer(() => {
 const FileSelectionCommand = observer(() => {
   const { uiStore, fileStore } = useStore();
   const selectionCount = uiStore.fileSelection.size;
-  const fileCount = fileStore.fileList.length;
+  const fileCount = fileStore.numLoadedFiles;
 
   const allFilesSelected = fileCount > 0 && selectionCount === fileCount;
   // If everything is selected, deselect all. Else, select all

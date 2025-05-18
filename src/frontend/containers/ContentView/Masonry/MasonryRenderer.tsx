@@ -39,7 +39,7 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
   const containerWidth = contentRect.width - SCROLL_BAR_WIDTH - MASONRY_PADDING;
 
   const viewMethod = uiStore.method as SupportedViewMethod;
-  const numImages = fileStore.fileList.length;
+  const numImages = fileStore.fileDimensions.length;
 
   // Vertical keyboard navigation with lastSelectionIndex
   // note: horizontal keyboard navigation is handled elsewhere: LayoutSwitcher
@@ -53,7 +53,7 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
       const curTransform = worker.getTransform(index);
       const curTransformCenter = curTransform[3] + curTransform[0] / 2;
       const maxLookAhead = 100;
-      const numFiles = fileStore.fileList.length;
+      const numFiles = fileStore.fileDimensions.length;
 
       if (e.key === 'ArrowUp') {
         for (let i = index - 1; i > Math.max(0, i - maxLookAhead); i--) {
@@ -95,7 +95,7 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
       try {
         await worker.initialize(numImages);
         const containerHeight = await worker.compute(
-          fileStore.fileList,
+          fileStore.fileDimensions,
           numImages,
           containerWidth,
           {
@@ -122,7 +122,7 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
       (async function onItemOrderChange() {
         try {
           const containerHeight = await worker.compute(
-            fileStore.fileList,
+            fileStore.fileDimensions,
             numImages,
             containerWidth,
             {

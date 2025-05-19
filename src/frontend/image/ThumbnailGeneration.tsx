@@ -60,9 +60,7 @@ export const generateThumbnailUsingWorker = action(
           });
           timeoutReject ? reject() : resolve();
           listeners.delete(msg.fileId);
-          console.debug(
-            `timeout: unable to generate thumbnail for ${file.name}, retrying: ${!timeoutReject}`,
-          );
+          //console.debug(`timeout: unable to generate thumbnail for ${file.name}, retrying: ${!timeoutReject}`);
         }
       }, timeout);
 

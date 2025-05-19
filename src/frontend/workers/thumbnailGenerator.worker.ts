@@ -101,10 +101,10 @@ let curParallelThumbnails = 0;
 const addToQueue = (data: IThumbnailMessage) => {
   if (queue.length >= MAX_QUEUE_LENGTH) {
     queue.shift();
-    console.log(`Queue full (${MAX_QUEUE_LENGTH}). Removed oldest request.`);
+    console.debug(`Queue full (${MAX_QUEUE_LENGTH}). Removed oldest request.`);
   }
 
-  addToQueue(data);
+  queue.push(data);
 };
 
 async function processMessage(data: IThumbnailMessage) {
@@ -121,7 +121,7 @@ async function processMessage(data: IThumbnailMessage) {
       ctx.postMessage(response);
       curParallelThumbnails--;
     } else {
-      queue.push(data);
+      addToQueue(data);
     }
   } catch (err) {
     curParallelThumbnails--;
@@ -141,7 +141,7 @@ ctx.addEventListener('message', async (event) => {
     const index = queue.findIndex((item) => item.fileId === event.data.fileId);
     if (index !== -1) {
       queue.splice(index, 1);
-      console.log(`Cancelled request for fileId: ${event.data.fileId}`);
+      console.debug(`Cancelled request for fileId: ${event.data.fileId}`);
     }
     return;
   }

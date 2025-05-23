@@ -329,6 +329,10 @@
   position: relative;
 }
 
+[role='rowgroup'] {
+  position: relative;
+}
+
 .thumbnail-square img, .thumbnail-square video {
   background-position: center;
   object-fit: cover;

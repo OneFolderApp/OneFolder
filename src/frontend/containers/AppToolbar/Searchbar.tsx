@@ -70,6 +70,7 @@ const QuickSearchList = observer(() => {
     return [
       <Row
         id="search-in-path-option"
+        index={0}
         key="search-in-path"
         value={`Search in file paths for "${query}"`}
         onClick={() => {
@@ -79,6 +80,7 @@ const QuickSearchList = observer(() => {
       />,
       <Row
         id="advanced-search-option"
+        index={1}
         key="advanced-search"
         value="Advanced search"
         onClick={uiStore.toggleAdvancedSearch}

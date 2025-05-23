@@ -1,4 +1,3 @@
-import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, {
   ForwardedRef,
@@ -11,8 +10,14 @@ import React, {
   useState,
 } from 'react';
 
-import { Grid, GridCell, IconButton, IconSet, Row, Tag } from 'widgets';
-import { RowProps, useGridFocus } from 'widgets/combobox/Grid';
+import { GridCell, IconButton, IconSet, Row, Tag } from 'widgets';
+import {
+  RowProps,
+  useVirtualizedGridFocus,
+  VirtualizedGrid,
+  VirtualizedGridHandle,
+  VirtualizedGridRowProps,
+} from 'widgets/combobox/Grid';
 import { Flyout } from 'widgets/popovers';
 import { useStore } from '../contexts/StoreContext';
 import { ClientTag } from '../entities/Tag';
@@ -21,8 +26,7 @@ import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 
 export interface TagSelectorProps {
-  selection: ClientTag[];
-  isNotInherithedList?: [ClientTag, boolean][];
+  selection: ClientTag[] | [ClientTag, boolean][];
   onSelect: (item: ClientTag) => void;
   onDeselect: (item: ClientTag) => void;
   onTagClick?: (item: ClientTag) => void;
@@ -42,7 +46,6 @@ export interface TagSelectorProps {
 const TagSelector = (props: TagSelectorProps) => {
   const {
     selection,
-    isNotInherithedList,
     onSelect,
     onDeselect,
     onTagClick,
@@ -61,7 +64,20 @@ const TagSelector = (props: TagSelectorProps) => {
   const [query, setQuery] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
 
-  const debounceSetDebQuery = useRef(debounce(setDebQuery, 500)).current;
+  /**
+   * A memoized map of selected tags with their inheritance status for better perfomance.
+   * - Key: The tag object
+   * - Value: True if the tag is explicitly assigned (not inherited)
+   */
+  const selectionMap = useMemo(() => {
+    if (Array.isArray(selection) && selection.length > 0 && Array.isArray(selection[0])) {
+      return new Map(selection as [ClientTag, boolean][]);
+    } else {
+      return new Map((selection as ClientTag[]).map((tag) => [tag, true]));
+    }
+  }, [selection]);
+
+  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
   useEffect(() => {
     if (query.length > 2) {
       setDebQuery(query);
@@ -86,17 +102,22 @@ const TagSelector = (props: TagSelectorProps) => {
 
   const isInputEmpty = query.length === 0;
 
-  const gridRef = useRef<HTMLDivElement>(null);
-  const [activeDescendant, handleGridFocus] = useGridFocus(gridRef);
+  const gridRef = useRef<VirtualizedGridHandle>(null);
+  const [activeDescendant, handleGridFocus] = useVirtualizedGridFocus(gridRef);
   const handleGalleryInput = useGalleryInputKeydownHandler();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Backspace') {
         e.stopPropagation();
 
-        // Remove last item from selection with backspace
-        if (isInputEmpty && selection.length > 0) {
-          onDeselect(selection[selection.length - 1]);
+        // Remove last assigned item from selection with backspace
+        if (isInputEmpty && selectionMap.size > 0) {
+          const lastExplicitTag = Array.from(selectionMap.entries())
+            .filter(([, isExplicit]) => isExplicit)
+            .at(-1)?.[0];
+          if (lastExplicitTag) {
+            onDeselect(lastExplicitTag);
+          }
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -107,13 +128,15 @@ const TagSelector = (props: TagSelectorProps) => {
         handleGridFocus(e);
       }
     },
-    [handleGridFocus, onDeselect, isInputEmpty, selection, handleGalleryInput],
+    [handleGridFocus, onDeselect, isInputEmpty, selectionMap, handleGalleryInput],
   );
 
   const handleBlur = useRef((e: React.FocusEvent<HTMLDivElement>) => {
     // If anything is blurred, and the new focus is not the input nor the flyout, close the flyout
     const isFocusingOption =
-      e.relatedTarget instanceof HTMLElement && e.relatedTarget.matches('div[role="row"]');
+      e.relatedTarget instanceof HTMLElement &&
+      (e.relatedTarget.matches('div[role="row"]') ||
+        e.relatedTarget.matches('div.virtualized-grid'));
     if (isFocusingOption || e.relatedTarget === inputRef.current) {
       return;
     }
@@ -142,14 +165,6 @@ const TagSelector = (props: TagSelectorProps) => {
     [onDeselect, onSelect],
   );
 
-  const selectionSummary = useMemo((): [ClientTag, boolean][] => {
-    if (isNotInherithedList) {
-      return isNotInherithedList;
-    } else {
-      return selection.map((t) => [t, true] as [ClientTag, boolean]);
-    }
-  }, [selection, isNotInherithedList]);
-
   return (
     <div
       role="combobox"
@@ -168,11 +183,11 @@ const TagSelector = (props: TagSelectorProps) => {
         target={(ref) => (
           <div ref={ref} className="multiautocomplete-input">
             <div className="input-wrapper">
-              {selectionSummary.map((tt) => (
+              {Array.from(selectionMap.entries()).map(([tag, isExplicit]) => (
                 <SelectedTag
-                  key={tt[0].id}
-                  tag={tt[0]}
-                  onDeselect={tt[1] ? onDeselect : undefined}
+                  key={tag.id}
+                  tag={tag}
+                  onDeselect={isExplicit ? onDeselect : undefined}
                   onTagClick={onTagClick}
                   showContextMenu={showTagContextMenu}
                 />
@@ -200,7 +215,7 @@ const TagSelector = (props: TagSelectorProps) => {
           id={gridId}
           filter={filter}
           query={dobuncedQuery}
-          selection={selection}
+          selectionMap={selectionMap}
           toggleSelection={toggleSelection}
           resetTextBox={resetTextBox.current}
           renderCreateOption={renderCreateOption}
@@ -236,7 +251,7 @@ const SelectedTag = observer((props: SelectedTagProps) => {
 interface SuggestedTagsListProps {
   id: string;
   query: string;
-  selection: readonly ClientTag[];
+  selectionMap: Map<ClientTag, boolean>;
   filter?: (tag: ClientTag) => boolean;
   toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
   resetTextBox: () => void;
@@ -250,12 +265,12 @@ interface SuggestedTagsListProps {
 const SuggestedTagsList = observer(
   React.forwardRef(function TagsList(
     props: SuggestedTagsListProps,
-    ref: ForwardedRef<HTMLDivElement>,
+    ref: ForwardedRef<VirtualizedGridHandle>,
   ) {
     const {
       id,
       query,
-      selection,
+      selectionMap,
       filter = () => true,
       toggleSelection,
       resetTextBox,
@@ -265,58 +280,123 @@ const SuggestedTagsList = observer(
     const { tagStore } = useStore();
 
     const suggestions = useMemo(
-      () =>
-        computed(() => {
-          if (query.length === 0) {
-            if (tagStore.count > 50) {
-              return selection;
-            } else {
-              return tagStore.tagList.filter(filter);
+      () => {
+        if (query.length === 0) {
+          return Array.from(selectionMap.keys());
+        } else {
+          const textLower = query.toLowerCase();
+          const exactMatches: ClientTag[] = [];
+          const otherMatches: ClientTag[] = [];
+          for (const tag of tagStore.tagList) {
+            if (!filter(tag)) {
+              continue;
             }
-          } else {
-            const textLower = query.toLowerCase();
-            return tagStore.tagList
-              .filter((t) => t.name.toLowerCase().includes(textLower))
-              .filter(filter);
+            const nameLower = tag.name.toLowerCase();
+            if (nameLower === textLower) {
+              exactMatches.push(tag);
+            } else if (nameLower.includes(textLower)) {
+              otherMatches.push(tag);
+            }
           }
-        }),
+          // Bring exact matches to the top of the suggestions. This helps find tags with short names
+          // that would otherwise get buried under partial matches if they appeared lower in the list.
+          return [...exactMatches, ...otherMatches];
+        }
+      },
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [query, tagStore.tagList, filter, suggestionsUpdateDependency],
-    ).get();
+    );
+    const widestItem = useMemo(() => {
+      if (suggestions.length === 0) {
+        return undefined;
+      }
+      return suggestions.reduce((max: ClientTag, item: ClientTag) => {
+        return item.path.length > max.path.length ? item : max;
+      }, suggestions[0]);
+    }, [suggestions]);
+
+    const row = useMemo(
+      () => createRowRenderer({ selectionMap, toggleSelection, id }),
+      [selectionMap, toggleSelection, id],
+    );
+
+    let specialItems: React.ReactElement<RowProps>[] = [];
+    if (suggestions.length === 0) {
+      if (query.length > 0) {
+        const result = renderCreateOption?.(query, resetTextBox);
+        specialItems = Array.isArray(result) ? result : result ? [result] : [];
+      } else {
+        specialItems = [<Row key="empty-message" value="Type to select tags&nbsp;&nbsp;"></Row>];
+      }
+    }
 
     return (
-      <Grid ref={ref} id={id} multiselectable>
-        {suggestions.map((tag) => {
-          const selected = selection.includes(tag);
-          return (
-            <TagOption
-              id={`${id}${tag.id}`}
-              key={tag.id}
-              tag={tag}
-              selected={selected}
-              toggleSelection={toggleSelection}
-            />
-          );
-        })}
-        {suggestions.length === 0 &&
-          (query.length > 0
-            ? renderCreateOption?.(query, resetTextBox)
-            : tagStore.count > 50 && <span>Type to select tags</span>)}
-      </Grid>
+      <>
+        {suggestions.length > 0 ? (
+          <VirtualizedGrid
+            ref={ref}
+            id={id}
+            itemData={suggestions}
+            sampleItem={widestItem}
+            multiselectable
+            children={row}
+          />
+        ) : (
+          <VirtualizedGrid
+            ref={ref}
+            id={id}
+            itemData={specialItems}
+            sampleItem={specialItems[0]}
+            multiselectable
+          >
+            {({ index, data }) => {
+              const item = data[index];
+              return item;
+            }}
+          </VirtualizedGrid>
+        )}
+      </>
     );
   }),
 );
 
+interface VirtualizableTagOption {
+  id?: string;
+  selectionMap: Map<ClientTag, boolean>;
+  toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
+}
+
+export function createRowRenderer({ selectionMap, toggleSelection, id }: VirtualizableTagOption) {
+  const RowRenderer = ({ index, style, data, id: sub_id }: VirtualizedGridRowProps<ClientTag>) => {
+    const tag = data[index];
+    const selected = selectionMap.get(tag) ?? false;
+    return (
+      <TagOption
+        id={`${id}${tag.id}${sub_id}`}
+        index={index}
+        style={style}
+        key={tag.id}
+        tag={tag}
+        selected={selected}
+        toggleSelection={toggleSelection}
+      />
+    );
+  };
+  return RowRenderer;
+}
+
 interface TagOptionProps {
   id?: string;
+  index?: number;
   tag: ClientTag;
   selected?: boolean;
+  style?: React.CSSProperties;
   toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
 export const TagOption = observer(
-  ({ id, tag, selected, toggleSelection, onContextMenu }: TagOptionProps) => {
+  ({ id, index, tag, selected, toggleSelection, onContextMenu, style }: TagOptionProps) => {
     const [path, hint] = useComputed(() => {
       const path = tag.path
         .map((v) => (v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v))
@@ -333,6 +413,7 @@ export const TagOption = observer(
     return (
       <Row
         id={id}
+        index={index}
         value={isHeader ? '<b>' + tag.name.slice(1) + '</b>' : tag.name}
         selected={selected}
         icon={<span style={{ color: tag.viewColor }}>{IconSet.TAG}</span>}
@@ -340,6 +421,7 @@ export const TagOption = observer(
         tooltip={path}
         onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, tag) : undefined}
         valueIsHtml
+        style={style}
       >
         {hint.length > 0 ? (
           <GridCell className="tag-option-hint" __html={hint}></GridCell>

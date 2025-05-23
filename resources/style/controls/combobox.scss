@@ -85,6 +85,10 @@
       -webkit-mask-image: url(~resources/icons/select-all-checked.svg);
     }
 
+    &:not([aria-selected])::before {
+      display: none;
+    }
+
     [role='gridcell'] {
       &[data-cell-focused='true'] {
         outline: 1px solid var(--text-color);

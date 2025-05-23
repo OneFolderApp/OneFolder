@@ -21,6 +21,7 @@ const FileTags = observer(({ file }: IFileTagProp) => {
     (tagName: string, resetTextBox: () => void) => (
       <Row
         id="file-tags-create-option"
+        index={0}
         key="create"
         value={`Create tag "${tagName}"`}
         icon={IconSet.TAG_ADD}
@@ -62,8 +63,7 @@ const FileTags = observer(({ file }: IFileTagProp) => {
   return (
     <TagSelector
       disabled={file.isBroken}
-      selection={Array.from(file.tags)}
-      isNotInherithedList={isNotInherithedMap}
+      selection={isNotInherithedMap}
       onClear={file.clearTags}
       onDeselect={file.removeTag}
       onSelect={file.addTag}

@@ -11,11 +11,18 @@ import React, {
 } from 'react';
 
 import { debounce } from 'common/timeout';
-import { Grid, Tag } from 'widgets';
-import { Row, RowSeparator, useGridFocus } from 'widgets/combobox/Grid';
+import { Tag } from 'widgets';
+import {
+  Row,
+  RowSeparator,
+  useVirtualizedGridFocus,
+  VirtualizedGrid,
+  VirtualizedGridHandle,
+  VirtualizedGridRowProps,
+} from 'widgets/combobox/Grid';
 import { IconSet } from 'widgets/icons';
 import { ToolbarButton } from 'widgets/toolbar';
-import { TagOption } from '../../components/TagSelector';
+import { createRowRenderer } from '../../components/TagSelector';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { ClientTag } from '../../entities/Tag';
@@ -56,9 +63,9 @@ const TagEditor = observer(() => {
   const [inputText, setInputText] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
 
-  const debounceSetDebQuery = useRef(debounce(setDebQuery, 500)).current;
+  const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
   useEffect(() => {
-    if (inputText.length > 2) {
+    if (inputText.length == 0 || inputText.length > 2) {
       setDebQuery(inputText);
     }
     // allways call the debounced version to avoud old calls with outdated query values to be set
@@ -96,8 +103,8 @@ const TagEditor = observer(() => {
     setInputText(e.target.value),
   ).current;
 
-  const gridRef = useRef<HTMLDivElement>(null);
-  const [activeDescendant, handleGridFocus] = useGridFocus(gridRef);
+  const gridRef = useRef<VirtualizedGridHandle>(null);
+  const [activeDescendant, handleGridFocus] = useVirtualizedGridFocus(gridRef);
 
   // Remember the height when panel is resized
   const panelRef = useRef<HTMLDivElement>(null);
@@ -183,6 +190,8 @@ const TagEditor = observer(() => {
   );
 });
 
+const CREATE_OPTION = Symbol('placeholder');
+
 interface MatchingTagsListProps {
   inputText: string;
   counter: IComputedValue<Map<ClientTag, [number, boolean]>>;
@@ -193,60 +202,117 @@ interface MatchingTagsListProps {
 const MatchingTagsList = observer(
   React.forwardRef(function MatchingTagsList(
     { inputText, counter, resetTextBox, onContextMenu }: MatchingTagsListProps,
-    ref: ForwardedRef<HTMLDivElement>,
+    ref: ForwardedRef<VirtualizedGridHandle>,
   ) {
     const { tagStore, uiStore } = useStore();
 
-    const matches = useMemo(
+    const { matches, widestItem } = useMemo(
       () =>
         computed(() => {
           if (inputText.length === 0) {
-            if (tagStore.count > 50) {
-              return Array.from(counter.get().keys());
-            } else {
-              return tagStore.tagList;
+            let widest = undefined;
+            const matches: (symbol | ClientTag)[] = [];
+            for (const tag of counter.get().keys()) {
+              matches.push(tag);
+              widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
             }
+            // Always append CREATE_OPTION to render the create option component.
+            matches.push(CREATE_OPTION);
+            return { matches: matches, widestItem: widest };
           } else {
+            let widest = undefined;
             const textLower = inputText.toLowerCase();
-            return tagStore.tagList.filter((t) => t.name.toLowerCase().includes(textLower));
+            const exactMatches: ClientTag[] = [];
+            const otherMatches: ClientTag[] = [];
+            for (const tag of tagStore.tagList) {
+              let validFlag = false;
+              const nameLower = tag.name.toLowerCase();
+              if (nameLower === textLower) {
+                exactMatches.push(tag);
+                validFlag = true;
+              } else if (nameLower.includes(textLower)) {
+                otherMatches.push(tag);
+                validFlag = true;
+              }
+              if (validFlag) {
+                widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
+              }
+            }
+            // Bring exact matches to the top of the suggestions. This helps find tags with short names
+            // that would otherwise get buried under partial matches if they appeared lower in the list.
+            // Always append CREATE_OPTION to render the create option component.
+            return {
+              matches: [...exactMatches, ...otherMatches, CREATE_OPTION],
+              widestItem: widest,
+            };
           }
         }),
-      [counter, inputText, tagStore.count, tagStore.tagList],
+      [counter, inputText, tagStore.tagList],
     ).get();
 
-    const toggleSelection = useAction((isSelected: boolean, tag: ClientTag) => {
-      const operation = isSelected
-        ? (f: ClientFile) => f.removeTag(tag)
-        : (f: ClientFile) => f.addTag(tag);
-      uiStore.fileSelection.forEach(operation);
-      resetTextBox();
-    });
+    const toggleSelection = useRef(
+      useAction((isSelected: boolean, tag: ClientTag) => {
+        const operation = isSelected
+          ? (f: ClientFile) => f.removeTag(tag)
+          : (f: ClientFile) => f.addTag(tag);
+        uiStore.fileSelection.forEach(operation);
+        resetTextBox();
+      }),
+    ).current;
+
+    const isSelected = useCallback(
+      (tag: ClientTag) => counter.get().get(tag)?.[1] ?? false,
+      [counter],
+    );
+    const VirtualizableTagOption = useMemo(
+      () =>
+        observer(
+          createRowRenderer({
+            id: POPUP_ID,
+            isSelected: isSelected,
+            toggleSelection: toggleSelection,
+            onContextMenu: onContextMenu,
+          }),
+        ),
+      [isSelected, onContextMenu, toggleSelection],
+    );
+    const VirtualizableCreateOption = useMemo(() => {
+      const VirtualizableCreateOption = ({ index, style }: VirtualizedGridRowProps<symbol>) => {
+        return (
+          <CreateOption
+            key={index}
+            index={index}
+            style={style}
+            inputText={inputText}
+            //matches always have at least the CREATE_OPTION item, so check if it's bigger than 1.
+            hasMatches={matches.length > 1}
+            resetTextBox={resetTextBox}
+          />
+        );
+      };
+      return VirtualizableCreateOption;
+    }, [inputText, matches.length, resetTextBox]);
+
+    const row = useMemo(() => {
+      const row = (rowProps: VirtualizedGridRowProps<ClientTag | symbol>) =>
+        rowProps.data[rowProps.index] !== CREATE_OPTION ? (
+          <VirtualizableTagOption {...(rowProps as VirtualizedGridRowProps<ClientTag>)} />
+        ) : (
+          <VirtualizableCreateOption {...(rowProps as VirtualizedGridRowProps<symbol>)} />
+        );
+      return row;
+    }, [VirtualizableCreateOption, VirtualizableTagOption]);
 
     return (
-      <Grid ref={ref} id={POPUP_ID} multiselectable>
-        {matches.map((tag) => {
-          //Only mark as selected those tags that are actually assigned to the file(s) and not only inherited
-          const selected = counter.get().get(tag)?.[1] ?? false;
-          return (
-            <TagOption
-              key={tag.id}
-              id={`${POPUP_ID}-${tag.id}`}
-              tag={tag}
-              selected={selected}
-              toggleSelection={toggleSelection}
-              onContextMenu={onContextMenu}
-            />
-          );
-        })}
-        {matches.length === 0 && inputText.length === 0 && tagStore.count > 50 && (
-          <div style={{ marginLeft: '0.25rem' }}>Type to select tags</div>
-        )}
-        <CreateOption
-          inputText={inputText}
-          hasMatches={matches.length > 0}
-          resetTextBox={resetTextBox}
-        />
-      </Grid>
+      <VirtualizedGrid
+        ref={ref}
+        id={POPUP_ID}
+        itemData={matches}
+        sampleItem={widestItem}
+        height={'100%'}
+        children={row}
+        multiselectable
+      />
     );
   }),
 );
@@ -255,9 +321,11 @@ interface CreateOptionProps {
   inputText: string;
   hasMatches: boolean;
   resetTextBox: () => void;
+  style?: React.CSSProperties | undefined;
+  index?: number;
 }
 
-const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps) => {
+const CreateOption = ({ inputText, hasMatches, resetTextBox, style, index }: CreateOptionProps) => {
   const { tagStore, uiStore } = useStore();
 
   const createTag = useCallback(async () => {
@@ -271,20 +339,32 @@ const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputText, resetTextBox]);
 
-  if (inputText.length === 0) {
-    return null;
-  }
+  const separatorTop = style
+    ? typeof style.top === 'number'
+      ? `calc(${style.top}px + 1rem)`
+      : `calc(${style.top} + 1rem)`
+    : undefined;
 
   return (
     <>
-      {hasMatches && <RowSeparator />}
-      <Row
-        id="tag-editor-create-option"
-        selected={false}
-        value={`Create Tag "${inputText}"`}
-        onClick={createTag}
-        icon={IconSet.TAG_ADD}
-      />
+      {inputText.length > 0 ? (
+        <>
+          {hasMatches && <RowSeparator style={{ position: style?.position, top: style?.top }} />}
+          <Row
+            id="tag-editor-create-option"
+            index={index}
+            style={{ ...style, top: hasMatches ? separatorTop : style?.top }}
+            selected={false}
+            value={`Create Tag "${inputText}"`}
+            onClick={createTag}
+            icon={IconSet.TAG_ADD}
+          />
+        </>
+      ) : (
+        !hasMatches && (
+          <Row style={style} key="empty-message" value="Type to select tags&nbsp;&nbsp;" />
+        )
+      )}
     </>
   );
 };

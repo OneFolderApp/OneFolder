@@ -4,9 +4,10 @@
   display: table;
   width: var(--floating-dialog-width);
   top: calc(var(--toolbar-height) + 1rem);
-  left: calc(50% - (var(--floating-dialog-width) / 2));
+  left: 50%;
+  transform: translateX(-50%);
   overflow-y: auto;
-  transition: top 0.3s ease, left 0.3s ease, box-shadow 0.3s ease-out, width 0.3s ease, height 0.3s ease;
+  transition: transform 0s, width 0.3s ease, top 0.3s ease, left 0.3s ease, box-shadow 0.3s ease-out, width 0.3s ease, height 0.3s ease;
 }
 
 #tag-editor {
@@ -43,6 +44,7 @@
       background: var(--text-color-muted);
       height: 1px;
       margin: 0.5rem 1rem;
+      width: -webkit-fill-available;
     }
   }
 
@@ -62,6 +64,9 @@
 .virtualized-grid {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+  flex-grow: 1;
+  min-height: 0;
+  overflow: hidden;
 
   [role='grid'] {
     max-height: unset;
@@ -95,5 +100,9 @@
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   min-width: 20ch;
-  max-width: 80vw;
+  max-width: 60vw;
+
+  [role='grid'] {
+    border: unset !important;
+  }
 }

@@ -140,7 +140,9 @@ export interface VirtualizedGridProps<T> {
   sampleItem?: T;
   children: (props: VirtualizedGridRowProps<T>) => React.ReactElement | null;
   width?: number | string;
-  height?: number | string;
+  height?: number | '100%';
+  // Optional override for height: defines height in number of visible items (rows)
+  itemsInView?: number;
 }
 
 export interface VirtualizedGridHandle {
@@ -155,10 +157,12 @@ function VirtualizedGridInner<T>(
   props: VirtualizedGridProps<T>,
   ref: ForwardedRef<VirtualizedGridHandle>,
 ) {
-  const { id, itemData, sampleItem, multiselectable, width, height, children } = props;
-
+  const { id, itemData, sampleItem, multiselectable, width, height, itemsInView, children } = props;
+  const ListRow = children;
   const [cellSize, setCellSize] = useState(24);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const focusedIndex = useRef(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<FixedSizeList>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -197,6 +201,17 @@ function VirtualizedGridInner<T>(
     }, 0);
   }, [itemData.length]);
 
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+    });
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   const ListGrid = useMemo(
     () =>
       forwardRef(function VGrid({ children, ...props }: any, fref: ForwardedRef<HTMLDivElement>) {
@@ -209,23 +224,28 @@ function VirtualizedGridInner<T>(
     [id, multiselectable],
   );
 
+  const listHeight =
+    height && !itemsInView
+      ? typeof height === 'number'
+        ? height
+        : size.height
+      : cellSize * Math.min(itemData.length, itemsInView ?? 10);
+  const listWidth = width ? width : 'auto';
+
   return (
-    <div className="virtualized-grid" tabIndex={-1}>
+    <div ref={containerRef} className="virtualized-grid" tabIndex={-1}>
       <div className="horizontal-measure-inline-hidden">
         <div ref={measureRef} role="grid">
-          {measureItem &&
-            children({
-              index: 0,
-              style: undefined,
-              data: [measureItem],
-              id: 'measure-item-id',
-            })}
+          {measureItem !== undefined && (
+            <ListRow index={0} style={undefined} data={[measureItem]} id="measure-item-id" />
+          )}
         </div>
       </div>
       <FixedSizeList
         ref={listRef}
-        height={height ? height : cellSize * Math.min(itemData.length, 10)}
-        width={width ? width : 'auto'}
+        layout="vertical"
+        height={listHeight}
+        width={listWidth}
         itemCount={itemData.length}
         itemData={itemData}
         itemSize={cellSize}
@@ -233,7 +253,7 @@ function VirtualizedGridInner<T>(
         outerElementType={ListGrid}
         outerRef={outerRef}
         innerElementType={Body}
-        children={children}
+        children={ListRow}
       />
     </div>
   );
@@ -381,7 +401,9 @@ export const Row = ({
   </div>
 );
 
-export const RowSeparator = () => <div role="separator"></div>;
+export const RowSeparator = ({ style }: { style?: React.CSSProperties }) => (
+  <div style={style} role="separator"></div>
+);
 
 interface GridCellProps {
   id?: string;

@@ -79,7 +79,7 @@ const TagSelector = (props: TagSelectorProps) => {
 
   const debounceSetDebQuery = useRef(debounce(setDebQuery)).current;
   useEffect(() => {
-    if (query.length > 2) {
+    if (query.length == 0 || query.length > 2) {
       setDebQuery(query);
     }
     // allways call the debounced version to avoud old calls with outdated query values to be set
@@ -279,45 +279,57 @@ const SuggestedTagsList = observer(
     } = props;
     const { tagStore } = useStore();
 
-    const suggestions = useMemo(
+    const { suggestions, widestItem } = useMemo(
       () => {
         if (query.length === 0) {
-          return Array.from(selectionMap.keys());
+          let widest = undefined;
+          const matches: ClientTag[] = [];
+          for (const tag of selectionMap.keys()) {
+            matches.push(tag);
+            widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
+          }
+          return { suggestions: matches, widestItem: widest };
         } else {
+          let widest = undefined;
           const textLower = query.toLowerCase();
           const exactMatches: ClientTag[] = [];
           const otherMatches: ClientTag[] = [];
           for (const tag of tagStore.tagList) {
+            let validFlag = false;
             if (!filter(tag)) {
               continue;
             }
             const nameLower = tag.name.toLowerCase();
             if (nameLower === textLower) {
               exactMatches.push(tag);
+              validFlag = true;
             } else if (nameLower.includes(textLower)) {
               otherMatches.push(tag);
+              validFlag = true;
+            }
+            if (validFlag) {
+              widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
             }
           }
           // Bring exact matches to the top of the suggestions. This helps find tags with short names
           // that would otherwise get buried under partial matches if they appeared lower in the list.
-          return [...exactMatches, ...otherMatches];
+          return {
+            suggestions: [...exactMatches, ...otherMatches],
+            widestItem: widest,
+          };
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [query, tagStore.tagList, filter, suggestionsUpdateDependency],
     );
-    const widestItem = useMemo(() => {
-      if (suggestions.length === 0) {
-        return undefined;
-      }
-      return suggestions.reduce((max: ClientTag, item: ClientTag) => {
-        return item.path.length > max.path.length ? item : max;
-      }, suggestions[0]);
-    }, [suggestions]);
 
+    const isSelected = useCallback(
+      (tag: ClientTag) => selectionMap.get(tag) ?? false,
+      [selectionMap],
+    );
     const row = useMemo(
-      () => createRowRenderer({ selectionMap, toggleSelection, id }),
-      [selectionMap, toggleSelection, id],
+      () => createRowRenderer({ isSelected, toggleSelection, id }),
+      [isSelected, toggleSelection, id],
     );
 
     let specialItems: React.ReactElement<RowProps>[] = [];
@@ -339,6 +351,7 @@ const SuggestedTagsList = observer(
             itemData={suggestions}
             sampleItem={widestItem}
             multiselectable
+            itemsInView={10}
             children={row}
           />
         ) : (
@@ -348,6 +361,7 @@ const SuggestedTagsList = observer(
             itemData={specialItems}
             sampleItem={specialItems[0]}
             multiselectable
+            itemsInView={10}
           >
             {({ index, data }) => {
               const item = data[index];
@@ -362,23 +376,30 @@ const SuggestedTagsList = observer(
 
 interface VirtualizableTagOption {
   id?: string;
-  selectionMap: Map<ClientTag, boolean>;
+  isSelected: (tag: ClientTag) => boolean;
   toggleSelection: (isSelected: boolean, tag: ClientTag) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
-export function createRowRenderer({ selectionMap, toggleSelection, id }: VirtualizableTagOption) {
+export function createRowRenderer({
+  isSelected,
+  toggleSelection,
+  id,
+  onContextMenu,
+}: VirtualizableTagOption) {
   const RowRenderer = ({ index, style, data, id: sub_id }: VirtualizedGridRowProps<ClientTag>) => {
     const tag = data[index];
-    const selected = selectionMap.get(tag) ?? false;
+    const selected = isSelected(tag);
     return (
       <TagOption
-        id={`${id}${tag.id}${sub_id}`}
+        id={`${id}-${tag.id}-${sub_id}`}
         index={index}
         style={style}
         key={tag.id}
         tag={tag}
         selected={selected}
         toggleSelection={toggleSelection}
+        onContextMenu={onContextMenu}
       />
     );
   };

@@ -219,7 +219,7 @@ export class ClientTag {
         return tag.color;
       }
     }
-    return this.color;
+    return this.store.root.color;
   }
 
   @computed get isSearched(): boolean {

@@ -90,8 +90,9 @@ const ProgressBar = memo(
     }, [simulatedTotal, resultProgress, total, transitionTime]);
 
     const style: CSSProperties = {
-      width: `${reseting ? 0 : resultProgress}%`,
-      transition: `width ${reseting ? 0 : transitionTime}ms linear`,
+      transform: `scaleX(${reseting ? 0 : resultProgress / 100})`,
+      transformOrigin: 'left',
+      transition: `transform ${reseting ? 0 : transitionTime}ms linear`,
     };
 
     return (

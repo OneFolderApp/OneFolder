@@ -79,8 +79,10 @@ export const Split = ({
   useLayoutEffect(() => {
     if (isExpanded) {
       value.current = splitPoint;
+      container.current?.style.setProperty(`--${id}-primary-size`, `${splitPoint}px`);
     } else {
       value.current = 0;
+      container.current?.style.setProperty(`--${id}-primary-size`, `${0}px`);
     }
     if (container.current !== null) {
       // Content
@@ -88,7 +90,7 @@ export const Split = ({
       // Splitter
       (container.current.children[1] as HTMLElement).style[align] = `${value.current}px`;
     }
-  }, [align, isExpanded, splitPoint]);
+  }, [align, id, isExpanded, splitPoint]);
 
   useEffect(() => {
     const observer = resizeObserver.current;

@@ -202,14 +202,25 @@ function VirtualizedGridInner<T>(
   }, [itemData.length]);
 
   useEffect(() => {
+    let rafID = 0;
     const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setSize({ width, height });
+      if (rafID) {
+        cancelAnimationFrame(rafID);
+      }
+      rafID = requestAnimationFrame(() => {
+        const { width, height } = entry.contentRect;
+        setSize({ width, height });
+      });
     });
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafID) {
+        cancelAnimationFrame(rafID);
+      }
+    };
   }, []);
 
   const ListGrid = useMemo(

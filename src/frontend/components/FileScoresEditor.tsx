@@ -13,35 +13,11 @@ import { IComputedValue, runInAction } from 'mobx';
 import { IconSet } from 'widgets/icons';
 import { ScoreOverwrite, ScoreRemoval, ScoreUnAssign } from './RemovalAlert';
 import { debounce } from 'common/timeout';
-import { FloatingPanel } from '../containers/AppToolbar/FileTagEditor';
-import { ToolbarButton } from 'widgets/toolbar';
 import { IAction } from '../containers/types';
 import { ID } from 'src/api/id';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 
-export const FloatingScoreEditor = observer(() => {
-  const { uiStore } = useStore();
-  return (
-    <>
-      <ToolbarButton
-        icon={IconSet.META_INFO}
-        //disabled={uiStore.fileSelection.size === 0 && !uiStore.isScorePopoverOpen}
-        onClick={uiStore.toggleScorePopover}
-        text="Score selected files"
-        tooltip="Add or remove scores from selected images"
-      />
-      <FloatingPanel
-        title="Score Editor"
-        dataOpen={uiStore.isScorePopoverOpen}
-        onBlur={uiStore.closeScorePopover}
-      >
-        <ScoreEditor />
-      </FloatingPanel>
-    </>
-  );
-});
-
-const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
+export const FileScoresEditor = observer(({ file }: { file?: ClientFile }) => {
   const { uiStore, fileStore } = useStore();
   const [deletableScore, setDeletableScore] = useState<ClientScore>();
   const [removableScore, setRemovableScore] = useState<{
@@ -144,7 +120,7 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
   // Autofocus
   const buttonParentRef = useRef<HTMLDivElement>(null);
   useAutorun(() => {
-    if (uiStore.isScorePopoverOpen) {
+    if (uiStore.isFileScoresEditorOpen) {
       requestAnimationFrame(() => requestAnimationFrame(() => buttonParentRef.current?.focus()));
     }
   });
@@ -193,7 +169,7 @@ const ScoreEditor = observer(({ file }: { file?: ClientFile }) => {
   );
 });
 
-export default ScoreEditor;
+export default FileScoresEditor;
 
 interface IScoreContextMenu {
   parentPopoverId: string;

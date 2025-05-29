@@ -109,3 +109,38 @@
   max-height: 1rem;
   max-width: 1rem;
 }
+
+.virtualized-grid {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  min-height: 0px;
+  overflow: hidden;
+
+  [role='grid'] {
+    max-height: unset;
+    padding-top: unset;
+    padding-bottom: unset;
+
+  }
+}
+
+.horizontal-measure-inline-hidden {
+  opacity: 0;
+  white-space: nowrap;
+  height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  list-style: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  min-width: 20ch;
+  max-width: 60vw;
+
+  [role='grid'] {
+    border: unset !important;
+  }
+}

@@ -6,6 +6,7 @@ import { useStore } from '../../contexts/StoreContext';
 import LocationsPanel from './LocationsPanel';
 import SavedSearchesPanel from './SavedSearchesPanel';
 import TagsPanel, { OutlinerActionBar } from './TagsPanel';
+import FileEditorsPanel from './FileEditorsPanel';
 
 const Outliner = () => {
   const { uiStore } = useStore();
@@ -27,6 +28,7 @@ const Outliner = () => {
         >
           <LocationsPanel />
           <TagsPanel />
+          <FileEditorsPanel />
           <SavedSearchesPanel />
         </MultiSplit>
       </div>

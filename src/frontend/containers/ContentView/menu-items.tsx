@@ -68,11 +68,7 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
         text="Open In Preview Window"
         icon={IconSet.PREVIEW}
       />
-      <MenuItem
-        onClick={uiStore.openToolbarTagPopover}
-        text="Open Tag Selector"
-        icon={IconSet.TAG}
-      />
+      <MenuItem onClick={uiStore.openFileTagsEditor} text="Open Tag Selector" icon={IconSet.TAG} />
       <MenuSubItem text="Search Similar Images..." icon={IconSet.MORE}>
         <MenuItem
           onClick={(e) =>

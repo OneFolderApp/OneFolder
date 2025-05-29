@@ -7,7 +7,7 @@ import ImageInfo from '../../components/ImageInfo';
 import { IconButton, IconSet } from 'widgets';
 import { shell } from 'electron';
 import { IS_PREVIEW_WINDOW } from 'common/window';
-import FileScores from '../../components/ScoreEditor';
+import FileScoresEditor from '../../components/FileScoresEditor';
 
 const Inspector = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -52,7 +52,7 @@ const Inspector = observer(() => {
             <header>
               <h2>Scores</h2>
             </header>
-            <FileScores file={first} />
+            <FileScoresEditor file={first} />
           </section>
         </>
       )}

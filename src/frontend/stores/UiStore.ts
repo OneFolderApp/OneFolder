@@ -103,9 +103,9 @@ type PersistentPreferenceFields =
   | 'theme'
   | 'isOutlinerOpen'
   | 'isInspectorOpen'
-  | 'isFloatingPanelToSide'
-  | 'isToolbarTagPopoverOpen'
-  | 'isScorePopoverOpen'
+  | 'areFileEditorsDocked'
+  | 'isFileTagsEditorOpen'
+  | 'isFileScoresEditorOpen'
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
@@ -152,8 +152,8 @@ class UiStore {
   @observable isSlideMode: boolean = false;
   @observable isFullScreen: boolean = false;
   @observable outlinerWidth: number = UiStore.MIN_OUTLINER_WIDTH;
-  readonly outlinerExpansion = observable<boolean>([true, true, true]);
-  readonly outlinerHeights = observable<number>([0, 0, 0]);
+  readonly outlinerExpansion = observable<boolean>([true, true, true, true]);
+  readonly outlinerHeights = observable<number>([0, 0, 0, 0]);
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
   @observable isThumbnailTagOverlayEnabled: boolean = true;
@@ -172,10 +172,10 @@ class UiStore {
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
   @observable isRefreshing: boolean = false;
 
-  @observable isFloatingPanelToSide: boolean = false;
-  @observable isToolbarTagPopoverOpen: boolean = false;
+  @observable areFileEditorsDocked: boolean = false;
+  @observable isFileTagsEditorOpen: boolean = false;
   @observable focusTagEditor: boolean = false;
-  @observable isScorePopoverOpen: boolean = false;
+  @observable isFileScoresEditorOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
   /** Dialog for moving files to the system's trash bin, and removing from Allusion's database */
@@ -205,19 +205,19 @@ class UiStore {
   /////////////////// UI Reactions /////////////////
   initReactions(): void {
     reaction(
-      () => this.isToolbarTagPopoverOpen,
+      () => this.isFileTagsEditorOpen,
       (isOpen) => {
         if (isOpen) {
-          this.isScorePopoverOpen = false;
+          this.isFileScoresEditorOpen = false;
         }
       },
     );
 
     reaction(
-      () => this.isScorePopoverOpen,
+      () => this.isFileScoresEditorOpen,
       (isOpen) => {
         if (isOpen) {
-          this.isToolbarTagPopoverOpen = false;
+          this.isFileTagsEditorOpen = false;
         }
       },
     );
@@ -506,44 +506,44 @@ class UiStore {
     this.isManyExternalFilesOpen = false;
   }
 
-  @action.bound toggleFloatingPanelToSide(): void {
-    this.isFloatingPanelToSide = !this.isFloatingPanelToSide;
+  @action.bound toggleFileEditorsDocked(): void {
+    this.areFileEditorsDocked = !this.areFileEditorsDocked;
   }
 
-  @action.bound setFloatingPanelToSide(val: boolean): void {
-    this.isFloatingPanelToSide = val;
+  @action.bound setFileEditorsDocked(val: boolean): void {
+    this.areFileEditorsDocked = val;
   }
 
-  @action.bound toggleToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = !this.isToolbarTagPopoverOpen;
+  @action.bound toggleFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = !this.isFileTagsEditorOpen;
     this.focusTagEditor = true;
   }
 
-  @action.bound openToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = true;
+  @action.bound openFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = true;
     this.focusTagEditor = true;
   }
 
-  @action.bound closeToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = false;
+  @action.bound closeFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = false;
   }
 
   @action.bound setFocusTagEditor(value: boolean): void {
     this.focusTagEditor = value;
   }
 
-  @action.bound toggleScorePopover(): void {
-    this.isScorePopoverOpen = !this.isScorePopoverOpen;
+  @action.bound toggleFileScoresEditor(): void {
+    this.isFileScoresEditorOpen = !this.isFileScoresEditorOpen;
   }
 
-  @action.bound openScorePopover(): void {
+  @action.bound openFileScoresEditor(): void {
     if (this.fileSelection.size > 0) {
-      this.isScorePopoverOpen = true;
+      this.isFileScoresEditorOpen = true;
     }
   }
 
-  @action.bound closeScorePopover(): void {
-    this.isScorePopoverOpen = false;
+  @action.bound closeFileScoresEditor(): void {
+    this.isFileScoresEditorOpen = false;
   }
 
   @action.bound openLocationRecovery(locationId: ID): void {
@@ -868,9 +868,9 @@ class UiStore {
     } else if (matches(hotkeyMap.toggleInspector)) {
       this.toggleInspector();
     } else if (matches(hotkeyMap.openTagEditor)) {
-      this.openToolbarTagPopover();
+      this.openFileTagsEditor();
     } else if (matches(hotkeyMap.toggleScoreEditor)) {
-      this.toggleScorePopover();
+      this.toggleFileScoresEditor();
     } else if (matches(hotkeyMap.refreshSearch)) {
       this.refresh();
     } else if (matches(hotkeyMap.toggleSettings)) {
@@ -986,9 +986,9 @@ class UiStore {
         this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
-        this.isFloatingPanelToSide = Boolean(prefs.isFloatingPanelToSide ?? false);
-        this.isToolbarTagPopoverOpen = Boolean(prefs.isToolbarTagPopoverOpen ?? false);
-        this.isScorePopoverOpen = Boolean(prefs.isScorePopoverOpen ?? false);
+        this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
+        this.isFileTagsEditorOpen = Boolean(prefs.isFileTagsEditorOpen ?? false);
+        this.isFileScoresEditorOpen = Boolean(prefs.isFileScoresEditorOpen ?? false);
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -1035,9 +1035,9 @@ class UiStore {
       theme: this.theme,
       isOutlinerOpen: this.isOutlinerOpen,
       isInspectorOpen: this.isInspectorOpen,
-      isFloatingPanelToSide: this.isFloatingPanelToSide,
-      isToolbarTagPopoverOpen: this.isToolbarTagPopoverOpen,
-      isScorePopoverOpen: this.isScorePopoverOpen,
+      areFileEditorsDocked: this.areFileEditorsDocked,
+      isFileTagsEditorOpen: this.isFileTagsEditorOpen,
+      isFileScoresEditorOpen: this.isFileScoresEditorOpen,
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,

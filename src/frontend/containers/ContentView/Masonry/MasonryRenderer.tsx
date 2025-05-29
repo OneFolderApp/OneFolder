@@ -78,7 +78,7 @@ const MasonryRenderer = observer(({ contentRect, select, lastSelectionIndex }: G
       select(fileStore.fileList[index], e.ctrlKey || e.metaKey, e.shiftKey);
 
       // Don't change focus when TagEditor overlay is open: is closes onBlur
-      if (!uiStore.isToolbarTagPopoverOpen) {
+      if (!uiStore.isFileTagsEditorOpen) {
         FocusManager.focusGallery();
       }
     });

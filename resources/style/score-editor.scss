@@ -1,6 +1,6 @@
 .score-editor {
 
-  .floating-dialog & {
+  .floating-panel & {
     margin: 0.6rem;
   }
 
@@ -13,59 +13,6 @@
     height: unset !important;
     white-space: unset !important;
   }
-}
-
-.floating-dialog {
-  &.fresh-rendered {
-    transition: unset !important;
-    display: none !important;
-  }
-
-  &.opened {
-    box-shadow: 0 0 15px 5px var(--accent-color) !important;
-  }
-  
-  &:hover .floating-switch-side-button {
-    opacity: 1;
-  }
-
-  header {
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem 0 1rem;
-    background: var(--background-color);
-    outline: 0.0625rem solid var(--border-color);
-
-    h2 {
-      cursor: pointer;
-      flex-grow: 1;
-    }
-
-    [role='toolbar'] {
-      opacity: 0;
-    }
-
-    [role='toolbar']:focus-within {
-      opacity: 1;
-    }
-
-    .toolbar-floating-switch-side-button {
-      min-height: 1.5rem;
-      min-width: 1.5rem;
-
-      &[aria-pressed='true'],
-      &[aria-checked='true'] {
-        color: var(--accent-color);
-      }
-    }
-
-    .floating-switch-side-button {
-      opacity: 0;
-    }
-  }
-
-  
 }
 
 //prevents data-popovers to interfier when overflow is auto
@@ -189,14 +136,6 @@
 
   .label-container input {
     box-shadow: 0 0 0 0.125rem var(--accent-color); //only one label will be editable at the time, so this makes it look better when auto focus don't work
-  }
-}
-
-.floating-switch-side-button {
-  margin-left: auto;
-  .custom-icon {
-    width: 0.75rem;
-    height: 0.75rem;
   }
 }
 

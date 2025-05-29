@@ -1,14 +1,6 @@
-import { computed, IComputedValue, reaction, runInAction } from 'mobx';
+import { computed, IComputedValue, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React, {
-  ForwardedRef,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { ForwardedRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { debounce } from 'common/timeout';
 import { Tag } from 'widgets';
@@ -21,44 +13,21 @@ import {
   VirtualizedGridRowProps,
 } from 'widgets/combobox/Grid';
 import { IconSet } from 'widgets/icons';
-import { ToolbarButton } from 'widgets/toolbar';
-import { createRowRenderer } from '../../components/TagSelector';
-import { useStore } from '../../contexts/StoreContext';
-import { ClientFile } from '../../entities/File';
-import { ClientTag } from '../../entities/Tag';
-import FocusManager from '../../FocusManager';
-import { useAction, useAutorun, useComputed } from '../../hooks/mobx';
+import { createRowRenderer } from './TagSelector';
+import { useStore } from '../contexts/StoreContext';
+import { ClientFile } from '../entities/File';
+import { ClientTag } from '../entities/Tag';
+import { useAction, useAutorun, useComputed } from '../hooks/mobx';
 import { Menu, useContextMenu } from 'widgets/menus';
-import { EditorTagSummaryItems } from '../ContentView/menu-items';
+import { EditorTagSummaryItems } from '../containers/ContentView/menu-items';
 import { useGalleryInputKeydownHandler } from 'src/frontend/hooks/useHandleInputKeydown';
 
 const POPUP_ID = 'tag-editor-popup';
+const PANEL_SIZE_ID = 'tag-editor-height';
+const PANEL_SUMMARY_SIZE_ID = 'tag-editor-summary-height';
+const REM_VALUE = parseFloat(getComputedStyle(document.documentElement).fontSize);
 
-const FileTagEditor = observer(() => {
-  const { uiStore } = useStore();
-  return (
-    <>
-      <ToolbarButton
-        icon={IconSet.TAG_LINE}
-        //disabled={uiStore.fileSelection.size === 0 && !uiStore.isToolbarTagPopoverOpen}
-        onClick={uiStore.toggleToolbarTagPopover}
-        text="Tag selected files"
-        tooltip="Add or remove tags from selected images"
-      />
-      <FloatingPanel
-        title="File Tags Editor"
-        dataOpen={uiStore.isToolbarTagPopoverOpen}
-        onBlur={uiStore.closeToolbarTagPopover}
-      >
-        <TagEditor />
-      </FloatingPanel>
-    </>
-  );
-});
-
-export default FileTagEditor;
-
-const TagEditor = observer(() => {
+export const FileTagsEditor = observer(() => {
   const { uiStore } = useStore();
   const [inputText, setInputText] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
@@ -106,14 +75,22 @@ const TagEditor = observer(() => {
   const gridRef = useRef<VirtualizedGridHandle>(null);
   const [activeDescendant, handleGridFocus] = useVirtualizedGridFocus(gridRef);
 
-  // Remember the height when panel is resized
+  // Remember the height when panels are resized
   const panelRef = useRef<HTMLDivElement>(null);
-  const [storedHeight] = useState(localStorage.getItem('tag-editor-height'));
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [storedHeight] = useState(localStorage.getItem(PANEL_SIZE_ID));
+  const [storedSummaryHeight] = useState(localStorage.getItem(PANEL_SUMMARY_SIZE_ID));
+  const [showSummary, setShowSummary] = useState(
+    storedSummaryHeight ? parseFloat(storedSummaryHeight) > REM_VALUE * 1.6 : true,
+  );
   useEffect(() => {
-    if (!panelRef.current) {
+    if (!panelRef.current || !summaryRef.current) {
       return;
     }
-    const storeHeight = debounce((val: string) => localStorage.setItem('tag-editor-height', val));
+    const storeHeight = debounce((val: string) => localStorage.setItem(PANEL_SIZE_ID, val));
+    const storeSummaryHeight = debounce((val: string) =>
+      localStorage.setItem(PANEL_SUMMARY_SIZE_ID, val),
+    );
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
@@ -126,7 +103,34 @@ const TagEditor = observer(() => {
       });
     });
     observer.observe(panelRef.current, { attributes: true });
-    return () => observer.disconnect();
+    let rafID = 0;
+    const summaryObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type == 'attributes' &&
+          mutation.attributeName === 'style' &&
+          summaryRef.current
+        ) {
+          const height = summaryRef.current.style.height;
+          storeSummaryHeight(height);
+          if (rafID) {
+            cancelAnimationFrame(rafID);
+          }
+          rafID = requestAnimationFrame(() => {
+            setShowSummary(parseFloat(height) > REM_VALUE * 1.6);
+          });
+        }
+      });
+    });
+    summaryObserver.observe(summaryRef.current, { attributes: true });
+
+    return () => {
+      observer.disconnect();
+      summaryObserver.disconnect();
+      if (rafID) {
+        cancelAnimationFrame(rafID);
+      }
+    };
   }, []);
 
   const resetTextBox = useRef(() => {
@@ -181,11 +185,19 @@ const TagEditor = observer(() => {
         resetTextBox={resetTextBox}
         onContextMenu={handleTagContextMenu}
       />
-      {uiStore.fileSelection.size === 0 ? (
-        <div><i><b>No files selected</b></i></div> // eslint-disable-line prettier/prettier
-      ) : (
-        <TagSummary counter={counter} removeTag={removeTag} onContextMenu={handleTagContextMenu} />
-      )}
+      <div ref={summaryRef} style={{ height: storedSummaryHeight ?? undefined }}>
+        {uiStore.fileSelection.size === 0 ? (
+          <div><i><b>No files selected</b></i></div> // eslint-disable-line prettier/prettier
+        ) : (
+          showSummary && (
+            <TagSummary
+              counter={counter}
+              removeTag={removeTag}
+              onContextMenu={handleTagContextMenu}
+            />
+          )
+        )}
+      </div>
     </div>
   );
 });
@@ -473,138 +485,3 @@ const TagSummaryMenu = ({ parentPopoverId }: ITagSummaryMenu) => {
 
   return handleTagContextMenu;
 };
-
-interface IFloatingPanelProps {
-  title?: string;
-  onBlur: () => void;
-  children: ReactNode;
-  dataOpen: boolean;
-}
-
-export const FloatingPanel = observer(
-  ({ title, dataOpen, onBlur, children }: IFloatingPanelProps) => {
-    const { uiStore } = useStore();
-    const [style, setStyle] = useState<React.CSSProperties | undefined>(undefined);
-    const [extraClassName, setExtraClassName] = useState('fresh-rendered');
-
-    const handleBlur = useAction((e: React.FocusEvent) => {
-      const button = e.currentTarget.previousElementSibling as HTMLElement;
-      if (
-        e.relatedTarget !== button &&
-        !e.currentTarget.contains(e.relatedTarget as Node) &&
-        !e.relatedTarget?.closest('[data-contextmenu="true"]') &&
-        !uiStore.isFloatingPanelToSide
-      ) {
-        onBlur();
-        FocusManager.focusGallery();
-      }
-    });
-
-    const handleKeyDown = useRef((e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onBlur();
-        FocusManager.focusGallery();
-      }
-    }).current;
-
-    const handleSwitchToSide = useRef(() => {
-      uiStore.toggleFloatingPanelToSide();
-    }).current;
-
-    useEffect(() => {
-      const disposer = reaction(
-        () => ({
-          isFloatingPanelToSide: uiStore.isFloatingPanelToSide,
-          outlinerWidth: uiStore.outlinerWidth,
-          outlinerHeights: uiStore.outlinerHeights.slice(),
-          outlinerExpansion: uiStore.outlinerExpansion.slice(),
-        }),
-        ({ isFloatingPanelToSide, outlinerWidth }) => {
-          if (isFloatingPanelToSide) {
-            const outlinerLastChild = document
-              .getElementById('outliner-content')
-              ?.querySelector('.multi-split')?.lastElementChild;
-            if (outlinerLastChild) {
-              const header = outlinerLastChild.querySelector('header');
-              const rect = outlinerLastChild.getBoundingClientRect();
-              const headerHeight = header ? header.getBoundingClientRect().height : 0;
-              const newStyle: React.CSSProperties = {
-                position: 'fixed',
-                display: 'block',
-                left: rect.left,
-                top: rect.top - headerHeight,
-                width: outlinerWidth,
-                height: rect.height,
-                borderTop: 'unset',
-                borderBottom: 'unset',
-                boxShadow: 'unset',
-                transform: 'unset',
-              };
-              setStyle(newStyle);
-              return;
-            }
-          }
-          setStyle({});
-        },
-        { fireImmediately: true },
-      );
-
-      return () => disposer();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => {
-      if (style === undefined) {
-        return;
-      }
-      if (dataOpen) {
-        setExtraClassName('opened');
-        const timeout = setTimeout(() => {
-          setExtraClassName('');
-        }, 300);
-        return () => clearTimeout(timeout);
-      }
-    }, [dataOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    //initial enabling animations with delay to avoid ghost panel to move
-    useEffect(() => {
-      const timeout = setTimeout(() => {
-        setExtraClassName('');
-      }, 300);
-      return () => clearTimeout(timeout);
-    }, []);
-
-    const isFloatingPanelToSide = uiStore.isFloatingPanelToSide;
-
-    return (
-      // FIXME: data attributes placeholder
-      <div
-        data-popover
-        style={style}
-        data-open={dataOpen}
-        className={`floating-dialog ${extraClassName}`}
-        tabIndex={-1} //necessary for handling the onblur correctly
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-      >
-        {dataOpen && style !== undefined ? (
-          <>
-            <header>
-              <h2>{title}</h2>
-              <button
-                className="floating-switch-side-button"
-                data-tooltip="Switch to/from the side"
-                onClick={handleSwitchToSide}
-                aria-haspopup="menu"
-                style={isFloatingPanelToSide ? undefined : { transform: 'scaleX(-1)' }}
-              >
-                {IconSet.ARROW_RIGHT}
-              </button>
-            </header>
-            {children}
-          </>
-        ) : null}
-      </div>
-    );
-  },
-);

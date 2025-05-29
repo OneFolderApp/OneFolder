@@ -1,15 +1,3 @@
-.floating-dialog {
-  --floating-dialog-width: 25rem;
-  position: absolute;
-  display: table;
-  width: var(--floating-dialog-width);
-  top: calc(var(--toolbar-height) + 1rem);
-  left: 50%;
-  transform: translateX(-50%);
-  overflow-y: auto;
-  transition: transform 0s, width 0.3s ease, top 0.3s ease, left 0.3s ease, box-shadow 0.3s ease-out, width 0.3s ease, height 0.3s ease;
-}
-
 #tag-editor {
   height: 14rem;
   min-height: 10rem;
@@ -36,7 +24,6 @@
   [role='grid'] {
     flex: 1 1 auto;
     border-top: 0.0625rem solid var(--border-color);
-    border-bottom: 0.0625rem solid var(--border-color);
     max-width: unset;
     max-height: unset;
 
@@ -48,31 +35,35 @@
     }
   }
 
+  .virtualized-grid {
+    flex: 1 1 auto;
+    padding-top: unset;
+    padding-bottom: unset;
+  }
+
   // The tags applied to the selected images
   > div:last-child {
     flex: 0 0 auto;
-    margin: 0.5rem;
-    min-height: 1.5rem; // 1 row of tags
-    max-height: calc(1.5rem * 9.5); // 3.5 rows of tags edit: 9
-    overflow: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-  }
-}
+    overflow: hidden;
+    height: calc(1.5rem * 3.5); // 3.5 rows of tags
+    //Allow resizing and move the resize handle to the top of the div
+    resize: vertical;
+    transform: scaleY(-1);
+    //Important to avoid the main resize handler to overlap with this resize handler
+    min-height: 1.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem; // Is bottom because the div is inverted, so it will appear on the top
+    border-bottom: 0.0625rem solid var(--border-color); // bottom bc the same
 
-.virtualized-grid {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  flex-grow: 1;
-  min-height: 0;
-  overflow: hidden;
-
-  [role='grid'] {
-    max-height: unset;
-    padding-top: unset;
-    padding-bottom: unset;
-
+    > * {
+      transform: scaleY(-1);
+      padding: 0 0.5rem 0 0.5rem;
+      height: 100%;
+      overflow: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+    }
   }
 }
 
@@ -84,25 +75,4 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.horizontal-measure-inline-hidden {
-  opacity: 0;
-  white-space: nowrap;
-  height: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  list-style: none;
-  margin-top: 0;
-  margin-bottom: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  min-width: 20ch;
-  max-width: 60vw;
-
-  [role='grid'] {
-    border: unset !important;
-  }
 }

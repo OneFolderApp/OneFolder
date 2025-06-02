@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useStore } from 'src/frontend/contexts/StoreContext';
 import { FloatingPanel } from 'widgets/FloatingPanel';
-import { FileScoresEditor } from 'src/frontend/components/FileScoresEditor';
+import { FileExtraPropertiesEditor } from 'src/frontend/components/FileExtraPropertiesEditor';
 import { FileTagsEditor } from 'src/frontend/components/FileTagsEditor';
 import { observer } from 'mobx-react-lite';
 import { MultiSplitPaneProps } from 'widgets/MultiSplit/MultiSplitPane';
@@ -34,15 +34,15 @@ const FileEditorsPanel = observer(({ className }: Partial<MultiSplitPaneProps>) 
         },
       };
     }
-    if (uiStore.isFileScoresEditorOpen) {
+    if (uiStore.isFileExtraPropertiesEditorOpen) {
       return {
-        type: 'score',
+        type: 'extra-properties',
         isOpen: true,
-        title: 'Score Editor',
-        content: <FileScoresEditor />,
-        onBlur: uiStore.closeFileScoresEditor,
+        title: 'Extra File Properties Editor',
+        content: <FileExtraPropertiesEditor addButtonContainerID="file-editors-panel-header" />,
+        onBlur: uiStore.closeFileExtraPropertiesEditor,
         ignoreOnBlur: (e: React.FocusEvent) => {
-          return e.relatedTarget?.id === 'file-scores-editor-button';
+          return e.relatedTarget?.id === 'file-extra-properties-editor-button';
         },
       };
     }

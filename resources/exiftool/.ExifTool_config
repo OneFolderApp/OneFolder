@@ -21,9 +21,8 @@
     },
   },
   'Image::ExifTool::XMP::xmp' => {
-    Scores => {
+    ExtraProperties => {
       Writable => 'string',
-      List => 'Bag',
     },
   },
 );

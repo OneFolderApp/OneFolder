@@ -7,7 +7,7 @@ import ImageInfo from '../../components/ImageInfo';
 import { IconButton, IconSet } from 'widgets';
 import { shell } from 'electron';
 import { IS_PREVIEW_WINDOW } from 'common/window';
-import FileScoresEditor from '../../components/FileScoresEditor';
+import FileExtraPropertiesEditor from '../../components/FileExtraPropertiesEditor';
 
 const Inspector = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -43,16 +43,19 @@ const Inspector = observer(() => {
       {!IS_PREVIEW_WINDOW && (
         <>
           <section>
+            <header id="inspector-extra-porperties-header">
+              <h2>Extra properties</h2>
+            </header>
+            <FileExtraPropertiesEditor
+              file={first}
+              addButtonContainerID="inspector-extra-porperties-header"
+            />
+          </section>
+          <section>
             <header>
               <h2>Tags</h2>
             </header>
             <FileTags file={first} />
-          </section>
-          <section>
-            <header>
-              <h2>Scores</h2>
-            </header>
-            <FileScoresEditor file={first} />
           </section>
         </>
       )}

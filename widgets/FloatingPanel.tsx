@@ -1,9 +1,10 @@
 import React, { ReactNode, useCallback, useEffect, useRef } from 'react';
 import FocusManager from 'src/frontend/FocusManager';
 import { IconSet } from 'widgets/icons';
+import { Toolbar } from './toolbar';
 
 interface IFloatingPanelProps {
-  id?: string;
+  id: string;
   type?: string;
   title?: string;
   className?: string;
@@ -109,23 +110,21 @@ export const FloatingPanel = (props: IFloatingPanelProps) => {
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
       >
-        {dataOpen ? (
-          <>
-            <header onClick={onBlur}>
-              <h2>{title}</h2>
-              <button
-                className="floating-switch-side-button"
-                data-tooltip="Switch to/from the side"
-                onClick={handleSwitchToSide}
-                aria-haspopup="menu"
-                style={isDocked ? undefined : { transform: 'scaleX(-1)' }}
-              >
-                {IconSet.ARROW_RIGHT}
-              </button>
-            </header>
-            {children}
-          </>
-        ) : null}
+        <header onClick={onBlur} id={`${id}-header`}>
+          <h2>{title}</h2>
+          <Toolbar controls={id} isCompact>
+            <button
+              className="floating-switch-side-button"
+              data-tooltip="Switch to/from the side"
+              onClick={handleSwitchToSide}
+              aria-haspopup="menu"
+              style={isDocked ? undefined : { transform: 'scaleX(-1)' }}
+            >
+              {IconSet.ARROW_RIGHT}
+            </button>
+          </Toolbar>
+        </header>
+        {dataOpen ? children : null}
       </div>
     </div>
   );

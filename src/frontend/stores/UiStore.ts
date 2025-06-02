@@ -48,8 +48,8 @@ export interface IHotkeyMap {
   search: string;
   refreshSearch: string;
   advancedSearch: string;
-  openTagEditor: string;
-  toggleScoreEditor: string;
+  openFileTagsEditor: string;
+  toggleExtraPropertiesEditor: string;
 
   // Other
   openPreviewWindow: string;
@@ -60,8 +60,8 @@ export interface IHotkeyMap {
 export const defaultHotkeyMap: IHotkeyMap = {
   toggleOutliner: '1',
   toggleInspector: '2',
-  openTagEditor: '3',
-  toggleScoreEditor: '4',
+  openFileTagsEditor: '3',
+  toggleExtraPropertiesEditor: '4',
   replaceQuery: 'q',
   toggleSettings: 's',
   toggleHelpCenter: 'h',
@@ -105,7 +105,7 @@ type PersistentPreferenceFields =
   | 'isInspectorOpen'
   | 'areFileEditorsDocked'
   | 'isFileTagsEditorOpen'
-  | 'isFileScoresEditorOpen'
+  | 'isFileExtraPropertiesEditorOpen'
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
@@ -175,7 +175,7 @@ class UiStore {
   @observable areFileEditorsDocked: boolean = false;
   @observable isFileTagsEditorOpen: boolean = false;
   @observable focusTagEditor: boolean = false;
-  @observable isFileScoresEditorOpen: boolean = false;
+  @observable isFileExtraPropertiesEditorOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
   /** Dialog for moving files to the system's trash bin, and removing from Allusion's database */
@@ -208,13 +208,13 @@ class UiStore {
       () => this.isFileTagsEditorOpen,
       (isOpen) => {
         if (isOpen) {
-          this.isFileScoresEditorOpen = false;
+          this.isFileExtraPropertiesEditorOpen = false;
         }
       },
     );
 
     reaction(
-      () => this.isFileScoresEditorOpen,
+      () => this.isFileExtraPropertiesEditorOpen,
       (isOpen) => {
         if (isOpen) {
           this.isFileTagsEditorOpen = false;
@@ -532,18 +532,18 @@ class UiStore {
     this.focusTagEditor = value;
   }
 
-  @action.bound toggleFileScoresEditor(): void {
-    this.isFileScoresEditorOpen = !this.isFileScoresEditorOpen;
+  @action.bound toggleFileExtraPropertiesEditor(): void {
+    this.isFileExtraPropertiesEditorOpen = !this.isFileExtraPropertiesEditorOpen;
   }
 
-  @action.bound openFileScoresEditor(): void {
+  @action.bound openFileExtraPropertiesEditor(): void {
     if (this.fileSelection.size > 0) {
-      this.isFileScoresEditorOpen = true;
+      this.isFileExtraPropertiesEditorOpen = true;
     }
   }
 
-  @action.bound closeFileScoresEditor(): void {
-    this.isFileScoresEditorOpen = false;
+  @action.bound closeFileExtraPropertiesEditor(): void {
+    this.isFileExtraPropertiesEditorOpen = false;
   }
 
   @action.bound openLocationRecovery(locationId: ID): void {
@@ -867,10 +867,10 @@ class UiStore {
       this.toggleOutliner();
     } else if (matches(hotkeyMap.toggleInspector)) {
       this.toggleInspector();
-    } else if (matches(hotkeyMap.openTagEditor)) {
+    } else if (matches(hotkeyMap.openFileTagsEditor)) {
       this.openFileTagsEditor();
-    } else if (matches(hotkeyMap.toggleScoreEditor)) {
-      this.toggleFileScoresEditor();
+    } else if (matches(hotkeyMap.toggleExtraPropertiesEditor)) {
+      this.toggleFileExtraPropertiesEditor();
     } else if (matches(hotkeyMap.refreshSearch)) {
       this.refresh();
     } else if (matches(hotkeyMap.toggleSettings)) {
@@ -988,7 +988,9 @@ class UiStore {
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
         this.isFileTagsEditorOpen = Boolean(prefs.isFileTagsEditorOpen ?? false);
-        this.isFileScoresEditorOpen = Boolean(prefs.isFileScoresEditorOpen ?? false);
+        this.isFileExtraPropertiesEditorOpen = Boolean(
+          prefs.isFileExtraPropertiesEditorOpen ?? false,
+        );
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -1037,7 +1039,7 @@ class UiStore {
       isInspectorOpen: this.isInspectorOpen,
       areFileEditorsDocked: this.areFileEditorsDocked,
       isFileTagsEditorOpen: this.isFileTagsEditorOpen,
-      isFileScoresEditorOpen: this.isFileScoresEditorOpen,
+      isFileExtraPropertiesEditorOpen: this.isFileExtraPropertiesEditorOpen,
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,

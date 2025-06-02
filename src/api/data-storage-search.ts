@@ -3,7 +3,7 @@ export type OrderBy<T> =
       [K in keyof T]: K extends string ? K : never;
     }[keyof T]
   | 'random'
-  | 'score';
+  | 'extraProperty';
 
 export const enum OrderDirection {
   Asc,

@@ -7,7 +7,7 @@ import { FileRemoval } from '../../components/RemovalAlert';
 import { useStore } from '../../contexts/StoreContext';
 import { SortCommand, ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
-import { FileScoreEditorButton, FileTagEditorButton } from './ToolbarButtons';
+import { FileExtraPropertiesEditorButton, FileTagEditorButton } from './ToolbarButtons';
 
 const OutlinerToggle = observer(() => {
   const { uiStore } = useStore();
@@ -43,7 +43,7 @@ const PrimaryCommands = observer(() => {
         // Only show when not viewing missing files (so it is replaced by the Delete button)
         <>
           <FileTagEditorButton />
-          <FileScoreEditorButton />
+          <FileExtraPropertiesEditorButton />
         </>
       )}
 
@@ -71,7 +71,7 @@ export const SlideModeCommand = observer(() => {
       <div className="spacer" />
 
       <FileTagEditorButton />
-      <FileScoreEditorButton />
+      <FileExtraPropertiesEditorButton />
 
       <ToolbarButton
         icon={IconSet.INFO}

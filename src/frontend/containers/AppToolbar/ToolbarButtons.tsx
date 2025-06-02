@@ -18,16 +18,16 @@ export const FileTagEditorButton = () => {
   );
 };
 
-export const FileScoreEditorButton = () => {
+export const FileExtraPropertiesEditorButton = () => {
   const { uiStore } = useStore();
   return (
     <>
       <ToolbarButton
-        id="file-scores-editor-button"
+        id="file-extra-properties-editor-button"
         icon={IconSet.META_INFO}
-        onClick={uiStore.toggleFileScoresEditor}
-        text="Score selected files"
-        tooltip="Add or remove scores from selected images"
+        onClick={uiStore.toggleFileExtraPropertiesEditor}
+        text="File extra properties"
+        tooltip="Add or remove extra properties from selected images"
       />
     </>
   );

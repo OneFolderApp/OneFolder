@@ -144,3 +144,8 @@
     border: unset !important;
   }
 }
+
+header [role=gridcell] {
+  font-size: 0.8125rem;
+  font-weight: normal;
+}

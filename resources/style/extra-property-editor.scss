@@ -1,4 +1,4 @@
-.score-editor {
+.extra-property-editor {
 
   .floating-panel & {
     margin: 0.6rem;
@@ -17,12 +17,12 @@
 
 //prevents data-popovers to interfier when overflow is auto
 [data-popover="true"] [data-popover="true"],
-.score-editor [data-popover="true"] {
+.extra-property-editor [data-popover="true"] {
   position: fixed !important;
   overflow: visible;
 }
 
-.score-selector-pane {
+.extra-property-selector-pane {
   width: 20rem;
   display: flex;
   flex-direction: column;
@@ -53,11 +53,11 @@
   }
 }
 
-[role="menu"]:has(.score-selector-pane) {
+[role="menu"]:has(.extra-property-selector-pane) {
   padding: 0;
 }
 
-.score-list-editor {
+.extra-property-list-editor {
   display: grid;
   grid-template-columns: repeat(2, auto);
   align-items: center;
@@ -65,7 +65,7 @@
   width: fit-content;
   max-width: 100%;
 
-  .score-list-option {
+  .extra-property-list-option {
     display: contents;
     color: var(--text-color-muted);
     &:hover {
@@ -73,11 +73,11 @@
     }
   }
   
-  .score-value {
+  .extra-property-value {
     user-select: text;
   }
   
-  .score-name {
+  .extra-property-name {
     padding: 0;
     padding-left: 0.3rem;
     font-weight: 500;
@@ -88,7 +88,7 @@
     overflow: hidden;
   }
   
-  .score-value {
+  .extra-property-value {
     padding: 0;
     padding-left: 0.5rem;
     word-break: break-word;
@@ -113,7 +113,7 @@
     text-overflow: ellipsis;
     color: var(--accent-color)
   }
-  .score-label {
+  .extra-property-label {
     display: inline-block;
     overflow: hidden;
     text-overflow: clip;
@@ -130,7 +130,7 @@
     width: 100%;
   }
 
-  .score-value input {
+  .extra-property-value input {
     width: 5rem;
   }
 

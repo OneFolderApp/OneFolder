@@ -8,8 +8,8 @@ import { MenuButton, MenuRadioGroup, MenuRadioItem, MenuSubItem } from 'widgets/
 import { getThumbnailSize } from '../ContentView/utils';
 import { MenuDivider, MenuSliderItem } from 'widgets/menus/menu-items';
 import { useStore } from 'src/frontend/contexts/StoreContext';
-import { ScoreSelector } from 'src/frontend/components/ScoreSelector';
-import { ClientScore } from 'src/frontend/entities/Score';
+import { ExtraPropertySelector } from 'src/frontend/components/ExtraPropertySelector';
+import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
 import { useComputed } from 'src/frontend/hooks/mobx';
 
 // Tooltip info
@@ -68,30 +68,30 @@ const sortMenuData: Array<{
   { prop: 'random', icon: IconSet.RELOAD_COMPACT, text: 'Random', hideDirection: true },
 ];
 
-const sortScoreData: {
+const sortExtraPropertyData: {
   prop: OrderBy<FileDTO>;
   icon: JSX.Element;
   text: string;
   hideDirection?: boolean;
-} = { prop: 'score', icon: IconSet.META_INFO, text: 'Score' };
+} = { prop: 'extraProperty', icon: IconSet.META_INFO, text: 'Extra Property' };
 
 export const SortMenuItems = observer(() => {
-  const { fileStore, scoreStore } = useStore();
+  const { fileStore, extraPropertyStore } = useStore();
   const {
     orderDirection: fileOrder,
     orderBy,
-    orderByScore,
+    orderByExtraProperty,
     orderFilesBy,
-    orderFilesByScore,
+    orderFilesByExtraProperty,
     switchOrderDirection,
   } = fileStore;
   const orderIcon = fileOrder === OrderDirection.Desc ? IconSet.ARROW_DOWN : IconSet.ARROW_UP;
 
   const counter = useComputed(() => {
-    const score = scoreStore.get(fileStore.orderByScore);
-    const counter = new Map<ClientScore, [number, number | undefined]>();
-    if (score) {
-      counter.set(score, [1, 0]);
+    const extraProperty = extraPropertyStore.get(fileStore.orderByExtraProperty);
+    const counter = new Map<ClientExtraProperty, [number, number | undefined]>();
+    if (extraProperty) {
+      counter.set(extraProperty, [1, 0]);
     }
     return counter;
   });
@@ -110,20 +110,20 @@ export const SortMenuItems = observer(() => {
           />
         )),
         <MenuSubItem
-          key={sortScoreData.prop}
-          icon={sortScoreData.icon}
-          text={sortScoreData.text}
-          checked={orderBy === sortScoreData.prop}
+          key={sortExtraPropertyData.prop}
+          icon={sortExtraPropertyData.icon}
+          text={sortExtraPropertyData.text}
+          checked={orderBy === sortExtraPropertyData.prop}
           accelerator={
-            orderBy === sortScoreData.prop && !sortScoreData.hideDirection ? orderIcon : <></>
+            orderBy === sortExtraPropertyData.prop && !sortExtraPropertyData.hideDirection ? orderIcon : <></>
           }
         >
-          <ScoreSelector
+          <ExtraPropertySelector
             counter={counter}
-            onSelect={(score: ClientScore) =>
-              orderByScore === score.id
+            onSelect={(extraProperty: ClientExtraProperty) =>
+              orderByExtraProperty === extraProperty.id
                 ? switchOrderDirection()
-                : orderFilesByScore(sortScoreData.prop, score)
+                : orderFilesByExtraProperty(sortExtraPropertyData.prop, extraProperty)
             }
           />
         </MenuSubItem>,

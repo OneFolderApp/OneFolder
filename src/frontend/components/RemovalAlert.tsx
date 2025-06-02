@@ -10,7 +10,7 @@ import { ClientLocation, ClientSubLocation } from '../entities/Location';
 import { ClientFileSearchItem } from '../entities/SearchItem';
 import { ClientTag } from '../entities/Tag';
 import { AppToaster } from './Toaster';
-import { ClientScore } from '../entities/Score';
+import { ClientExtraProperty } from '../entities/ExtraProperty';
 import { ClientFile } from '../entities/File';
 
 interface IRemovalProps<T> {
@@ -86,11 +86,11 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
   );
 });
 
-export const ScoreRemoval = observer((props: IRemovalProps<ClientScore>) => (
+export const ExtraPropertyRemoval = observer((props: IRemovalProps<ClientExtraProperty>) => (
   <RemovalAlert
     open
-    title={`Are you sure you want to delete the "${props.object.name}" scores ?`}
-    information="This will permanently remove the score and all of its values from all files in Allusion."
+    title={`Are you sure you want to delete the "${props.object.name}" extra property ?`}
+    information="This will permanently remove the extra property and all of its values from all files in Allusion."
     onCancel={props.onClose}
     onConfirm={() => {
       props.onClose();
@@ -99,69 +99,83 @@ export const ScoreRemoval = observer((props: IRemovalProps<ClientScore>) => (
   />
 ));
 
-export const ScoreUnAssign = observer(
+export const ExtraPropertyUnAssign = observer(
   (
     props: IRemovalProps<{
       files: ClientFile[];
-      score: ClientScore;
+      extraProperty: ClientExtraProperty;
     }>,
   ) => {
-    const { scoreStore } = useStore();
+    const { extraPropertyStore } = useStore();
     const fileCount = props.object.files.length;
     //If the file selection has less than 2 files auto confirm
     useEffect(() => {
       if (fileCount < 2) {
         props.onClose();
-        scoreStore.removeFromFiles(props.object.files, props.object.score);
+        extraPropertyStore.removeFromFiles(props.object.files, props.object.extraProperty);
       }
-    }, [props, scoreStore, fileCount]);
+    }, [props, extraPropertyStore, fileCount]);
 
-    const scoreName = props.object.score.name;
+    const extraPropertyName = props.object.extraProperty.name;
     if (fileCount < 2) {
       return <></>;
     }
     return (
       <RemovalAlert
         open
-        title={`Are you sure you want to remove the "${scoreName}" scores from ${fileCount} files?`}
+        title={`Are you sure you want to remove the "${extraPropertyName}" extra property from ${fileCount} files?`}
         information="This will permanently remove all of its values from those files in Allusion."
         primaryButtonText="Remove"
         onCancel={props.onClose}
         onConfirm={() => {
           props.onClose();
-          scoreStore.removeFromFiles(props.object.files, props.object.score);
+          extraPropertyStore.removeFromFiles(props.object.files, props.object.extraProperty);
         }}
       />
     );
   },
 );
 
-export const ScoreOverwrite = observer(
-  (props: IRemovalProps<{ files: ClientFile[]; score: ClientScore; value: number }>) => {
-    const { scoreStore } = useStore();
+export const ExtraPropertyOverwrite = observer(
+  (
+    props: IRemovalProps<{
+      files: ClientFile[];
+      extraProperty: ClientExtraProperty;
+      value: number;
+    }>,
+  ) => {
+    const { extraPropertyStore } = useStore();
     const fileCount = props.object.files.length;
     //If the file selection has less than 2 files auto confirm
     useEffect(() => {
       if (fileCount < 2) {
         props.onClose();
-        scoreStore.setOnFiles(props.object.files, props.object.score, props.object.value);
+        extraPropertyStore.setOnFiles(
+          props.object.files,
+          props.object.extraProperty,
+          props.object.value,
+        );
       }
-    }, [props, scoreStore, fileCount]);
+    }, [props, extraPropertyStore, fileCount]);
 
-    const scoreName = props.object.score.name;
+    const extraPropertyName = props.object.extraProperty.name;
     if (fileCount < 2) {
       return <></>;
     }
     return (
       <RemovalAlert
         open
-        title={`Are you sure you want to overwrite the "${scoreName}" scores from ${fileCount} files?`}
+        title={`Are you sure you want to overwrite the "${extraPropertyName}" extra property from ${fileCount} files?`}
         information="This will permanently overwrite all of its values from those files in Allusion."
         primaryButtonText="Confirm"
         onCancel={props.onClose}
         onConfirm={() => {
           props.onClose();
-          scoreStore.setOnFiles(props.object.files, props.object.score, props.object.value);
+          extraPropertyStore.setOnFiles(
+            props.object.files,
+            props.object.extraProperty,
+            props.object.value,
+          );
         }}
       />
     );

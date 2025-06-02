@@ -14,7 +14,18 @@
     max-width: var(--window-splitter-primary-size, 0);
     transition: all 0.5s ease;
   }
+
+  #file-editors-panel-header > div[tabindex='-1'] > .toolbar-button {
+    justify-content: flex-end;
+  }
+
+  #file-editors-panel-header {
+    .toolbar-button {
+      opacity: 0;
+    }
+  }
 }
+
 
 
 .floating-panel {

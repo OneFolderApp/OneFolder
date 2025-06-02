@@ -4,6 +4,7 @@ import fse from 'fs-extra';
 import { FileDTO } from '../api/file';
 import { TagDTO } from 'src/api/tag';
 import { ID } from '../api/id';
+import { ExtraProperties, ExtraPropertyType } from 'src/api/extraProperty';
 
 // The name of the IndexedDB
 export const DB_NAME = 'Allusion';
@@ -132,14 +133,14 @@ const dbConfig: DBVersioningConfig[] = [
     upgrade: (tx: Transaction): void => {
       tx.table('files')
         .toCollection()
-        .modify((file: FileDTO) => {
+        .modify((file: any) => {
           file.scores = new Map<ID, number>();
           return file;
         });
     },
   },
   {
-    // Version 11, 13-11-21: Added OrigDateModified date to File for recreating thumbnails and metadata
+    // Version 11, Added OrigDateModified date to File for recreating thumbnails and metadata
     version: 11,
     collections: [],
     upgrade: (tx: Transaction): void => {
@@ -151,11 +152,91 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    // Version 12 29-5-25: Rename table Scores to extraProperties, redefine scores in files to extraProperties, add skipInherit: bool to tags and add tags to locations.
+    version: 12,
+    collections: [
+      {
+        name: 'extraProperties',
+        schema: '++id, name',
+      },
+      {
+        name: 'files',
+        schema:
+          '++id, ino, locationId, *tags, *extraPropertyIDs, relativePath, &absolutePath, name, extension, size, width, height, dateAdded, dateModified, dateCreated, OrigDateModified',
+      },
+    ],
+    upgrade: (tx: Transaction): void => {
+      // Migrate "scores" to "extraProperties"
+      const oldScores = tx.table('scores');
+      const extraProperties = tx.table('extraProperties');
+
+      oldScores.toArray().then((records) => {
+        const transformed = records.map((oldRecord: any) => {
+          return {
+            ...oldRecord,
+            type: ExtraPropertyType.number,
+            dateAdded: oldRecord.dateCreated,
+            dateCreated: undefined,
+            dateModified: undefined,
+          };
+        });
+        const cleaned = transformed.map((r) => {
+          delete r.dateCreated;
+          delete r.dateModified;
+          return r;
+        });
+
+        return extraProperties.bulkAdd(cleaned);
+      });
+
+      // Migrate property "scores" in files to "extraProperties"
+      tx.table('files')
+        .toCollection()
+        .modify((file: any) => {
+          if (file.scores instanceof Map) {
+            file.extraPropertyIDs = Array.from(file.scores.keys());
+            file.extraProperties = Object.fromEntries(file.scores) as ExtraProperties;
+          } else {
+            file.extraPropertyIDs = [];
+            file.extraProperties = {};
+          }
+          delete file.scores;
+          return file;
+        });
+
+      // Add skipInherit to tags
+      tx.table('tags')
+        .toCollection()
+        .modify((tag: any) => {
+          tag.skipInherit = false;
+          return tag;
+        });
+
+      // Add campo tags to locations
+      tx.table('locations')
+        .toCollection()
+        .modify((location: any) => {
+          location.tags = [];
+          return location;
+        });
+    },
+  },
+  {
+    // Version 12 29-5-25: Drop table scores
+    version: 13,
+    collections: [
+      {
+        name: 'scores',
+        schema: null,
+      },
+    ],
+  },
 ];
 
 type DBVersioningConfig = {
   version: number;
-  collections: Array<{ name: string; schema: string }>;
+  collections: Array<{ name: string; schema: string | null }>;
   upgrade?: (tx: Transaction) => void | Promise<void>;
 };
 
@@ -169,7 +250,7 @@ export function dbInit(dbName: string): Dexie {
   // Initialize for each DB version: https://dexie.org/docs/Tutorial/Design#database-versioning
   for (const config of dbConfig) {
     const { version, collections, upgrade } = config;
-    const dbSchema: { [key: string]: string } = {};
+    const dbSchema: { [key: string]: string | null } = {};
     collections.forEach(({ name, schema }) => (dbSchema[name] = schema));
     const stores = db.version(version).stores(dbSchema);
     if (upgrade) {

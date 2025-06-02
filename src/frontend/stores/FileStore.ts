@@ -14,8 +14,13 @@ import { ClientLocation } from '../entities/Location';
 import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
-import { ClientScore } from '../entities/Score';
+import { ClientExtraProperty } from '../entities/ExtraProperty';
 import { Dimensions } from '@floating-ui/core';
+import {
+  detectExtraPropertyType,
+  ExtraProperties,
+  ExtraPropertyValue,
+} from 'src/api/extraProperty';
 
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
@@ -23,7 +28,7 @@ export const FILE_STORAGE_KEY = 'Allusion_File';
 type PersistentPreferenceFields =
   | 'orderDirection'
   | 'orderBy'
-  | 'orderByScore'
+  | 'orderByExtraProperty'
   | 'averageFetchTimes';
 
 export const enum Content {
@@ -58,7 +63,7 @@ class FileStore {
   @observable private content: Content = Content.All;
   @observable orderDirection: OrderDirection = OrderDirection.Desc;
   @observable orderBy: OrderBy<FileDTO> = 'dateAdded';
-  @observable orderByScore: ID = '';
+  @observable orderByExtraProperty: ID = '';
   @observable numTotalFiles = 0;
   @observable numLoadedFiles = 0;
   @observable numUntaggedFiles = 0;
@@ -80,8 +85,8 @@ class FileStore {
     this.rootStore = rootStore;
     makeObservable(this);
 
-    this.debouncedRefetch = debounce(this.refetch, 200).bind(this);
-    this.debouncedSaveFilesToSave = debounce(this.saveFilesToSave, 100).bind(this);
+    this.debouncedRefetch = debounce(this.refetch, 800).bind(this);
+    this.debouncedSaveFilesToSave = debounce(this.saveFilesToSave, 200).bind(this);
     // reaction to keep updated properties "related" to fileList
   }
 
@@ -135,24 +140,28 @@ class FileStore {
           console.error('Could not import tags for', absolutePath, e);
         }
         try {
-          const xmpScores = await this.rootStore.exifTool.readScores(absolutePath);
-          const { scoreStore } = this.rootStore;
-          for (const xmpScore of xmpScores) {
-            const [encodedKey, encodedValue] = xmpScore.split('=');
-            const name = decodeURIComponent(encodedKey);
-            const value = Number(decodeURIComponent(encodedValue));
-            const match = scoreStore.getByName(name);
-            if (match) {
-              // if already exists this score category set it to the file
-              file.setScore(match, value);
-            } else {
-              // if not create a new score and set it to the file
-              const newScore = await scoreStore.createScore(name);
-              file.setScore(newScore, value);
+          const xmpExtraProperties = await this.rootStore.exifTool.readExtraProperties(
+            absolutePath,
+          );
+          if (!xmpExtraProperties) {
+            continue;
+          }
+          const parsedProps = JSON.parse(xmpExtraProperties);
+          const { extraPropertyStore } = this.rootStore;
+          for (const [name, value] of Object.entries(parsedProps)) {
+            const detectedType = detectExtraPropertyType(value);
+            if (!detectedType) {
+              console.warn(`Type not supported for extraProperty "${name}":`, typeof value);
+              continue;
             }
+            let match = extraPropertyStore.getByNameAndType(name, detectedType);
+            if (!match) {
+              match = await extraPropertyStore.createExtraProperty(name, detectedType);
+            }
+            file.setExtraProperty(match, value as ExtraPropertyValue);
           }
         } catch (e) {
-          console.error('Could not import scores for', absolutePath, e);
+          console.error('Could not import extraProperties for', absolutePath, e);
         }
       }
       AppToaster.show(
@@ -178,20 +187,24 @@ class FileStore {
     const toastKey = 'write-tags-to-file';
     try {
       const numFiles = this.fileList.length;
-      const tagFilePairs = runInAction(() =>
-        this.definedFiles.map((f) => ({
-          absolutePath: f.absolutePath,
-          tagHierarchy: Array.from(
-            f.tags,
-            action((t) => t.path),
-          ),
-          scoreValues: Array.from(f.scores).map(
-            ([s, value]) => `${encodeURIComponent(s.name)}=${value}`,
-          ),
-        })),
+      const fileTagsProps = runInAction(() =>
+        this.definedFiles.map((f) => {
+          const extraProps: Record<string, ExtraPropertyValue> = {};
+          for (const [ep, value] of f.extraProperties) {
+            extraProps[ep.name] = value;
+          }
+          return {
+            absolutePath: f.absolutePath,
+            tagHierarchy: Array.from(
+              f.tags,
+              action((t) => t.path),
+            ),
+            extraPropsValues: JSON.stringify(extraProps),
+          };
+        }),
       );
       let lastToastVal = '0';
-      for (let i = 0; i < tagFilePairs.length; i++) {
+      for (let i = 0; i < fileTagsProps.length; i++) {
         const newToastVal = ((100 * i) / numFiles).toFixed(0);
         if (lastToastVal !== newToastVal) {
           lastToastVal = newToastVal;
@@ -204,9 +217,9 @@ class FileStore {
           );
         }
 
-        const { absolutePath, tagHierarchy, scoreValues } = tagFilePairs[i];
+        const { absolutePath, tagHierarchy, extraPropsValues } = fileTagsProps[i];
         try {
-          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy, scoreValues);
+          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy, extraPropsValues);
         } catch (e) {
           console.error('Could not write tags to', absolutePath, tagHierarchy, e);
         }
@@ -281,9 +294,12 @@ class FileStore {
     this.refetch();
   }
 
-  @action.bound orderFilesByScore(prop: OrderBy<FileDTO> = 'dateAdded', score: ClientScore): void {
+  @action.bound orderFilesByExtraProperty(
+    prop: OrderBy<FileDTO> = 'dateAdded',
+    extraProperty: ClientExtraProperty,
+  ): void {
     this.setOrderBy(prop);
-    this.setOrderByScore(score.id);
+    this.setOrderByExtraProperty(extraProperty.id);
     this.refetch();
   }
 
@@ -414,7 +430,7 @@ class FileStore {
       const fetchedFiles = await this.backend.fetchFiles(
         this.orderBy,
         this.orderDirection,
-        this.orderByScore,
+        this.orderByExtraProperty,
       );
       const end = performance.now();
       this.setAverageFetchTime(Content.All, end - start, fetchedFiles.length);
@@ -443,7 +459,7 @@ class FileStore {
         criteria.toCondition(this.rootStore),
         this.orderBy,
         this.orderDirection,
-        this.orderByScore,
+        this.orderByExtraProperty,
         uiStore.searchMatchAny,
       );
       const end = performance.now();
@@ -465,7 +481,7 @@ class FileStore {
       const {
         orderBy,
         orderDirection,
-        orderByScore,
+        orderByExtraProperty,
         rootStore: { uiStore },
       } = this;
 
@@ -476,7 +492,11 @@ class FileStore {
 
       // Fetch all files, then check their existence and only show the missing ones
       // Similar to {@link updateFromBackend}, but the existence check needs to be awaited before we can show the images
-      const backendFiles = await this.backend.fetchFiles(orderBy, orderDirection, orderByScore);
+      const backendFiles = await this.backend.fetchFiles(
+        orderBy,
+        orderDirection,
+        orderByExtraProperty,
+      );
       const end = performance.now();
       this.setAverageFetchTime(Content.All, end - start, backendFiles.length);
       // continue if the current taskId is the same else abort the fetch
@@ -559,7 +579,7 @@ class FileStore {
         criterias as [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
         this.orderBy,
         this.orderDirection,
-        this.orderByScore,
+        this.orderByExtraProperty,
         uiStore.searchMatchAny,
       );
       const end = performance.now();
@@ -639,15 +659,17 @@ class FileStore {
     return tags;
   }
 
-  getScores(dtoScores: Map<ID, number>): Map<ClientScore, number> {
-    const scores = new Map<ClientScore, number>();
-    for (const [id, value] of dtoScores.entries()) {
-      const clientScore = this.rootStore.scoreStore.get(id);
-      if (clientScore !== undefined) {
-        scores.set(clientScore, value);
+  getExtraProperties(
+    dtoExtraProperties: ExtraProperties,
+  ): Map<ClientExtraProperty, ExtraPropertyValue> {
+    const extraProperties = new Map<ClientExtraProperty, ExtraPropertyValue>();
+    for (const [id, value] of Object.entries(dtoExtraProperties)) {
+      const clientProperty = this.rootStore.extraPropertyStore.get(id);
+      if (clientProperty !== undefined) {
+        extraProperties.set(clientProperty, value);
       }
     }
-    return scores;
+    return extraProperties;
   }
 
   getLocation(location: ID): ClientLocation {
@@ -683,8 +705,8 @@ class FileStore {
         // BACKWARDS_COMPATIBILITY: orderDirection used to be called fileOrder
         this.setOrderDirection(prefs.orderDirection ?? prefs.fileOrder);
         this.setOrderBy(prefs.orderBy);
-        if (prefs.orderByScore) {
-          this.setOrderByScore(prefs.orderByScore);
+        if (prefs.orderByExtraProperty) {
+          this.setOrderByExtraProperty(prefs.orderByExtraProperty);
         }
         if (prefs.averageFetchTimes) {
           this.averageFetchTimes.replace(new Map(prefs.averageFetchTimes));
@@ -699,7 +721,7 @@ class FileStore {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
       orderBy: this.orderBy,
       orderDirection: this.orderDirection,
-      orderByScore: this.orderByScore,
+      orderByExtraProperty: this.orderByExtraProperty,
       averageFetchTimes: Array.from(this.averageFetchTimes.entries()),
     };
     return preferences;
@@ -884,19 +906,19 @@ class FileStore {
             ) {
               existingFile.updateTagsFromBackend(newTags);
             }
-            // Update scores (might have changes, e.g. removed)
-            const newScores = new Map<ClientScore, number>();
-            for (const [id, value] of f.scores.entries()) {
-              const clientScore = this.rootStore.scoreStore.get(id);
-              if (clientScore) {
-                newScores.set(clientScore, value);
+            // Update extraProperties (might have changes, e.g. removed)
+            const newExtraProps = new Map<ClientExtraProperty, ExtraPropertyValue>();
+            for (const [id, value] of Object.entries(f.extraProperties)) {
+              const clientExtraProp = this.rootStore.extraPropertyStore.get(id);
+              if (clientExtraProp) {
+                newExtraProps.set(clientExtraProp, value);
               }
             }
             if (
-              existingFile.scores.size !== newScores.size ||
-              Array.from(existingFile.scores).some((t) => t[1] !== newScores.get(t[0]))
+              existingFile.extraProperties.size !== newExtraProps.size ||
+              Array.from(existingFile.extraProperties).some((t) => t[1] !== newExtraProps.get(t[0]))
             ) {
-              existingFile.updateScoresFromBackend(newScores);
+              existingFile.updateExtraPropertiesFromBackend(newExtraProps);
             }
             targetList[idx] = existingFile;
             targeIndex.set(existingFile.id, idx);
@@ -997,8 +1019,8 @@ class FileStore {
     this.orderBy = prop;
   }
 
-  @action private setOrderByScore(scoreId: ID = '') {
-    this.orderByScore = scoreId;
+  @action private setOrderByExtraProperty(extraPropertyID: ID = '') {
+    this.orderByExtraProperty = extraPropertyID;
   }
 
   @action private incrementNumMissingFiles() {

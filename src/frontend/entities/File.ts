@@ -16,7 +16,12 @@ import ImageLoader from '../image/ImageLoader';
 import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
-import { ClientScore } from './Score';
+import { ClientExtraProperty } from './ExtraProperty';
+import {
+  ExtraProperties,
+  ExtraPropertyValue,
+  getExtraPropertyDefaultValue,
+} from 'src/api/extraProperty';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -53,7 +58,7 @@ export class ClientFile {
   readonly relativePath: string;
   readonly absolutePath: string;
   readonly tags: ObservableSet<ClientTag>;
-  readonly scores: ObservableMap<ClientScore, number>;
+  readonly extraProperties: ObservableMap<ClientExtraProperty, ExtraPropertyValue>;
   readonly size: number;
   readonly width: number;
   readonly height: number;
@@ -97,7 +102,7 @@ export class ClientFile {
     this.filename = base.slice(0, base.lastIndexOf('.'));
 
     this.tags = observable(this.store.getTags(fileProps.tags));
-    this.scores = observable(this.store.getScores(fileProps.scores));
+    this.extraProperties = observable(this.store.getExtraProperties(fileProps.extraProperties));
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -147,8 +152,13 @@ export class ClientFile {
     }
   }
 
-  @action.bound setScore(score: ClientScore, value: number = 0): void {
-    this.scores.set(score, value);
+  @action.bound setExtraProperty(
+    extraProperty: ClientExtraProperty,
+    value?: ExtraPropertyValue,
+  ): void {
+    const finalValue =
+      value !== undefined ? value : getExtraPropertyDefaultValue(extraProperty.type);
+    this.extraProperties.set(extraProperty, finalValue);
   }
 
   @action.bound removeTag(tag: ClientTag): void {
@@ -162,8 +172,8 @@ export class ClientFile {
     }
   }
 
-  @action.bound removeScore(score: ClientScore): void {
-    this.scores.delete(score);
+  @action.bound removeExtraProperty(extraProperty: ClientExtraProperty): void {
+    this.extraProperties.delete(extraProperty);
   }
 
   @action.bound clearTags(): void {
@@ -183,11 +193,19 @@ export class ClientFile {
     this.tags.replace(tags);
   }
 
-  @action.bound updateScoresFromBackend(scores: Map<ClientScore, number>): void {
-    this.scores.replace(scores);
+  @action.bound updateExtraPropertiesFromBackend(
+    extraProperties: Map<ClientExtraProperty, ExtraPropertyValue>,
+  ): void {
+    this.extraProperties.replace(extraProperties);
   }
 
   serialize(): FileDTO {
+    const entries: [string, ExtraPropertyValue][] = Array.from(
+      this.extraProperties.entries(),
+      ([extraProperty, value]) => [extraProperty.id, value],
+    );
+    const extraProperties: ExtraProperties = Object.fromEntries(entries);
+    const extraPropertyIDs = entries.map(([id]) => id);
     return {
       id: this.id,
       ino: this.ino,
@@ -195,7 +213,8 @@ export class ClientFile {
       relativePath: this.relativePath,
       absolutePath: this.absolutePath,
       tags: Array.from(this.tags, (t) => t.id), // removes observable properties from observable array
-      scores: new Map<ID, number>([...this.scores].map(([cs, value]) => [cs.id, value])),
+      extraPropertyIDs: extraPropertyIDs,
+      extraProperties: extraProperties,
       size: this.size,
       width: this.width,
       height: this.height,

@@ -16,7 +16,7 @@ import { FileSearchDTO } from '../api/file-search';
 import { ID } from '../api/id';
 import { LocationDTO } from '../api/location';
 import { ROOT_TAG_ID, TagDTO } from '../api/tag';
-import { ScoreDTO } from '../api/score';
+import { ExtraPropertyDTO, ExtraPropertyType } from '../api/extraProperty';
 
 const USE_TIMING_PROXY = true;
 
@@ -31,7 +31,7 @@ export default class Backend implements DataStorage {
   #tags: Table<TagDTO, ID>;
   #locations: Table<LocationDTO, ID>;
   #searches: Table<FileSearchDTO, ID>;
-  #scores: Table<ScoreDTO, ID>;
+  #extraProperties: Table<ExtraPropertyDTO, ID>;
   #db: Dexie;
   #notifyChange: () => void;
 
@@ -42,7 +42,7 @@ export default class Backend implements DataStorage {
     this.#tags = db.table('tags');
     this.#locations = db.table('locations');
     this.#searches = db.table('searches');
-    this.#scores = db.table('scores');
+    this.#extraProperties = db.table('extraProperties');
     this.#db = db;
     this.#notifyChange = notifyChange;
   }
@@ -76,16 +76,21 @@ export default class Backend implements DataStorage {
   async fetchFiles(
     order: OrderBy<FileDTO>,
     fileOrder: OrderDirection,
-    scoreId?: ID,
+    extraPropertyID?: ID,
   ): Promise<FileDTO[]> {
     console.info('IndexedDB: Fetching files...');
     if (order === 'random') {
       return shuffleArray(await this.#files.toArray());
     }
-    if (order === 'score') {
+    if (order === 'extraProperty') {
       order = 'dateAdded';
-      if (scoreId) {
-        return await orderByScore(this.#files.orderBy(order), scoreId, fileOrder);
+      if (extraPropertyID) {
+        const extraProperty = await this.#extraProperties.get(extraPropertyID);
+        if (extraProperty) {
+          return await orderByExtraProperty(this.#files.orderBy(order), fileOrder, extraProperty);
+        } else {
+          console.error(`IndexedDB: Custom field with ID "${extraPropertyID}" not found.`);
+        }
       }
     }
 
@@ -121,16 +126,16 @@ export default class Backend implements DataStorage {
     return this.#searches.toArray();
   }
 
-  async fetchScores(): Promise<ScoreDTO[]> {
-    console.info('IndexedDB: Fetching scores...');
-    return this.#scores.orderBy('name').toArray();
+  async fetchExtraProperties(): Promise<ExtraPropertyDTO[]> {
+    console.info('IndexedDB: Fetching extra properties...');
+    return this.#extraProperties.orderBy('name').toArray();
   }
 
   async searchFiles(
     criteria: ConditionDTO<FileDTO> | [ConditionDTO<FileDTO>, ...ConditionDTO<FileDTO>[]],
     order: OrderBy<FileDTO>,
     fileOrder: OrderDirection,
-    scoreId?: ID,
+    extraPropertyID?: ID,
     matchAny?: boolean,
   ): Promise<FileDTO[]> {
     console.info('IndexedDB: Searching files...', { criteria, matchAny });
@@ -140,10 +145,15 @@ export default class Backend implements DataStorage {
     if (order === 'random') {
       return shuffleArray(await collection.toArray());
     }
-    if (order === 'score') {
+    if (order === 'extraProperty') {
       order = 'dateAdded';
-      if (scoreId) {
-        return await orderByScore(collection, scoreId, fileOrder);
+      if (extraPropertyID) {
+        const extraProperty = await this.#extraProperties.get(extraPropertyID);
+        if (extraProperty) {
+          return await orderByExtraProperty(collection, fileOrder, extraProperty);
+        } else {
+          console.error(`IndexedDB: Custom field with ID "${extraPropertyID}" not found.`);
+        }
       }
     }
     // table.reverse() can be an order of magnitude slower than a javascript .reverse() call
@@ -176,9 +186,9 @@ export default class Backend implements DataStorage {
     this.#notifyChange();
   }
 
-  async createScore(score: ScoreDTO): Promise<void> {
-    console.info('IndexedDB: Creating score...', score);
-    await this.#scores.add(score);
+  async createExtraProperty(extraProperty: ExtraPropertyDTO): Promise<void> {
+    console.info('IndexedDB: Creating extra property...', extraProperty);
+    await this.#extraProperties.add(extraProperty);
     this.#notifyChange();
   }
 
@@ -206,9 +216,9 @@ export default class Backend implements DataStorage {
     this.#notifyChange();
   }
 
-  async saveScore(score: ScoreDTO): Promise<void> {
-    console.info('IndexedDB: Saving score...', score);
-    await this.#scores.put(score);
+  async saveExtraProperty(extraProperty: ExtraPropertyDTO): Promise<void> {
+    console.info('IndexedDB: Saving extra property...', extraProperty);
+    await this.#extraProperties.put(extraProperty);
     this.#notifyChange();
   }
 
@@ -277,18 +287,21 @@ export default class Backend implements DataStorage {
     this.#notifyChange();
   }
 
-  async removeScores(scores: ID[]): Promise<void> {
-    console.info('IndexedDB: Removing scores...', scores);
-    await this.#db.transaction('rw', this.#files, this.#scores, async () => {
+  async removeExtraProperties(extraPropertyIDs: ID[]): Promise<void> {
+    console.info('IndexedDB: Removing extra properties...', extraPropertyIDs);
+    await this.#db.transaction('rw', this.#files, this.#extraProperties, async () => {
       await this.#files
-        .filter((file) => scores.some((scoreId) => file.scores.has(scoreId)))
+        .where('extraPropertyIDs')
+        .anyOf(extraPropertyIDs)
+        .distinct()
         .modify((file) => {
-          for (const scoreId of scores) {
-            file.scores.delete(scoreId);
+          for (const id of extraPropertyIDs) {
+            delete file.extraProperties[id];
           }
+          retainArray(file.extraPropertyIDs, (id) => !extraPropertyIDs.includes(id));
         });
 
-      await this.#scores.bulkDelete(scores);
+      await this.#extraProperties.bulkDelete(extraPropertyIDs);
     });
 
     this.#notifyChange();
@@ -360,19 +373,54 @@ function createTimingProxy(obj: Backend): Backend {
   });
 }
 
-async function orderByScore(
+async function orderByExtraProperty(
   collection: Dexie.Collection<FileDTO, string>,
-  scoreID: ID,
   fileOrder: OrderDirection,
-) {
-  const files = await collection.toArray();
+  extraProperty: ExtraPropertyDTO,
+): Promise<FileDTO[]> {
+  switch (extraProperty.type) {
+    case ExtraPropertyType.number:
+      return orderByCustomNumberField(collection, extraProperty.id, fileOrder);
+    case ExtraPropertyType.text:
+      return orderByCustomTextField(collection, extraProperty.id, fileOrder);
+    default:
+      throw new Error(`Unsupported custom field type: ${extraProperty.type}`);
+  }
+}
 
+async function orderByCustomNumberField(
+  collection: Dexie.Collection<FileDTO, string>,
+  extraPropertyID: ID,
+  fileOrder: OrderDirection,
+): Promise<FileDTO[]> {
+  const files = await collection.toArray();
   files.sort((a, b) => {
-    const scoreA =
-      a.scores.get(scoreID) ?? (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
-    const scoreB =
-      b.scores.get(scoreID) ?? (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
-    return fileOrder === OrderDirection.Desc ? scoreB - scoreA : scoreA - scoreB;
+    const valueA: number =
+      (a.extraProperties[extraPropertyID] as number | undefined) ??
+      (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
+    const valueB: number =
+      (b.extraProperties[extraPropertyID] as number | undefined) ??
+      (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
+
+    return fileOrder === OrderDirection.Desc ? valueB - valueA : valueA - valueB;
+  });
+  return files;
+}
+
+async function orderByCustomTextField(
+  collection: Dexie.Collection<FileDTO, string>,
+  extraPropertyID: ID,
+  fileOrder: OrderDirection,
+): Promise<FileDTO[]> {
+  const files = await collection.toArray();
+  files.sort((a, b) => {
+    const valueA = (a.extraProperties[extraPropertyID] as string | undefined)?.toLowerCase() ?? '';
+    const valueB = (b.extraProperties[extraPropertyID] as string | undefined)?.toLowerCase() ?? '';
+    if (fileOrder === OrderDirection.Desc) {
+      return valueB.localeCompare(valueA);
+    } else {
+      return valueA.localeCompare(valueB);
+    }
   });
   return files;
 }

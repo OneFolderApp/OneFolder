@@ -4,6 +4,7 @@ import { useFloating } from '@floating-ui/react-dom';
 export function usePopover(placement?: Placement, fallbackPlacements?: Placement[]) {
   const { x, y, reference, floating, strategy, update } = useFloating({
     placement,
+    strategy: 'fixed',
     middleware: [
       flip({ fallbackPlacements }),
       shift({ boundary: document.body, crossAxis: true, padding: 8 }),

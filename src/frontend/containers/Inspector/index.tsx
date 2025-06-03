@@ -24,7 +24,7 @@ const Inspector = observer(() => {
   const path = first ? first.absolutePath : '...';
 
   return (
-    <aside id="inspector">
+    <aside id="inspector" className="scroll-hover">
       <section>{first && <ImageInfo file={first} />}</section>
       <section>
         <header>
@@ -49,6 +49,7 @@ const Inspector = observer(() => {
             <FileExtraPropertiesEditor
               file={first}
               addButtonContainerID="inspector-extra-porperties-header"
+              menuPlacement="left-start"
             />
           </section>
           <section>

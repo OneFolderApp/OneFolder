@@ -46,7 +46,7 @@ const MultiSplit: React.FC<MultiSplitProps> = ({
   const lastExpandedPanelIndex = expansion.lastIndexOf(true);
 
   return (
-    <div className="multi-split">
+    <div className="multi-split scroll-hover">
       {React.Children.map(children, (child, index) => {
         const typedChild = child as React.ReactElement<
           React.PropsWithChildren<MultiSplitPaneProps>

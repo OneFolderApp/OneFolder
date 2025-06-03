@@ -22,6 +22,7 @@ import { ID } from 'src/api/id';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 import { ExtraPropertyValue } from 'src/api/extraProperty';
 import { createPortal } from 'react-dom';
+import { Placement } from '@floating-ui/core';
 
 export type ExtraPropertiesCounter = IComputedValue<
   Map<ClientExtraProperty, [number, ExtraPropertyValue | undefined]>
@@ -30,10 +31,11 @@ export type ExtraPropertiesCounter = IComputedValue<
 interface FileExtraPropertiesEditorProps {
   file?: ClientFile;
   addButtonContainerID?: string;
+  menuPlacement?: Placement;
 }
 
 export const FileExtraPropertiesEditor = observer(
-  ({ file, addButtonContainerID }: FileExtraPropertiesEditorProps) => {
+  ({ file, addButtonContainerID, menuPlacement }: FileExtraPropertiesEditorProps) => {
     const { uiStore, fileStore } = useStore();
     const [deletableExtraProperty, setDeletableExtraProperty] = useState<ClientExtraProperty>();
     const [removableExtraProperty, setRemovableExtraProperty] = useState<{
@@ -172,7 +174,8 @@ export const FileExtraPropertiesEditor = observer(
               tooltip="Add extra property to file"
               id={extraPropertySelectorButtonID}
               menuID={extraPropertySelectorButtonMenuID}
-              placement="left-start"
+              placement={menuPlacement ? menuPlacement : 'left-start'}
+              strategy="fixed"
               updateDependency={file}
             >
               <ExtraPropertySelector

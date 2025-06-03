@@ -39,7 +39,12 @@ const FileEditorsPanel = observer(({ className }: Partial<MultiSplitPaneProps>) 
         type: 'extra-properties',
         isOpen: true,
         title: 'Extra File Properties Editor',
-        content: <FileExtraPropertiesEditor addButtonContainerID="file-editors-panel-header" />,
+        content: (
+          <FileExtraPropertiesEditor
+            addButtonContainerID="file-editors-panel-header"
+            menuPlacement="right-start"
+          />
+        ),
         onBlur: uiStore.closeFileExtraPropertiesEditor,
         ignoreOnBlur: (e: React.FocusEvent) => {
           return e.relatedTarget?.id === 'file-extra-properties-editor-button';

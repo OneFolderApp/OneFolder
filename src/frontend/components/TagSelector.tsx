@@ -24,6 +24,7 @@ import { ClientTag } from '../entities/Tag';
 import { useComputed } from '../hooks/mobx';
 import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
+import { Placement } from '@floating-ui/core';
 
 export interface TagSelectorProps {
   selection: ClientTag[] | [ClientTag, boolean][];
@@ -165,6 +166,8 @@ const TagSelector = (props: TagSelectorProps) => {
     [onDeselect, onSelect],
   );
 
+  const fallbackPlacements = useRef<Placement[]>(['left-end', 'top-start', 'right-end']).current;
+
   return (
     <div
       role="combobox"
@@ -179,6 +182,7 @@ const TagSelector = (props: TagSelectorProps) => {
         isOpen={isOpen}
         cancel={() => setIsOpen(false)}
         placement="bottom-start"
+        fallbackPlacements={fallbackPlacements}
         ignoreCloseForElementOnBlur={inputRef.current || undefined}
         target={(ref) => (
           <div ref={ref} className="multiautocomplete-input">

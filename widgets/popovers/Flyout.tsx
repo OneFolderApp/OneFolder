@@ -18,6 +18,7 @@ export interface FlyoutProps {
   /** When this specific element is focused, the FlyOut is not closed */
   ignoreCloseForElementOnBlur?: HTMLElement;
   placement?: Placement;
+  fallbackPlacements?: Placement[];
   updateDependency?: any;
 }
 
@@ -35,9 +36,10 @@ export const Flyout = (props: FlyoutProps) => {
     target,
     children,
     placement,
+    fallbackPlacements,
     updateDependency = children,
   } = props;
-  const { style, reference, floating, update } = usePopover(placement);
+  const { style, reference, floating, update } = usePopover(placement, fallbackPlacements);
 
   useLayoutEffect(() => {
     if (isOpen) {

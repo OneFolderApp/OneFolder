@@ -20,7 +20,7 @@
       // so that the tags section remains visible when inspector is very small in height: inspector should overflow with a scrollbar
       min-height: 6rem;
     }
-    */
+    */        
   }
 
   header {
@@ -56,6 +56,11 @@
   // Hovering over inspector should show toolbars
   &:hover header [role='toolbar'] {
     opacity: 1;
+  }
+
+  .tag-selector.input.multiautocomplete {
+    max-height: unset;
+    overflow: unset;
   }
 
   #inspector-extra-porperties-header {

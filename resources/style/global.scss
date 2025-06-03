@@ -148,6 +148,19 @@ details[open] > summary::before {
   background-color: var(--scrollbar-track-color);
 }
 
+.scroll-hover::-webkit-scrollbar {
+  width: 0.4rem;
+  height: 0.4rem;
+}
+
+.scroll-hover::-webkit-scrollbar-thumb {
+  display: none;
+}
+
+.scroll-hover:hover::-webkit-scrollbar-thumb {
+  display: initial;
+}
+
 ///////////////////////////////// Media Queries /////////////////////////////////
 
 ///////////////////////////////// Misc /////////////////////////////////

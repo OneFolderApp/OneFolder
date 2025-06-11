@@ -204,6 +204,7 @@ const AlgorithmSelector = ({
   stats: AlgorithmStats | null;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [showAlgorithmSelector, setShowAlgorithmSelector] = useState(false);
   const selectedAlgoInfo = ALGORITHMS.find((a) => a.id === selectedAlgorithm)!;
   const rootStore = useStore();
   const { uiStore, fileStore } = rootStore;
@@ -212,53 +213,29 @@ const AlgorithmSelector = ({
 
   return (
     <div className="algorithm-selector">
-      <div className="algorithm-select-container">
-        <label htmlFor="algorithm-select" className="algorithm-select-label">
-          Choose Detection Method:
-        </label>
-        <select
-          id="algorithm-select"
-          value={selectedAlgorithm}
-          onChange={(e) => onAlgorithmChange(e.target.value as DuplicateAlgorithm)}
-          className="algorithm-select"
-        >
-          {ALGORITHMS.map((algo) => (
-            <option key={algo.id} value={algo.id}>
-              {algo.name} - {algo.speed} Speed, {algo.accuracy} Accuracy
-            </option>
-          ))}
-        </select>
+      <div className="current-algorithm">
+        <div className="current-algorithm__line">
+          <span className="current-algorithm__label">
+            Current algorithm: <strong>{selectedAlgoInfo.name}</strong>{' '}
+            <button
+              className="current-algorithm__details-btn"
+              onClick={() => setShowDetails(!showDetails)}
+            >
+              {showDetails ? 'Hide details' : 'Show details...'}
+            </button>
+          </span>
+          <button
+            className="current-algorithm__change-btn"
+            onClick={() => setShowAlgorithmSelector(!showAlgorithmSelector)}
+          >
+            {showAlgorithmSelector ? 'Cancel' : 'Change Algorithm'}
+          </button>
+        </div>
       </div>
 
-      <div className="selected-algorithm-info">
-        <div className="algorithm-header">
-          <h4>{selectedAlgoInfo.name}</h4>
-          <div className="algorithm-badges">
-            <span className={`badge badge--speed badge--${selectedAlgoInfo.speed.toLowerCase()}`}>
-              {selectedAlgoInfo.speed}
-            </span>
-            <span
-              className={`badge badge--accuracy badge--${selectedAlgoInfo.accuracy
-                .toLowerCase()
-                .replace(' ', '-')}`}
-            >
-              {selectedAlgoInfo.accuracy}
-            </span>
-          </div>
-        </div>
-
-        <p className="algorithm-description">{selectedAlgoInfo.description}</p>
-
-        <button className="algorithm-details-toggle" onClick={() => setShowDetails(!showDetails)}>
-          {showDetails ? 'Hide Technical Details' : 'Show Technical Details'}
-        </button>
-
-        {showDetails && (
+      {showDetails && (
+        <div className="current-algorithm-details">
           <div className="algorithm-details">
-            <div className="algorithm-details__section">
-              <strong>Technical Implementation:</strong>
-              <p>{selectedAlgoInfo.technical}</p>
-            </div>
             <div className="algorithm-details__section">
               <strong>Advantages:</strong>
               <ul>
@@ -275,9 +252,79 @@ const AlgorithmSelector = ({
                 ))}
               </ul>
             </div>
+            <div className="algorithm-details__section">
+              <strong>Technical Implementation:</strong>
+              <p>{selectedAlgoInfo.technical}</p>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {showAlgorithmSelector && (
+        <div className="algorithm-grid-container">
+          <label className="algorithm-grid-label">Choose Detection Method:</label>
+          <div className="algorithm-grid">
+            {ALGORITHMS.map((algo) => (
+              <div
+                key={algo.id}
+                className={`algorithm-card ${
+                  selectedAlgorithm === algo.id ? 'algorithm-card--selected' : ''
+                }`}
+                onClick={() => {
+                  onAlgorithmChange(algo.id);
+                  setShowAlgorithmSelector(false);
+                }}
+              >
+                <div className="algorithm-card__header">
+                  <h4 className="algorithm-card__name">{algo.name}</h4>
+                  <div className="algorithm-card__badges">
+                    <span className={`badge badge--speed badge--${algo.speed.toLowerCase()}`}>
+                      {algo.speed}
+                    </span>
+                    <span
+                      className={`badge badge--accuracy badge--${algo.accuracy
+                        .toLowerCase()
+                        .replace(' ', '-')}`}
+                    >
+                      {algo.accuracy}
+                    </span>
+                  </div>
+                </div>
+                <p className="algorithm-card__description">{algo.description}</p>
+                <div className="algorithm-card__preview">
+                  <div className="algorithm-card__pros">
+                    <strong>✓ Best for:</strong> {algo.pros[0]}
+                  </div>
+                  <div className="algorithm-card__tech-preview">
+                    <strong>Method:</strong> {algo.technical.split('.')[0]}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div
+              className="algorithm-card algorithm-card--suggest"
+              onClick={() => {
+                shell.openExternal(
+                  'https://onefolder.canny.io/feedback/p/what-duplication-algorithm-we-should-add',
+                );
+              }}
+            >
+              <div className="algorithm-card__header">
+                <h4 className="algorithm-card__name">💡 Suggest New Algorithm</h4>
+              </div>
+              <p className="algorithm-card__description">
+                Have an idea for a better duplicate detection method? We&apos;d love to hear your
+                suggestions!
+              </p>
+              <div className="algorithm-card__cta">
+                <strong>→ Submit your idea</strong>
+                <span>Help improve OneFolder</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="algorithm-actions">
         <button className="btn-primary" onClick={onAnalyze} disabled={isAnalyzing}>
@@ -327,7 +374,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<DuplicateAlgorithm>(
-    DuplicateAlgorithm.FileSize,
+    DuplicateAlgorithm.FileHash,
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
 

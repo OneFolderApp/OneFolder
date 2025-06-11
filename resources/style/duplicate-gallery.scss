@@ -73,68 +73,255 @@
     color: var(--text-primary);
   }
 
-  .algorithm-select-container {
+  .current-algorithm {
     margin-bottom: 1.5rem;
 
-    .algorithm-select-label {
+    &__line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    &__label {
+      color: var(--text-primary);
+      font-size: 0.95rem;
+
+      strong {
+        font-weight: 600;
+      }
+    }
+
+    &__details-btn {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      font-family: inherit;
+      line-height: inherit;
+
+      &:hover {
+        color: var(--accent-color-hover);
+      }
+    }
+
+    &__change-btn {
+      background: var(--surface-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+
+      &:hover {
+        background: var(--surface-hover);
+        border-color: var(--accent-color);
+      }
+    }
+  }
+
+  .current-algorithm-details {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--surface-tertiary);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-color-subtle);
+
+    .algorithm-details {
+      &__section {
+        margin-bottom: 1rem;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        strong {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: var(--text-primary);
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          line-height: 1.5;
+          font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New',
+            monospace;
+          background: var(--surface-secondary);
+          padding: 0.6rem;
+          border-radius: 4px;
+          border-left: 2px solid var(--accent-color-subtle);
+        }
+
+        ul {
+          margin: 0;
+          padding-left: 1.25rem;
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+
+          li {
+            margin-bottom: 0.3rem;
+            line-height: 1.3;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .algorithm-grid-container {
+    margin-bottom: 1.5rem;
+
+    .algorithm-grid-label {
       display: block;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1rem;
       font-weight: 500;
       color: var(--text-primary);
       font-size: 0.9rem;
     }
 
-    .algorithm-select {
-      width: 100%;
-      max-width: 500px;
-      padding: 0.75rem 1rem;
-      border: 2px solid var(--border-color);
-      border-radius: 6px;
-      background: var(--surface-primary);
-      color: var(--text-primary);
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: border-color 0.2s;
+    .algorithm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+  }
 
-      &:focus {
-        outline: none;
-        border-color: var(--accent-color);
-      }
+  .algorithm-card {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    background: var(--surface-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--surface-hover);
+    }
+
+    &--selected {
+      border-color: var(--accent-color);
+      background: var(--accent-color-bg);
+      box-shadow: 0 0 0 1px var(--accent-color);
+    }
+
+    &--suggest {
+      border-style: dashed;
+      position: relative;
+      overflow: hidden;
 
       &:hover {
-        border-color: var(--accent-color-subtle);
+        background: linear-gradient(135deg, var(--surface-hover) 0%, var(--accent-color-bg) 100%);
+      }
+
+      .algorithm-card__name {
+        color: var(--accent-color);
+      }
+
+      .algorithm-card__description {
+        margin-bottom: 1rem;
+      }
+    }
+
+    &__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      gap: 1rem;
+    }
+
+    &__name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    &__badges {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    &__description {
+      margin: 0 0 1rem 0;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    &__preview {
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    &__pros {
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      line-height: 1.3;
+
+      strong {
+        color: var(--success-color);
+        font-weight: 600;
+      }
+    }
+
+    &__tech-preview {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      line-height: 1.2;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New',
+        monospace;
+
+      strong {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-family: inherit;
+      }
+    }
+
+    &__cta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.75rem;
+      background: var(--accent-color-bg);
+      border-left: 2px solid var(--border-color);
+
+      strong {
+        color: var(--accent-color);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      span {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
       }
     }
   }
 
-  .selected-algorithm-info {
+  .selected-algorithm-details {
     margin-bottom: 1.5rem;
-
-    .algorithm-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-
-      h4 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-primary);
-      }
-
-      .algorithm-badges {
-        display: flex;
-        gap: 0.5rem;
-      }
-    }
-
-    .algorithm-description {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin: 0 0 1rem 0;
-    }
 
     .algorithm-details-toggle {
       background: none;
@@ -236,8 +423,7 @@
     .active-filters {
       background: var(--surface-tertiary);
       padding: 0.75rem;
-      border-radius: 6px;
-      border-left: 3px solid var(--accent-color);
+      border-left: 2px solid var(--accent-color);
 
       &__label {
         color: var(--text-secondary);
@@ -365,14 +551,10 @@
 
 .duplicate-file-container {
   background: var(--surface-primary);
-  border-radius: 6px;
+  border-radius: 3px;
   border: 1px solid var(--border-color);
   overflow: hidden;
   transition: all 0.2s;
-
-  &:hover {
-    border-color: var(--accent-color-subtle);
-  }
 
   &:has(.duplicate-file.selected) {
     border-color: var(--accent-color);

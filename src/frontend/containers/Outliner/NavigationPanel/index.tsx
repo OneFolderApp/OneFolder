@@ -59,6 +59,12 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
         text="Faces"
       />
       <NavigationButton
+        icon={IconSet.FACE_SMILING}
+        onClick={uiStore.setMethodDuplicates}
+        checked={uiStore.isDuplicates}
+        text="Faces"
+      />
+      <NavigationButton
         icon={IconSet.WORLD}
         onClick={uiStore.setMethodMap}
         checked={uiStore.isMap}

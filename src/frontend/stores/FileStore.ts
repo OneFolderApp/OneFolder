@@ -25,6 +25,7 @@ const enum Content {
   Missing,
   Untagged,
   Query,
+  Duplicates,
 }
 
 class FileStore {
@@ -249,6 +250,10 @@ class FileStore {
     return this.content === Content.Query;
   }
 
+  @computed get showsDuplicatesContent(): boolean {
+    return this.content === Content.Duplicates;
+  }
+
   @action.bound switchOrderDirection(): void {
     this.setOrderDirection(
       this.orderDirection === OrderDirection.Desc ? OrderDirection.Asc : OrderDirection.Desc,
@@ -277,6 +282,13 @@ class FileStore {
 
   @action.bound setContentUntagged(): void {
     this.content = Content.Untagged;
+    if (this.rootStore.uiStore.isSlideMode) {
+      this.rootStore.uiStore.disableSlideMode();
+    }
+  }
+
+  @action.bound setContentDuplicates(): void {
+    this.content = Content.Duplicates;
     if (this.rootStore.uiStore.isSlideMode) {
       this.rootStore.uiStore.disableSlideMode();
     }
@@ -368,6 +380,8 @@ class FileStore {
       return this.fetchFilesByQuery();
     } else if (this.showsMissingContent) {
       return this.fetchMissingFiles();
+    } else if (this.showsDuplicatesContent) {
+      return this.fetchDuplicatesFiles();
     }
   }
 
@@ -483,6 +497,18 @@ class FileStore {
       return this.updateFromBackend(fetchedFiles);
     } catch (e) {
       console.log('Could not find files based on criteria', e);
+    }
+  }
+
+  @action.bound async fetchDuplicatesFiles(): Promise<void> {
+    try {
+      // For now, just fetch all files - the duplicate detection logic is in the component
+      // In a future enhancement, we could move this logic to the backend for better performance
+      const fetchedFiles = await this.backend.fetchFiles(this.orderBy, this.orderDirection);
+      this.setContentDuplicates();
+      return this.updateFromBackend(fetchedFiles);
+    } catch (err) {
+      console.error('Could not load files for duplicate detection', err);
     }
   }
 

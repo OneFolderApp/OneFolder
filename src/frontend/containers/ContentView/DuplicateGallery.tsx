@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 import { shell } from 'electron';
-import { GalleryProps } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
+import { CommandDispatcher } from './Commands';
+import { GalleryProps } from './utils';
 
 export enum DuplicateAlgorithm {
   FileSize = 'fileSize',
@@ -98,7 +99,7 @@ interface DuplicateGroup {
 
 interface DuplicateItemProps {
   group: DuplicateGroup;
-  onFileSelect: (file: ClientFile, selectAdditive: boolean, selectRange: boolean) => void;
+  select: (file: ClientFile, toggleSelection: boolean, rangeSelection: boolean) => void;
 }
 
 interface AlgorithmStats {
@@ -108,7 +109,7 @@ interface AlgorithmStats {
   duplicatesFound: number;
 }
 
-const DuplicateItem = observer(({ group, onFileSelect }: DuplicateItemProps) => {
+const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
   const { uiStore } = useStore();
 
   return (
@@ -120,46 +121,57 @@ const DuplicateItem = observer(({ group, onFileSelect }: DuplicateItemProps) => 
       )}
 
       <div className="duplicate-group__files">
-        {group.files.map((file) => (
-          <div key={file.id} className="duplicate-file-container">
-            <div
-              className={`duplicate-file ${uiStore.fileSelection.has(file) ? 'selected' : ''}`}
-              onClick={(e) => onFileSelect(file, e.ctrlKey || e.metaKey, e.shiftKey)}
-            >
-              <div className="duplicate-file__thumbnail">
-                <Thumbnail
-                  file={file}
-                  mounted={true}
-                  forceNoThumbnail={false}
-                  hovered={false}
-                  galleryVideoPlaybackMode="disabled"
-                  isSlideMode={false}
-                />
-              </div>
-              <div className="duplicate-file__info">
-                <div className="duplicate-file__name" title={file.name}>
-                  {file.name}
-                </div>
-                <div className="duplicate-file__dimensions">
-                  {file.width} × {file.height} • {Math.round(file.size / 1024)}KB
-                </div>
-                <div className="duplicate-file__path" title={file.absolutePath}>
-                  {file.absolutePath.split('/').slice(-2).join('/')}
-                </div>
-              </div>
-              <button
-                className="duplicate-file__show-button"
+        {group.files.map((file) => {
+          const eventManager = useMemo(() => new CommandDispatcher(file), [file]);
+
+          return (
+            <div key={file.id} className="duplicate-file-container">
+              <div
+                className={`duplicate-file ${uiStore.fileSelection.has(file) ? 'selected' : ''}`}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  shell.showItemInFolder(file.absolutePath);
+                  // Use both CommandDispatcher for full integration AND the select function for keyboard navigation
+                  eventManager.select(e);
+                  // Disable range selection (shift+click) in duplicate view to prevent selecting hidden files
+                  select(file, e.ctrlKey || e.metaKey, false);
                 }}
-                title="Show in folder"
+                onDoubleClick={eventManager.preview}
+                onContextMenu={eventManager.showContextMenu}
               >
-                Show in Folder
-              </button>
+                <div className="duplicate-file__thumbnail">
+                  <Thumbnail
+                    file={file}
+                    mounted={true}
+                    forceNoThumbnail={false}
+                    hovered={false}
+                    galleryVideoPlaybackMode="disabled"
+                    isSlideMode={false}
+                  />
+                </div>
+                <div className="duplicate-file__info">
+                  <div className="duplicate-file__name" title={file.name}>
+                    {file.name}
+                  </div>
+                  <div className="duplicate-file__dimensions">
+                    {file.width} × {file.height} • {Math.round(file.size / 1024)}KB
+                  </div>
+                  <div className="duplicate-file__path" title={file.absolutePath}>
+                    {file.absolutePath.split('/').slice(-2).join('/')}
+                  </div>
+                </div>
+                <button
+                  className="duplicate-file__show-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    shell.showItemInFolder(file.absolutePath);
+                  }}
+                  title="Show in folder"
+                >
+                  Show in Folder
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -180,6 +192,10 @@ const AlgorithmSelector = ({
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const selectedAlgoInfo = ALGORITHMS.find((a) => a.id === selectedAlgorithm)!;
+  const rootStore = useStore();
+  const { uiStore, fileStore } = rootStore;
+  const hasFilters = uiStore.searchCriteriaList.length > 0;
+  const fileCount = fileStore.fileList.length;
 
   return (
     <div className="algorithm-selector">
@@ -252,8 +268,31 @@ const AlgorithmSelector = ({
 
       <div className="algorithm-actions">
         <button className="btn-primary" onClick={onAnalyze} disabled={isAnalyzing}>
-          {isAnalyzing ? 'Analyzing...' : `Analyze with ${selectedAlgoInfo.name}`}
+          {isAnalyzing ? 'Analyzing...' : `Analyze ${fileCount.toLocaleString()} files`}
         </button>
+
+        {hasFilters && (
+          <div className="active-filters">
+            <div className="active-filters__label">Active filters:</div>
+            <div className="active-filters__list">
+              {uiStore.searchCriteriaList.map((criteria: any, index: number) => (
+                <span key={index} className="active-filters__tag">
+                  {criteria.getLabel({ tags: 'Tags', absolutePath: 'Path' }, rootStore)}
+                </span>
+              ))}
+            </div>
+            <button
+              className="active-filters__clear"
+              onClick={() => {
+                uiStore.clearSearchCriteriaList();
+                fileStore.fetchAllFiles();
+              }}
+              title="Remove all filters and analyze entire collection"
+            >
+              Clear filters and analyze all files
+            </button>
+          </div>
+        )}
 
         {stats && (
           <div className="algorithm-stats">
@@ -590,7 +629,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         ) : (
           <div className="duplicate-gallery__groups">
             {duplicateGroups.map((group) => (
-              <DuplicateItem key={group.id} group={group} onFileSelect={select} />
+              <DuplicateItem key={group.id} group={group} select={select} />
             ))}
           </div>
         )}

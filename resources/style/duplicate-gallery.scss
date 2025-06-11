@@ -233,6 +233,53 @@
       }
     }
 
+    .active-filters {
+      background: var(--surface-tertiary);
+      padding: 0.75rem;
+      border-radius: 6px;
+      border-left: 3px solid var(--accent-color);
+
+      &__label {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+      }
+
+      &__list {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+      }
+
+      &__tag {
+        background: var(--accent-color);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      &__clear {
+        background: none;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.4rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background: var(--surface-hover);
+          color: var(--text-primary);
+          border-color: var(--accent-color);
+        }
+      }
+    }
+
     .algorithm-stats {
       display: flex;
       flex-direction: column;
@@ -319,14 +366,18 @@
 .duplicate-file-container {
   background: var(--surface-primary);
   border-radius: 6px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   overflow: hidden;
   transition: all 0.2s;
-  border: 1px solid var(--border-color);
+
+  &:hover {
+    border-color: var(--accent-color-subtle);
+  }
 
   &:has(.duplicate-file.selected) {
     border-color: var(--accent-color);
     background: var(--accent-color-bg);
+    box-shadow: 0 0 0 2px var(--accent-color);
   }
 }
 

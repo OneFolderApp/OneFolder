@@ -11,6 +11,7 @@ import { useCommandHandler } from './Commands';
 import ListGallery from './ListGallery';
 import FaceGallery from './FaceGallery';
 import CalendarGallery from './CalendarGallery';
+import DuplicateGallery from './DuplicateGallery';
 import MapView from './MapView';
 import MasonryRenderer from './Masonry/MasonryRenderer';
 import SlideMode from './SlideMode';
@@ -164,6 +165,15 @@ const Layout = ({ contentRect }: LayoutProps) => {
     case ViewMethod.Faces:
       overviewElem = (
         <FaceGallery
+          contentRect={contentRect}
+          select={handleFileSelect}
+          lastSelectionIndex={lastSelectionIndex}
+        />
+      );
+      break;
+    case ViewMethod.Duplicates:
+      overviewElem = (
+        <DuplicateGallery
           contentRect={contentRect}
           select={handleFileSelect}
           lastSelectionIndex={lastSelectionIndex}

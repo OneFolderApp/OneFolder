@@ -42,7 +42,8 @@ const ProfilePic = ({ src, name }: ProfilePicProps) => {
   );
 };
 
-const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const FaceGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
   return (
     <div className="face-gallery">
       <div className="wip-container">
@@ -118,4 +119,4 @@ const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) 
   );
 };
 
-export default ListGallery;
+export default FaceGallery;

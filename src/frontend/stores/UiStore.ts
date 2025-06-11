@@ -24,6 +24,7 @@ export const enum ViewMethod {
   Calendar,
   Map,
   Faces,
+  Duplicates,
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
@@ -54,6 +55,7 @@ export interface IHotkeyMap {
   viewCalendar: string;
   viewFaces: string;
   viewMap: string;
+  viewDuplicates: string;
   viewSlide: string;
   search: string;
   advancedSearch: string;
@@ -82,6 +84,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
   viewCalendar: 'alt + 5',
   viewFaces: 'alt + 6',
   viewMap: 'alt + 7',
+  viewDuplicates: 'alt + 8',
   search: 'mod + f',
   advancedSearch: 'mod + shift + f',
   // openPreviewWindow: 'space',
@@ -265,6 +268,10 @@ class UiStore {
     return this.method === ViewMethod.Map;
   }
 
+  @computed get isDuplicates(): boolean {
+    return this.method === ViewMethod.Duplicates;
+  }
+
   @action.bound setThumbnailSize(size: ThumbnailSize): void {
     this.thumbnailSize = size;
   }
@@ -351,6 +358,10 @@ class UiStore {
 
   @action.bound setMethodMap(): void {
     this.method = ViewMethod.Map;
+  }
+
+  @action.bound setMethodDuplicates(): void {
+    this.method = ViewMethod.Duplicates;
   }
 
   @action.bound enableSlideMode(): void {
@@ -903,6 +914,8 @@ class UiStore {
       this.setMethodFaces();
     } else if (matches(hotkeyMap.viewMap)) {
       this.setMethodMap();
+    } else if (matches(hotkeyMap.viewDuplicates)) {
+      this.setMethodDuplicates();
     } else if (matches(hotkeyMap.viewSlide)) {
       this.toggleSlideMode();
     } else {

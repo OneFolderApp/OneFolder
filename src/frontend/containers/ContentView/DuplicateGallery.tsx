@@ -113,42 +113,40 @@ const DuplicateItem = observer(({ group, onFileSelect }: DuplicateItemProps) => 
 
   return (
     <div className="duplicate-group">
-      <div className="duplicate-group__header">
-        <h3>Potential Duplicates ({group.files.length} files)</h3>
-        <span className="duplicate-group__reason">{group.reason}</span>
-        <span className="duplicate-group__algorithm">{group.algorithm}</span>
-        <span className="duplicate-group__confidence">
-          Confidence: {Math.round(group.confidence * 100)}%
-        </span>
-      </div>
       {group.details && (
         <div className="duplicate-group__details">
           <small>{group.details}</small>
         </div>
       )}
+
       <div className="duplicate-group__files">
         {group.files.map((file) => (
-          <div
-            key={file.id}
-            className={`duplicate-file ${uiStore.fileSelection.has(file) ? 'selected' : ''}`}
-            onClick={(e) => onFileSelect(file, e.ctrlKey || e.metaKey, e.shiftKey)}
-          >
-            <div className="duplicate-file__thumbnail">
-              <Thumbnail
-                file={file}
-                mounted={true}
-                forceNoThumbnail={false}
-                hovered={false}
-                galleryVideoPlaybackMode="disabled"
-                isSlideMode={false}
-              />
-            </div>
-            <div className="duplicate-file__info">
-              <div className="duplicate-file__name">{file.name}</div>
-              <div className="duplicate-file__details">
-                {file.width}×{file.height} • {Math.round(file.size / 1024)}KB
+          <div key={file.id} className="duplicate-file-container">
+            <div
+              className={`duplicate-file ${uiStore.fileSelection.has(file) ? 'selected' : ''}`}
+              onClick={(e) => onFileSelect(file, e.ctrlKey || e.metaKey, e.shiftKey)}
+            >
+              <div className="duplicate-file__thumbnail">
+                <Thumbnail
+                  file={file}
+                  mounted={true}
+                  forceNoThumbnail={false}
+                  hovered={false}
+                  galleryVideoPlaybackMode="disabled"
+                  isSlideMode={false}
+                />
               </div>
-              <div className="duplicate-file__path">{file.absolutePath}</div>
+              <div className="duplicate-file__info">
+                <div className="duplicate-file__name" title={file.name}>
+                  {file.name}
+                </div>
+                <div className="duplicate-file__dimensions">
+                  {file.width} × {file.height} • {Math.round(file.size / 1024)}KB
+                </div>
+                <div className="duplicate-file__path" title={file.absolutePath}>
+                  {file.absolutePath.split('/').slice(-2).join('/')}
+                </div>
+              </div>
               <button
                 className="duplicate-file__show-button"
                 onClick={(e) => {
@@ -157,7 +155,7 @@ const DuplicateItem = observer(({ group, onFileSelect }: DuplicateItemProps) => 
                 }}
                 title="Show in folder"
               >
-                📁 Show in Folder
+                Show in Folder
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
+import { shell } from 'electron';
 import { GalleryProps } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
@@ -148,6 +149,16 @@ const DuplicateItem = observer(({ group, onFileSelect }: DuplicateItemProps) => 
                 {file.width}×{file.height} • {Math.round(file.size / 1024)}KB
               </div>
               <div className="duplicate-file__path">{file.absolutePath}</div>
+              <button
+                className="duplicate-file__show-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  shell.showItemInFolder(file.absolutePath);
+                }}
+                title="Show in folder"
+              >
+                📁 Show in Folder
+              </button>
             </div>
           </div>
         ))}

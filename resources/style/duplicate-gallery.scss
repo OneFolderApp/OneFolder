@@ -4,9 +4,7 @@
   overflow-y: auto;
 
   &__header {
-    margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
 
     h2 {
       margin: 0 0 0.5rem 0;
@@ -418,6 +416,31 @@
     color: var(--text-tertiary);
     word-break: break-all;
     opacity: 0.8;
+  }
+
+  &__show-button {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    &:hover {
+      background: var(--accent-color-subtle);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
   }
 }
 

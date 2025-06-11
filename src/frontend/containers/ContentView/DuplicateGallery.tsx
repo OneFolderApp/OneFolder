@@ -357,10 +357,20 @@ const AlgorithmSelector = ({
         {stats && (
           <div className="algorithm-stats">
             <span>
-              Processed {stats.filesAnalyzed} files in {stats.processingTime}ms
+              <strong>{stats.processingTime}ms</strong>
+              <small>Processing Time</small>
             </span>
             <span>
-              Found {stats.groupsFound} groups with {stats.duplicatesFound} total files
+              <strong>{stats.filesAnalyzed}</strong>
+              <small>Files Analyzed</small>
+            </span>
+            <span>
+              <strong>{stats.groupsFound}</strong>
+              <small>Duplicate Groups</small>
+            </span>
+            <span>
+              <strong>{stats.duplicatesFound}</strong>
+              <small>Total Duplicates</small>
             </span>
           </div>
         )}
@@ -374,7 +384,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<DuplicateAlgorithm>(
-    DuplicateAlgorithm.FileHash,
+    DuplicateAlgorithm.FileSize,
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
 

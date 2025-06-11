@@ -53,15 +53,15 @@ const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
         text="Grid"
       />
       <NavigationButton
-        icon={IconSet.FACE_SMILING}
-        onClick={uiStore.setMethodFaces}
-        checked={uiStore.isFaces}
+        icon={IconSet.DUPLICATE}
+        onClick={uiStore.setMethodDuplicates}
+        checked={uiStore.isDuplicates}
         text="Faces"
       />
       <NavigationButton
         icon={IconSet.FACE_SMILING}
-        onClick={uiStore.setMethodDuplicates}
-        checked={uiStore.isDuplicates}
+        onClick={uiStore.setMethodFaces}
+        checked={uiStore.isFaces}
         text="Faces"
       />
       <NavigationButton

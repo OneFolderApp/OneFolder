@@ -387,6 +387,9 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     DuplicateAlgorithm.FileSize,
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
+  const [displayedGroupsCount, setDisplayedGroupsCount] = useState(100);
+
+  const GROUPS_PER_PAGE = 100;
 
   // Simplified hash function for demo (in production, use crypto.createHash)
   const simpleHash = (str: string): string => {
@@ -619,6 +622,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
       const duplicatesFound = groups.reduce((sum, group) => sum + group.files.length, 0);
 
       setDuplicateGroups(groups);
+      setDisplayedGroupsCount(GROUPS_PER_PAGE); // Reset pagination
       setStats({
         processingTime,
         filesAnalyzed: fileStore.fileList.length,
@@ -636,6 +640,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   useEffect(() => {
     setDuplicateGroups([]);
     setStats(null);
+    setDisplayedGroupsCount(GROUPS_PER_PAGE);
   }, [selectedAlgorithm]);
 
   // Run initial analysis only when file list changes (not when algorithm changes)
@@ -643,7 +648,15 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     // Clear any existing results when file list changes
     setDuplicateGroups([]);
     setStats(null);
+    setDisplayedGroupsCount(GROUPS_PER_PAGE);
   }, [fileStore.fileListLastModified]);
+
+  const loadMoreGroups = () => {
+    setDisplayedGroupsCount((prev) => prev + GROUPS_PER_PAGE);
+  };
+
+  const displayedGroups = duplicateGroups.slice(0, displayedGroupsCount);
+  const hasMoreGroups = duplicateGroups.length > displayedGroupsCount;
 
   return (
     <div className="duplicate-gallery">
@@ -698,9 +711,22 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           </div>
         ) : (
           <div className="duplicate-gallery__groups">
-            {duplicateGroups.map((group) => (
+            {displayedGroups.map((group) => (
               <DuplicateItem key={group.id} group={group} select={select} />
             ))}
+
+            {hasMoreGroups && (
+              <div className="duplicate-gallery__load-more">
+                <p>
+                  Showing {displayedGroups.length} of {duplicateGroups.length} duplicate groups
+                  {duplicateGroups.length >= 1000 && ' (large collection detected)'}
+                </p>
+                <button className="btn-secondary" onClick={loadMoreGroups}>
+                  Load Next{' '}
+                  {Math.min(GROUPS_PER_PAGE, duplicateGroups.length - displayedGroupsCount)} Groups
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

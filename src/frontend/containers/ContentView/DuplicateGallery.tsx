@@ -169,81 +169,81 @@ const AlgorithmSelector = ({
   isAnalyzing: boolean;
   stats: AlgorithmStats | null;
 }) => {
-  const [showDetails, setShowDetails] = useState<DuplicateAlgorithm | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const selectedAlgoInfo = ALGORITHMS.find((a) => a.id === selectedAlgorithm)!;
 
   return (
     <div className="algorithm-selector">
-      <h3>Detection Algorithm</h3>
-      <div className="algorithm-grid">
-        {ALGORITHMS.map((algo) => (
-          <div key={algo.id} className="algorithm-card">
-            <div className="algorithm-card__header">
-              <label className="algorithm-card__radio">
-                <input
-                  type="radio"
-                  name="algorithm"
-                  value={algo.id}
-                  checked={selectedAlgorithm === algo.id}
-                  onChange={() => onAlgorithmChange(algo.id)}
-                />
-                <span className="algorithm-card__name">{algo.name}</span>
-              </label>
-              <div className="algorithm-card__badges">
-                <span className={`badge badge--speed badge--${algo.speed.toLowerCase()}`}>
-                  {algo.speed}
-                </span>
-                <span
-                  className={`badge badge--accuracy badge--${algo.accuracy
-                    .toLowerCase()
-                    .replace(' ', '-')}`}
-                >
-                  {algo.accuracy}
-                </span>
-              </div>
-            </div>
+      <div className="algorithm-select-container">
+        <label htmlFor="algorithm-select" className="algorithm-select-label">
+          Choose Detection Method:
+        </label>
+        <select
+          id="algorithm-select"
+          value={selectedAlgorithm}
+          onChange={(e) => onAlgorithmChange(e.target.value as DuplicateAlgorithm)}
+          className="algorithm-select"
+        >
+          {ALGORITHMS.map((algo) => (
+            <option key={algo.id} value={algo.id}>
+              {algo.name} - {algo.speed} Speed, {algo.accuracy} Accuracy
+            </option>
+          ))}
+        </select>
+      </div>
 
-            <p className="algorithm-card__description">{algo.description}</p>
-
-            <button
-              className="algorithm-card__details-toggle"
-              onClick={() => setShowDetails(showDetails === algo.id ? null : algo.id)}
+      <div className="selected-algorithm-info">
+        <div className="algorithm-header">
+          <h4>{selectedAlgoInfo.name}</h4>
+          <div className="algorithm-badges">
+            <span className={`badge badge--speed badge--${selectedAlgoInfo.speed.toLowerCase()}`}>
+              {selectedAlgoInfo.speed}
+            </span>
+            <span
+              className={`badge badge--accuracy badge--${selectedAlgoInfo.accuracy
+                .toLowerCase()
+                .replace(' ', '-')}`}
             >
-              {showDetails === algo.id ? 'Hide Details' : 'Show Details'}
-            </button>
-
-            {showDetails === algo.id && (
-              <div className="algorithm-details">
-                <div className="algorithm-details__section">
-                  <strong>Technical Implementation:</strong>
-                  <p>{algo.technical}</p>
-                </div>
-                <div className="algorithm-details__section">
-                  <strong>Pros:</strong>
-                  <ul>
-                    {algo.pros.map((pro, i) => (
-                      <li key={i}>{pro}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="algorithm-details__section">
-                  <strong>Cons:</strong>
-                  <ul>
-                    {algo.cons.map((con, i) => (
-                      <li key={i}>{con}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
+              {selectedAlgoInfo.accuracy}
+            </span>
           </div>
-        ))}
+        </div>
+
+        <p className="algorithm-description">{selectedAlgoInfo.description}</p>
+
+        <button className="algorithm-details-toggle" onClick={() => setShowDetails(!showDetails)}>
+          {showDetails ? 'Hide Technical Details' : 'Show Technical Details'}
+        </button>
+
+        {showDetails && (
+          <div className="algorithm-details">
+            <div className="algorithm-details__section">
+              <strong>Technical Implementation:</strong>
+              <p>{selectedAlgoInfo.technical}</p>
+            </div>
+            <div className="algorithm-details__section">
+              <strong>Advantages:</strong>
+              <ul>
+                {selectedAlgoInfo.pros.map((pro, i) => (
+                  <li key={i}>{pro}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="algorithm-details__section">
+              <strong>Limitations:</strong>
+              <ul>
+                {selectedAlgoInfo.cons.map((con, i) => (
+                  <li key={i}>{con}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="algorithm-actions">
         <button className="btn-primary" onClick={onAnalyze} disabled={isAnalyzing}>
-          {isAnalyzing
-            ? 'Analyzing...'
-            : `Analyze with ${ALGORITHMS.find((a) => a.id === selectedAlgorithm)?.name}`}
+          {isAnalyzing ? 'Analyzing...' : `Analyze with ${selectedAlgoInfo.name}`}
         </button>
 
         {stats && (

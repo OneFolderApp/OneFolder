@@ -514,11 +514,18 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     }
   });
 
+  // Clear results when algorithm changes (user must manually re-analyze)
   useEffect(() => {
-    if (fileStore.fileList.length > 0) {
-      detectDuplicates();
-    }
-  }, [selectedAlgorithm, fileStore.fileListLastModified]);
+    setDuplicateGroups([]);
+    setStats(null);
+  }, [selectedAlgorithm]);
+
+  // Run initial analysis only when file list changes (not when algorithm changes)
+  useEffect(() => {
+    // Clear any existing results when file list changes
+    setDuplicateGroups([]);
+    setStats(null);
+  }, [fileStore.fileListLastModified]);
 
   return (
     <div className="duplicate-gallery">
@@ -547,7 +554,19 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
               {ALGORITHMS.find((a) => a.id === selectedAlgorithm)?.name}...
             </p>
           </div>
-        ) : duplicateGroups.length === 0 ? (
+        ) : duplicateGroups.length === 0 && stats === null ? (
+          <div className="duplicate-gallery__empty">
+            <h3>Ready to Analyze! 🔍</h3>
+            <p>
+              Select an algorithm above and click &quot;Analyze&quot; to search for duplicates in
+              your photo collection.
+            </p>
+            <p>
+              Each algorithm has different strengths - explore the details to choose the best method
+              for your needs.
+            </p>
+          </div>
+        ) : duplicateGroups.length === 0 && stats !== null ? (
           <div className="duplicate-gallery__empty">
             <h3>No duplicates found! 🎉</h3>
             <p>

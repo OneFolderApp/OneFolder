@@ -455,6 +455,23 @@
     word-break: break-all;
   }
 
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+
+    .tag {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.2rem;
+      border-radius: 3px;
+      font-weight: 500;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
   &__show-button {
     margin: 0.5rem;
     padding: 0.4rem 0.75rem;

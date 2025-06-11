@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 import { shell } from 'electron';
+import { Tag } from 'widgets';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
@@ -157,6 +158,18 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
                   <div className="duplicate-file__path" title={file.absolutePath}>
                     {file.absolutePath.split('/').slice(-2).join('/')}
                   </div>
+                  {file.tags.size > 0 && (
+                    <div className="duplicate-file__tags">
+                      {Array.from(file.tags, (tag) => (
+                        <Tag
+                          key={tag.id}
+                          text={tag.name}
+                          color={tag.viewColor}
+                          tooltip={tag.path.join(' › ')}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   className="duplicate-file__show-button"

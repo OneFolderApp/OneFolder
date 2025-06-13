@@ -1,5 +1,6 @@
 import { IndexableType } from 'dexie';
 import { ConditionDTO, OrderBy, OrderDirection } from './data-storage-search';
+import { DismissedDuplicateGroupDTO } from './dismissed-duplicate-group';
 import { FileDTO } from './file';
 import { FileSearchDTO } from './file-search';
 import { ID } from './id';
@@ -43,4 +44,9 @@ export interface DataStorage {
   removeSearch(search: ID): Promise<void>;
   countFiles(): Promise<[fileCount: number, untaggedFileCount: number]>;
   clear(): Promise<void>;
+
+  // Dismissed Duplicate Groups
+  fetchDismissedDuplicateGroups(): Promise<DismissedDuplicateGroupDTO[]>;
+  createDismissedDuplicateGroup(dismissedGroup: DismissedDuplicateGroupDTO): Promise<void>;
+  removeDismissedDuplicateGroup(groupHash: string): Promise<void>;
 }

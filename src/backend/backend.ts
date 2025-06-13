@@ -11,6 +11,7 @@ import {
   OrderDirection,
   StringConditionDTO,
 } from '../api/data-storage-search';
+import { DismissedDuplicateGroupDTO } from '../api/dismissed-duplicate-group';
 import { FileDTO } from '../api/file';
 import { FileSearchDTO } from '../api/file-search';
 import { ID } from '../api/id';
@@ -28,6 +29,7 @@ export default class Backend implements DataStorage {
   #tags: Table<TagDTO, ID>;
   #locations: Table<LocationDTO, ID>;
   #searches: Table<FileSearchDTO, ID>;
+  #dismissedDuplicateGroups: Table<DismissedDuplicateGroupDTO, ID>;
   #db: Dexie;
   #notifyChange: () => void;
 
@@ -38,8 +40,33 @@ export default class Backend implements DataStorage {
     this.#tags = db.table('tags');
     this.#locations = db.table('locations');
     this.#searches = db.table('searches');
+    this.#dismissedDuplicateGroups = db.table('dismissedDuplicateGroups');
     this.#db = db;
     this.#notifyChange = notifyChange;
+  }
+  async fetchDismissedDuplicateGroups(): Promise<DismissedDuplicateGroupDTO[]> {
+    console.info('IndexedDB: Fetching dismissed duplicate groups...');
+    return this.#dismissedDuplicateGroups.orderBy('dismissedAt').reverse().toArray();
+  }
+
+  async createDismissedDuplicateGroup(dismissedGroup: DismissedDuplicateGroupDTO): Promise<void> {
+    console.info('IndexedDB: Creating dismissed duplicate group...', dismissedGroup);
+
+    // First try to delete any existing record with the same groupHash
+    await this.#dismissedDuplicateGroups
+      .where('groupHash')
+      .equals(dismissedGroup.groupHash)
+      .delete();
+
+    // Then add the new record
+    await this.#dismissedDuplicateGroups.add(dismissedGroup);
+    this.#notifyChange();
+  }
+
+  async removeDismissedDuplicateGroup(groupHash: string): Promise<void> {
+    console.info('IndexedDB: Removing dismissed duplicate group...', groupHash);
+    await this.#dismissedDuplicateGroups.where('groupHash').equals(groupHash).delete();
+    this.#notifyChange();
   }
 
   static async init(db: Dexie, notifyChange: () => void): Promise<Backend> {

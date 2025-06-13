@@ -778,6 +778,60 @@ class FileStore {
     file.addTag(peopleTag);
     return peopleTag;
   }
+
+  // DISMISSED DUPLICATE GROUPS
+  // DISMISSED DUPLICATE GROUPS
+  // DISMISSED DUPLICATE GROUPS
+
+  /** Fetch all dismissed duplicate groups from the database */
+  async fetchDismissedDuplicateGroups(): Promise<
+    import('../../api/dismissed-duplicate-group').DismissedDuplicateGroupDTO[]
+  > {
+    try {
+      return await this.backend.fetchDismissedDuplicateGroups();
+    } catch (error) {
+      console.error('Failed to fetch dismissed duplicate groups:', error);
+      return [];
+    }
+  }
+
+  /** Add a dismissed duplicate group to the database */
+  async createDismissedDuplicateGroup(
+    groupHash: string,
+    algorithm: string,
+    fileIds: string[],
+  ): Promise<void> {
+    try {
+      // Don't set id field - let Dexie auto-increment it
+      const dismissedGroup = {
+        groupHash,
+        algorithm,
+        fileIds: JSON.stringify(fileIds), // Convert array to JSON string
+        dismissedAt: new Date(),
+      } as import('../../api/dismissed-duplicate-group').DismissedDuplicateGroupDTO;
+
+      await this.backend.createDismissedDuplicateGroup(dismissedGroup);
+      console.log('Successfully dismissed duplicate group:', {
+        groupHash,
+        algorithm,
+        fileCount: fileIds.length,
+      });
+    } catch (error) {
+      console.error('Failed to dismiss duplicate group:', error);
+      throw error; // Re-throw so UI can handle it
+    }
+  }
+
+  /** Remove a dismissed duplicate group from the database (undismiss) */
+  async removeDismissedDuplicateGroup(groupHash: string): Promise<void> {
+    try {
+      await this.backend.removeDismissedDuplicateGroup(groupHash);
+      console.log('Successfully undismissed duplicate group:', groupHash);
+    } catch (error) {
+      console.error('Failed to undismiss duplicate group:', error);
+      throw error; // Re-throw so UI can handle it
+    }
+  }
 }
 
 export default FileStore;

@@ -141,6 +141,16 @@ const dbConfig: DBVersioningConfig[] = [
         });
     },
   },
+  {
+    // Version 11, Dismissed Duplicate Groups - Store dismissed duplicate group hashes
+    version: 11,
+    collections: [
+      {
+        name: 'dismissedDuplicateGroups',
+        schema: '++id, &groupHash, algorithm, fileIds, dismissedAt, userNote',
+      },
+    ],
+  },
 ];
 
 type DBVersioningConfig = {

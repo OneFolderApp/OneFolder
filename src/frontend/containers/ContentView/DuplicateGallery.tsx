@@ -8,6 +8,7 @@ import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
 import { CommandDispatcher } from './Commands';
 import { GalleryProps } from './utils';
+import { DismissedDuplicateGroupDTO } from '../../../api/dismissed-duplicate-group';
 
 export enum DuplicateAlgorithm {
   FileSize = 'fileSize',
@@ -96,11 +97,14 @@ interface DuplicateGroup {
   confidence: number;
   algorithm: DuplicateAlgorithm;
   details?: string;
+  hash: string; // Unique hash for persistent dismissal
 }
 
 interface DuplicateItemProps {
   group: DuplicateGroup;
   select: (file: ClientFile, toggleSelection: boolean, rangeSelection: boolean) => void;
+  onDismiss: (group: DuplicateGroup) => void;
+  isDismissing: boolean;
 }
 
 interface AlgorithmStats {
@@ -149,7 +153,7 @@ const getRelativePath = (fullPath: string, commonPrefix: string): string => {
   return fullPath;
 };
 
-const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
+const DuplicateItem = observer(({ group, select, onDismiss, isDismissing }: DuplicateItemProps) => {
   const { uiStore } = useStore();
   const [showAllFiles, setShowAllFiles] = useState(false);
 
@@ -171,7 +175,38 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
 
   return (
     <div className="duplicate-group">
-      {/* 1. Image previews first */}
+      {/* Dismiss Button */}
+      <div
+        className="duplicate-group__dismiss"
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <button
+          className="duplicate-file__show-button"
+          onClick={() => onDismiss(group)}
+          disabled={isDismissing}
+          style={{
+            opacity: isDismissing ? 0.6 : 1,
+            cursor: isDismissing ? 'not-allowed' : 'pointer',
+          }}
+          title="Dismiss this duplicate group so it won't appear in future analyses"
+        >
+          <span
+            style={{
+              transform: 'scale(0.8)',
+              display: 'inline-block',
+              marginRight: '4px',
+            }}
+          >
+            {IconSet.EYE_LOW_VISION}
+          </span>
+          {isDismissing ? 'Dismissing...' : 'Dismiss duplicate'}
+        </button>
+      </div>
+
+      {/* 1. Image previews */}
       <div className="duplicate-group__files">
         {filesToShow.map((file) => {
           const eventManager = getEventManager(file);
@@ -405,7 +440,7 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
         </div>
       )}
 
-      {/* 3. Description with INFO icon last */}
+      {/* 3. Description with INFO icon */}
       {group.details && (
         <div className="duplicate-group__details">
           <span style={{ marginRight: '8px', verticalAlign: 'middle' }}>{IconSet.INFO}</span>
@@ -622,10 +657,31 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
   const [displayedGroupsCount, setDisplayedGroupsCount] = useState(100);
+  const [dismissedGroups, setDismissedGroups] = useState<Set<string>>(new Set());
+  const [isDismissing, setIsDismissing] = useState(false);
+  const [showManagement, setShowManagement] = useState(false);
+  const [dismissedGroupsList, setDismissedGroupsList] = useState<DismissedDuplicateGroupDTO[]>([]);
+  const [isLoadingManagement, setIsLoadingManagement] = useState(false);
 
   const GROUPS_PER_PAGE = 100;
 
-  // Simplified hash function for demo (in production, use crypto.createHash)
+  // Generate a consistent hash for a duplicate group based on sorted file IDs
+  const generateGroupHash = (files: ClientFile[], algorithm: DuplicateAlgorithm): string => {
+    // Sort file IDs to ensure consistent hash regardless of order
+    const sortedIds = files.map((f) => f.id).sort();
+    const hashInput = `${algorithm}:${sortedIds.join(',')}`;
+
+    // Simple hash function (in Phase 2, we'll use crypto.createHash for production)
+    let hash = 0;
+    for (let i = 0; i < hashInput.length; i++) {
+      const char = hashInput.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
+  };
+
+  // Keep the old function for other uses
   const simpleHash = (str: string): string => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -658,6 +714,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           confidence: 0.6,
           algorithm: DuplicateAlgorithm.FileSize,
           details: `All files are exactly ${Math.round(size / 1024)}KB (${size} bytes)`,
+          hash: generateGroupHash(groupFiles, DuplicateAlgorithm.FileSize),
         });
       }
     }
@@ -688,6 +745,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           confidence: 0.8,
           algorithm: DuplicateAlgorithm.FileName,
           details: `All files named "${name}" (case-insensitive match)`,
+          hash: generateGroupHash(groupFiles, DuplicateAlgorithm.FileName),
         });
       }
     }
@@ -720,6 +778,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           confidence: 0.95,
           algorithm: DuplicateAlgorithm.FileHash,
           details: `MD5 hash: ${hash} (demo hash based on file properties)`,
+          hash: generateGroupHash(groupFiles, DuplicateAlgorithm.FileHash),
         });
       }
     }
@@ -751,6 +810,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           confidence: 0.85,
           algorithm: DuplicateAlgorithm.Metadata,
           details: `Same dimensions: ${metadata}.`,
+          hash: generateGroupHash(groupFiles, DuplicateAlgorithm.Metadata),
         });
       }
     }
@@ -820,6 +880,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           confidence: Math.min(0.9, 0.5 + similarFiles.length * 0.1),
           algorithm: DuplicateAlgorithm.Combined,
           details: 'Multi-factor analysis: size + name + metadata matching with 70%+ confidence',
+          hash: generateGroupHash(similarFiles, DuplicateAlgorithm.Combined),
         });
       }
     }
@@ -870,6 +931,22 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
       setIsAnalyzing(false);
     }
   });
+
+  // Load dismissed groups on mount
+  useEffect(() => {
+    const loadDismissedGroups = async () => {
+      try {
+        const dismissed = await fileStore.fetchDismissedDuplicateGroups();
+        const dismissedHashes = new Set(dismissed.map((d) => d.groupHash));
+        setDismissedGroups(dismissedHashes);
+        console.log('Loaded dismissed groups:', dismissed.length);
+      } catch (error) {
+        console.error('Failed to load dismissed groups:', error);
+      }
+    };
+
+    loadDismissedGroups();
+  }, []); // Only run once on mount
 
   // Clear results when algorithm changes (user must manually re-analyze)
   useEffect(() => {
@@ -926,8 +1003,88 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     setDisplayedGroupsCount((prev) => prev + GROUPS_PER_PAGE);
   };
 
-  const displayedGroups = duplicateGroups.slice(0, displayedGroupsCount);
-  const hasMoreGroups = duplicateGroups.length > displayedGroupsCount;
+  const loadManagementData = async () => {
+    setIsLoadingManagement(true);
+    try {
+      const dismissed = await fileStore.fetchDismissedDuplicateGroups();
+      setDismissedGroupsList(dismissed);
+      console.log('Loaded management data:', dismissed.length, 'dismissed groups');
+    } catch (error) {
+      console.error('Failed to load management data:', error);
+    } finally {
+      setIsLoadingManagement(false);
+    }
+  };
+
+  const undismissGroup = async (dismissedGroup: DismissedDuplicateGroupDTO) => {
+    try {
+      await fileStore.removeDismissedDuplicateGroup(dismissedGroup.groupHash);
+
+      // Remove from both management list and active dismissed set
+      setDismissedGroupsList((prev) =>
+        prev.filter((g) => g.groupHash !== dismissedGroup.groupHash),
+      );
+      setDismissedGroups((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(dismissedGroup.groupHash);
+        return newSet;
+      });
+
+      console.log('Successfully undismissed group:', dismissedGroup.groupHash);
+    } catch (error) {
+      console.error('Failed to undismiss group:', error);
+    }
+  };
+
+  const toggleManagement = () => {
+    if (!showManagement) {
+      loadManagementData();
+    }
+    setShowManagement(!showManagement);
+  };
+
+  const dismissGroup = async (group: DuplicateGroup) => {
+    console.log('Dismissing group:', {
+      id: group.id,
+      hash: group.hash,
+      algorithm: group.algorithm,
+      fileCount: group.files.length,
+      fileIds: group.files.map((f) => f.id).sort(), // Show sorted IDs for consistency
+      filePaths: group.files.map((f) => f.absolutePath),
+    });
+
+    setIsDismissing(true);
+    try {
+      // Save to backend
+      await fileStore.createDismissedDuplicateGroup(
+        group.hash,
+        group.algorithm,
+        group.files.map((f) => f.id),
+      );
+
+      // Add group hash to dismissed set (for immediate UI feedback)
+      setDismissedGroups((prev) => new Set(prev).add(group.hash));
+    } catch (error) {
+      console.error('Failed to dismiss group:', error);
+      // Could show a toast notification here
+    } finally {
+      setIsDismissing(false);
+    }
+  };
+
+  // Filter out dismissed groups from display
+  const visibleGroups = duplicateGroups.filter((group) => !dismissedGroups.has(group.hash));
+  const displayedGroups = visibleGroups.slice(0, displayedGroupsCount);
+  const hasMoreGroups = visibleGroups.length > displayedGroupsCount;
+
+  // Calculate updated stats that reflect only visible (non-dismissed) groups
+  const activeStats: AlgorithmStats | null = stats
+    ? {
+        ...stats, // Keep processingTime and filesAnalyzed unchanged
+        groupsFound: visibleGroups.length,
+        duplicatesFound: visibleGroups.reduce((sum, group) => sum + group.files.length, 0),
+      }
+    : null;
 
   return (
     <div className="duplicate-gallery">
@@ -944,8 +1101,149 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         onAlgorithmChange={setSelectedAlgorithm}
         onAnalyze={detectDuplicates}
         isAnalyzing={isAnalyzing}
-        stats={stats}
+        stats={activeStats}
       />
+
+      <div
+        className="algorithm-management"
+        style={{
+          marginTop: '16px',
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <button
+          className="duplicate-file__show-button"
+          onClick={toggleManagement}
+          title={showManagement ? 'Hide dismissed groups' : 'Manage dismissed groups'}
+        >
+          <span
+            style={{
+              transform: 'scale(0.8)',
+              display: 'inline-block',
+              marginRight: '4px',
+            }}
+          >
+            {IconSet.EYE_LOW_VISION}
+          </span>
+          Dismissed ({dismissedGroups.size})
+        </button>
+      </div>
+
+      {showManagement && (
+        <div className="management-panel">
+          <div className="management-panel__header">
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '16px',
+              }}
+            >
+              <div>
+                <h3 style={{ marginTop: 0 }}>Dismissed Duplicate Groups</h3>
+                <p style={{ marginBottom: 0 }}>
+                  Groups you&apos;ve dismissed will not appear in future duplicate analyses.
+                </p>
+              </div>
+              {dismissedGroupsList.length > 0 && (
+                <button
+                  className="duplicate-file__show-button"
+                  onClick={() => {
+                    // Undismiss all groups
+                    dismissedGroupsList.forEach((group) => undismissGroup(group));
+                  }}
+                  title="Undismiss all dismissed groups"
+                >
+                  <span
+                    style={{
+                      transform: 'scale(0.8)',
+                      display: 'inline-block',
+                      marginRight: '4px',
+                    }}
+                  >
+                    {IconSet.EYE}
+                  </span>
+                  Undismiss All
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isLoadingManagement ? (
+            <div className="management-panel__loading">
+              <div className="loading-spinner" />
+              <p>Loading dismissed groups...</p>
+            </div>
+          ) : dismissedGroupsList.length === 0 ? (
+            <div className="management-panel__empty">
+              <h4>No Dismissed Groups</h4>
+              <p>You haven&apos;t dismissed any duplicate groups yet.</p>
+            </div>
+          ) : (
+            <div className="management-panel__list">
+              {dismissedGroupsList.map((dismissed) => (
+                <div
+                  key={dismissed.groupHash}
+                  className="dismissed-group-item"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    padding: '12px',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div className="dismissed-group-item__algorithm">
+                      <strong>
+                        {ALGORITHMS.find((a) => a.id === dismissed.algorithm)?.name ||
+                          dismissed.algorithm}
+                      </strong>
+                    </div>
+                    <div
+                      className="dismissed-group-item__details"
+                      style={{
+                        marginTop: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <span style={{ marginRight: '8px' }}>
+                        {IconSet.INFO} {JSON.parse(dismissed.fileIds).length} files
+                      </span>
+                      <span style={{ marginRight: '8px' }}>
+                        {IconSet.FILTER_DATE} Dismissed {dismissed.dismissedAt.toLocaleDateString()}{' '}
+                        at {dismissed.dismissedAt.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="dismissed-group-item__actions">
+                    <button
+                      className="duplicate-file__show-button"
+                      onClick={() => undismissGroup(dismissed)}
+                      title="Undismiss this group so it appears in future analyses"
+                    >
+                      <span
+                        style={{
+                          transform: 'scale(0.8)',
+                          display: 'inline-block',
+                          marginRight: '4px',
+                        }}
+                      >
+                        {IconSet.EYE}
+                      </span>
+                      Undismiss
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="duplicate-gallery__content">
         {isAnalyzing ? (
@@ -983,18 +1281,24 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         ) : (
           <div className="duplicate-gallery__groups">
             {displayedGroups.map((group) => (
-              <DuplicateItem key={group.id} group={group} select={select} />
+              <DuplicateItem
+                key={group.id}
+                group={group}
+                select={select}
+                onDismiss={dismissGroup}
+                isDismissing={isDismissing}
+              />
             ))}
 
             {hasMoreGroups && (
               <div className="duplicate-gallery__load-more">
                 <p>
-                  Showing {displayedGroups.length} of {duplicateGroups.length} duplicate groups
-                  {duplicateGroups.length >= 1000 && ' (large collection detected)'}
+                  Showing {displayedGroups.length} of {visibleGroups.length} duplicate groups
+                  {visibleGroups.length >= 1000 && ' (large collection detected)'}
                 </p>
                 <button className="btn-secondary" onClick={loadMoreGroups}>
-                  Load Next{' '}
-                  {Math.min(GROUPS_PER_PAGE, duplicateGroups.length - displayedGroupsCount)} Groups
+                  Load Next {Math.min(GROUPS_PER_PAGE, visibleGroups.length - displayedGroupsCount)}{' '}
+                  Groups
                 </button>
               </div>
             )}

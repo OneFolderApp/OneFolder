@@ -785,3 +785,106 @@
     transform: rotate(360deg);
   }
 }
+
+// Management Panel Styles
+.management-panel {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: var(--surface-tertiary);
+
+  &__header {
+    h3 {
+      margin-top: 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 0;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+
+    h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  }
+
+  &__list {
+    margin-top: 16px;
+  }
+}
+
+.dismissed-group-item {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--surface-primary);
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-color-subtle);
+  }
+
+  &__algorithm {
+    color: var(--text-primary);
+
+    strong {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+  }
+
+  &__details {
+    span {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  &__actions {
+    flex-shrink: 0;
+  }
+}

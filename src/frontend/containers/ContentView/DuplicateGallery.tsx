@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 import { shell } from 'electron';
-import { Tag } from 'widgets';
+import { Tag, IconSet } from 'widgets';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
@@ -110,20 +110,74 @@ interface AlgorithmStats {
   duplicatesFound: number;
 }
 
+// Utility function to find the longest common path prefix
+const findCommonPathPrefix = (paths: string[]): string => {
+  if (paths.length === 0) {
+    return '';
+  }
+  if (paths.length === 1) {
+    return paths[0].split('/').slice(0, -1).join('/') + '/';
+  }
+
+  // Split all paths into segments
+  const pathSegments = paths.map((path) => path.split('/'));
+
+  // Find the minimum length to avoid out of bounds
+  const minLength = Math.min(...pathSegments.map((segments) => segments.length));
+
+  const commonPrefix: string[] = [];
+
+  // Compare segments from the beginning
+  for (let i = 0; i < minLength - 1; i++) {
+    // -1 to exclude filename
+    const segment = pathSegments[0][i];
+    if (pathSegments.every((segments) => segments[i] === segment)) {
+      commonPrefix.push(segment);
+    } else {
+      break;
+    }
+  }
+
+  return commonPrefix.length > 0 ? commonPrefix.join('/') + '/' : '';
+};
+
+// Get the relative path after removing the common prefix
+const getRelativePath = (fullPath: string, commonPrefix: string): string => {
+  if (commonPrefix && fullPath.startsWith(commonPrefix)) {
+    return fullPath.slice(commonPrefix.length);
+  }
+  return fullPath;
+};
+
 const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
   const { uiStore } = useStore();
+  const [showAllFiles, setShowAllFiles] = useState(false);
+
+  const MAX_INITIAL_FILES = 5;
+  const shouldLimitFiles = group.files.length > MAX_INITIAL_FILES;
+  const filesToShow =
+    shouldLimitFiles && !showAllFiles ? group.files.slice(0, MAX_INITIAL_FILES) : group.files;
+  const hiddenFilesCount = group.files.length - MAX_INITIAL_FILES;
+
+  // Calculate common path and relative paths
+  const allPaths = group.files.map((file) => file.absolutePath);
+  const commonPath = findCommonPathPrefix(allPaths);
+  const hasCommonPath = commonPath.length > 1; // More than just "/"
+
+  // Create a stable function to get event manager for any file
+  const getEventManager = useCallback((file: ClientFile) => {
+    return new CommandDispatcher(file);
+  }, []);
 
   return (
     <div className="duplicate-group">
-      {group.details && (
-        <div className="duplicate-group__details">
-          <small>{group.details}</small>
-        </div>
-      )}
-
+      {/* 1. Image previews first */}
       <div className="duplicate-group__files">
-        {group.files.map((file) => {
-          const eventManager = useMemo(() => new CommandDispatcher(file), [file]);
+        {filesToShow.map((file) => {
+          const eventManager = getEventManager(file);
+          const displayPath = hasCommonPath
+            ? getRelativePath(file.absolutePath, commonPath)
+            : file.absolutePath.split('/').slice(-2).join('/');
 
           return (
             <div key={file.id} className="duplicate-file-container">
@@ -156,7 +210,7 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
                     {file.width} × {file.height} • {Math.round(file.size / 1024)}KB
                   </div>
                   <div className="duplicate-file__path" title={file.absolutePath}>
-                    {file.absolutePath.split('/').slice(-2).join('/')}
+                    {displayPath}
                   </div>
                   {file.tags.size > 0 && (
                     <div className="duplicate-file__tags">
@@ -185,7 +239,107 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
             </div>
           );
         })}
+
+        {shouldLimitFiles && !showAllFiles && (
+          <div className="duplicate-file-container">
+            <div
+              className="duplicate-file duplicate-file--show-more"
+              onClick={() => setShowAllFiles(true)}
+              title={`Show ${hiddenFilesCount} more similar ${
+                hiddenFilesCount === 1 ? 'file' : 'files'
+              }`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowAllFiles(true);
+                }
+              }}
+            >
+              <div
+                className="duplicate-file__thumbnail duplicate-file__thumbnail--show-more"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  width: '100%',
+                  textAlign: 'center',
+                  padding: '16px',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  className="show-more-plus"
+                  style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}
+                >
+                  +{hiddenFilesCount}
+                </div>
+                <div
+                  className="show-more-text"
+                  style={{ fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}
+                >
+                  Show More
+                </div>
+                <div className="show-more-subtitle" style={{ fontSize: '12px', opacity: 0.7 }}>
+                  {hiddenFilesCount} more similar {hiddenFilesCount === 1 ? 'file' : 'files'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 2. Paths second */}
+      {hasCommonPath && (
+        <div className="duplicate-group__path-info">
+          <br />
+          <div className="common-path">
+            <span style={{ marginRight: '8px', verticalAlign: 'middle' }}>
+              {IconSet.FOLDER_CLOSE}
+            </span>
+            <strong>Common path:</strong> <code>{commonPath}</code>
+          </div>
+          <div className="different-paths">
+            <span style={{ marginRight: '8px', verticalAlign: 'middle' }}>
+              {IconSet.FOLDER_STRUCTURE}
+            </span>
+            <strong>Different paths:</strong>
+            <ul className="different-paths__list">
+              {filesToShow.map((file) => (
+                <li key={file.id} className="different-paths__item">
+                  <code>{getRelativePath(file.absolutePath, commonPath)}</code>
+                </li>
+              ))}
+              {shouldLimitFiles && !showAllFiles && (
+                <li className="different-paths__item different-paths__show-more">
+                  <em>
+                    ... and {hiddenFilesCount} more path{hiddenFilesCount === 1 ? '' : 's'}
+                  </em>
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Description with INFO icon last */}
+      {group.details && (
+        <div className="duplicate-group__details">
+          <span style={{ marginRight: '8px', verticalAlign: 'middle' }}>{IconSet.INFO}</span>
+          <small>{group.details}</small>
+        </div>
+      )}
+
+      {shouldLimitFiles && showAllFiles && (
+        <div className="duplicate-group__show-less">
+          <button className="btn-secondary" onClick={() => setShowAllFiles(false)}>
+            Show fewer files
+          </button>
+        </div>
+      )}
     </div>
   );
 });

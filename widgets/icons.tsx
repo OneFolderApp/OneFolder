@@ -53,7 +53,7 @@ import FILTER_NAME_UP from 'resources/icons/filter-name-up.svg';
 // import FOLDER_CLOSE_IMPORT from 'resources/icons/folder-close-import.svg';
 import FOLDER_CLOSE from 'resources/icons/folder-close.svg';
 import FOLDER_OPEN from 'resources/icons/folder-open.svg';
-// import FOLDER_STRUCTURE from 'resources/icons/folder-structure.svg';
+import FOLDER_STRUCTURE from 'resources/icons/folder-structure.svg';
 // import FORM_DROP from 'resources/icons/form-drop.svg';
 import GITHUB from 'resources/icons/github.svg';
 import HIDDEN from 'resources/icons/hidden.svg';
@@ -171,7 +171,7 @@ const IconSet = {
   // FOLDER_CLOSE_IMPORT: toSvg(FOLDER_CLOSE_IMPORT),
   FOLDER_CLOSE: toSvg(FOLDER_CLOSE),
   FOLDER_OPEN: toSvg(FOLDER_OPEN),
-  // FOLDER_STRUCTURE: toSvg(FOLDER_STRUCTURE),
+  FOLDER_STRUCTURE: toSvg(FOLDER_STRUCTURE),
   // FORM_DROP: toSvg(FORM_DROP),
   GITHUB: toSvg(GITHUB),
   HIDDEN: toSvg(HIDDEN),

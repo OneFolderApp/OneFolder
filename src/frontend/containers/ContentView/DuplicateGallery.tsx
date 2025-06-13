@@ -336,6 +336,47 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
               {filesToShow.map((file) => (
                 <li key={file.id} className="different-paths__item">
                   <code>{getRelativePath(file.absolutePath, commonPath)}</code>
+                  <span className="different-paths__actions">
+                    <button
+                      className="path-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        shell.showItemInFolder(file.absolutePath);
+                      }}
+                      title="Show in folder"
+                      style={{
+                        padding: '2px',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        opacity: 0.2,
+                        verticalAlign: 'middle',
+                      }}
+                    >
+                      <span style={{ verticalAlign: 'middle' }}>{IconSet.FOLDER_CLOSE}</span>
+                    </button>
+                    <button
+                      className="path-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!uiStore.fileSelection.has(file)) {
+                          uiStore.selectFile(file, true);
+                        }
+                        uiStore.openMoveFilesToTrash();
+                      }}
+                      title="Delete file"
+                      style={{
+                        padding: '2px 1px',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        opacity: 0.2,
+                        verticalAlign: 'middle',
+                      }}
+                    >
+                      <span style={{ verticalAlign: 'middle' }}>{IconSet.DELETE}</span>
+                    </button>
+                  </span>
                 </li>
               ))}
               {shouldLimitFiles && !showAllFiles && (

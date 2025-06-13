@@ -19,6 +19,7 @@ export class ClientTag {
   @observable name: string;
   @observable color: string;
   @observable isHidden: boolean;
+  @observable isAi: boolean;
   @observable private _parent: ClientTag | undefined;
   readonly subTags = observable<ClientTag>([]);
   // icon, (fileCount?)
@@ -37,6 +38,7 @@ export class ClientTag {
     dateAdded: Date,
     color: string,
     isHidden: boolean,
+    isAi: boolean,
   ) {
     this.store = store;
     this.id = id;
@@ -45,6 +47,7 @@ export class ClientTag {
     this.color = color;
     this.fileCount = 0;
     this.isHidden = isHidden;
+    this.isAi = isAi;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -199,6 +202,7 @@ export class ClientTag {
       color: this.color,
       subTags: this.subTags.map((subTag) => subTag.id),
       isHidden: this.isHidden,
+      isAi: this.isAi,
     };
   }
 

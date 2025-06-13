@@ -56,6 +56,7 @@ export default class Backend implements DataStorage {
           subTags: [],
           color: '',
           isHidden: false,
+          isAi: false,
         });
       }
     });

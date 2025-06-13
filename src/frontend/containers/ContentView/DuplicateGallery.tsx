@@ -750,7 +750,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           reason: 'Identical metadata',
           confidence: 0.85,
           algorithm: DuplicateAlgorithm.Metadata,
-          details: `Same dimensions: ${metadata}. In production: would also compare EXIF date, camera, etc.`,
+          details: `Same dimensions: ${metadata}.`,
         });
       }
     }

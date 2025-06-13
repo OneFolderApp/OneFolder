@@ -335,7 +335,22 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
             <ul className="different-paths__list">
               {filesToShow.map((file) => (
                 <li key={file.id} className="different-paths__item">
-                  <code>{getRelativePath(file.absolutePath, commonPath)}</code>
+                  <code
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Select the file when clicking on the path
+                      select(file, e.ctrlKey || e.metaKey, false);
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                      color: uiStore.fileSelection.has(file) ? '#007bff' : 'inherit',
+                      fontWeight: uiStore.fileSelection.has(file) ? 'bold' : 'normal',
+                      transition: 'color 0.2s ease',
+                    }}
+                    title="Click to highlight corresponding image"
+                  >
+                    {getRelativePath(file.absolutePath, commonPath)}
+                  </code>
                   <span className="different-paths__actions">
                     <button
                       className="path-action-btn"
@@ -366,7 +381,6 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
                       }}
                       title="Delete file"
                       style={{
-                        padding: '2px 1px',
                         border: 'none',
                         background: 'transparent',
                         cursor: 'pointer',

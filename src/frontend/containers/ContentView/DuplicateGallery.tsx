@@ -235,6 +235,31 @@ const DuplicateItem = observer(({ group, select }: DuplicateItemProps) => {
                 >
                   Show in Folder
                 </button>
+                <button
+                  className="duplicate-file__delete-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Select the file for deletion if not already selected
+                    if (!uiStore.fileSelection.has(file)) {
+                      uiStore.selectFile(file, true);
+                    }
+                    uiStore.openMoveFilesToTrash();
+                  }}
+                  title="Delete file"
+                  style={{
+                    fontSize: '11px',
+                  }}
+                >
+                  <span
+                    style={{
+                      transform: 'scale(0.8)',
+                      display: 'inline-block',
+                    }}
+                  >
+                    {IconSet.DELETE}
+                  </span>
+                  Delete
+                </button>
               </div>
             </div>
           );
@@ -783,6 +808,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         groupsFound: groups.length,
         duplicatesFound,
       });
+      setLastProcessedModification(fileStore.fileListLastModified);
     } catch (error) {
       console.error('Error detecting duplicates:', error);
     } finally {
@@ -797,12 +823,48 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     setDisplayedGroupsCount(GROUPS_PER_PAGE);
   }, [selectedAlgorithm]);
 
-  // Run initial analysis only when file list changes (not when algorithm changes)
+  // Track the last file list modification time to detect when we need to update groups
+  const [lastProcessedModification, setLastProcessedModification] = useState<Date | null>(null);
+
+  // Update duplicate groups when file list changes (preserve search state when files are deleted)
   useEffect(() => {
-    // Clear any existing results when file list changes
-    setDuplicateGroups([]);
-    setStats(null);
-    setDisplayedGroupsCount(GROUPS_PER_PAGE);
+    // Only update if file list changed and we have existing results
+    if (
+      duplicateGroups.length === 0 ||
+      !lastProcessedModification ||
+      fileStore.fileListLastModified.getTime() === lastProcessedModification.getTime()
+    ) {
+      return;
+    }
+
+    // Update existing duplicate groups by removing deleted files
+    const currentFileIds = new Set(fileStore.fileList.map((f) => f.id));
+    const updatedGroups = duplicateGroups
+      .map((group) => ({
+        ...group,
+        files: group.files.filter((file) => currentFileIds.has(file.id)),
+      }))
+      .filter((group) => group.files.length > 1); // Remove groups with only 1 file left
+
+    // Update stats
+    const duplicatesFound = updatedGroups.reduce((sum, group) => sum + group.files.length, 0);
+    const updatedStats = stats
+      ? {
+          ...stats,
+          filesAnalyzed: fileStore.fileList.length,
+          groupsFound: updatedGroups.length,
+          duplicatesFound,
+        }
+      : null;
+
+    setDuplicateGroups(updatedGroups);
+    setStats(updatedStats);
+    setLastProcessedModification(fileStore.fileListLastModified);
+
+    // Reset pagination if we have fewer groups now
+    if (updatedGroups.length < displayedGroupsCount) {
+      setDisplayedGroupsCount(Math.max(GROUPS_PER_PAGE, updatedGroups.length));
+    }
   }, [fileStore.fileListLastModified]);
 
   const loadMoreGroups = () => {

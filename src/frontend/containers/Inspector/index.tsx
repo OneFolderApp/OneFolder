@@ -67,13 +67,13 @@ const Inspector = observer(() => {
         bodyComponent={<ImageMap file={first} />}
       />
 
-      <InspectorToggleSection
+      {/* <InspectorToggleSection
         title="Find Duplicates"
         icon={IconSet.DUPLICATE}
         isOpen={uiStore.inspectorIsDuplicatesVisible}
         toggleVisibility={uiStore.toggleInspectorDuplicateVisibility}
         bodyComponent={<ImageDuplicates file={first} />}
-      />
+      /> */}
 
       <InspectorToggleSection
         title="Tools"

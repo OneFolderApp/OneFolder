@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 import { shell } from 'electron';
 import { Tag, IconSet } from 'widgets';
+import { Menu, MenuItem, MenuDivider, useContextMenu } from 'widgets/menus';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
@@ -483,22 +484,19 @@ const AlgorithmSelector = ({
   return (
     <div className="algorithm-selector">
       <div className="current-algorithm">
-        <div className="current-algorithm__line">
-          <span className="current-algorithm__label">
-            Current algorithm: <strong>{selectedAlgoInfo.name}</strong>{' '}
+        <div className="current-algorithm__content">
+          <div className="current-algorithm__name">
+            Algorithm: <strong>{selectedAlgoInfo.name}</strong>
+          </div>
+          <div className="current-algorithm__description">
+            {selectedAlgoInfo.description}{' '}
             <button
-              className="current-algorithm__details-btn"
+              className="current-algorithm__toggle-btn"
               onClick={() => setShowDetails(!showDetails)}
             >
-              {showDetails ? 'Hide details' : 'Show details...'}
+              [{showDetails ? 'show less' : 'show more'}]
             </button>
-          </span>
-          <button
-            className="current-algorithm__change-btn"
-            onClick={() => setShowAlgorithmSelector(!showAlgorithmSelector)}
-          >
-            {showAlgorithmSelector ? 'Cancel' : 'Change Algorithm'}
-          </button>
+          </div>
         </div>
       </div>
 
@@ -528,6 +526,15 @@ const AlgorithmSelector = ({
           </div>
         </div>
       )}
+
+      <div className="algorithm-change-section">
+        <button
+          className="current-algorithm__change-btn"
+          onClick={() => setShowAlgorithmSelector(!showAlgorithmSelector)}
+        >
+          {showAlgorithmSelector ? 'Cancel' : 'Change Algorithm'}
+        </button>
+      </div>
 
       {showAlgorithmSelector && (
         <div className="algorithm-grid-container">
@@ -596,51 +603,69 @@ const AlgorithmSelector = ({
       )}
 
       <div className="algorithm-actions">
-        <button className="btn-primary" onClick={onAnalyze} disabled={isAnalyzing}>
-          {isAnalyzing ? 'Analyzing...' : `Analyze ${fileCount.toLocaleString()} files`}
-        </button>
-
-        {hasFilters && (
-          <div className="active-filters">
-            <div className="active-filters__label">Active filters:</div>
-            <div className="active-filters__list">
-              {uiStore.searchCriteriaList.map((criteria: any, index: number) => (
-                <span key={index} className="active-filters__tag">
-                  {criteria.getLabel({ tags: 'Tags', absolutePath: 'Path' }, rootStore)}
+        <div className="analyze-section">
+          <button className="btn-analyze-new" onClick={onAnalyze} disabled={isAnalyzing}>
+            <div className="analyze-content">
+              <span className="analyze-icon">{IconSet.SEARCH}</span>
+              <div className="analyze-main-content">
+                <span className="analyze-text">
+                  {isAnalyzing ? 'Analyzing...' : `Analyze ${fileCount.toLocaleString()} files`}
                 </span>
-              ))}
+                {hasFilters && !isAnalyzing && (
+                  <div className="analyze-filters-line">
+                    {uiStore.searchCriteriaList.map((criteria: any, index: number) => (
+                      <span key={index} className="analyze-filter-pill">
+                        {criteria.getLabel({ tags: 'Tags', absolutePath: 'Path' }, rootStore)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+          </button>
+          {hasFilters && (
             <button
-              className="active-filters__clear"
+              className="btn-clear-filters"
               onClick={() => {
                 uiStore.clearSearchCriteriaList();
                 fileStore.fetchAllFiles();
               }}
               title="Remove all filters and analyze entire collection"
             >
-              Clear filters and analyze all files
+              <span style={{ transform: 'scale(0.8)', display: 'inline-block' }}>
+                {IconSet.CLOSE}
+              </span>
+              Clear filters
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {stats && (
-          <div className="algorithm-stats">
-            <span>
-              <strong>{stats.processingTime}ms</strong>
-              <small>Processing Time</small>
-            </span>
-            <span>
-              <strong>{stats.filesAnalyzed}</strong>
-              <small>Files Analyzed</small>
-            </span>
-            <span>
-              <strong>{stats.groupsFound}</strong>
-              <small>Duplicate Groups</small>
-            </span>
-            <span>
-              <strong>{stats.duplicatesFound}</strong>
-              <small>Total Duplicates</small>
-            </span>
+          <div className="algorithm-stats-compact">
+            <div className="stats-item">
+              <div className="stats-content">
+                <span className="stats-value">{stats.processingTime}ms</span>
+                <span className="stats-label">Processing Time</span>
+              </div>
+            </div>
+            <div className="stats-item">
+              <div className="stats-content">
+                <span className="stats-value">{stats.filesAnalyzed.toLocaleString()}</span>
+                <span className="stats-label">Files Analyzed</span>
+              </div>
+            </div>
+            <div className="stats-item">
+              <div className="stats-content">
+                <span className="stats-value">{stats.groupsFound}</span>
+                <span className="stats-label">Duplicate Groups</span>
+              </div>
+            </div>
+            <div className="stats-item">
+              <div className="stats-content">
+                <span className="stats-value">{stats.duplicatesFound}</span>
+                <span className="stats-label">Total Duplicates</span>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -649,7 +674,7 @@ const AlgorithmSelector = ({
 };
 
 const DuplicateGallery = observer(({ select }: GalleryProps) => {
-  const { fileStore } = useStore();
+  const { fileStore, uiStore } = useStore();
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<DuplicateAlgorithm>(
@@ -662,6 +687,8 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [showManagement, setShowManagement] = useState(false);
   const [dismissedGroupsList, setDismissedGroupsList] = useState<DismissedDuplicateGroupDTO[]>([]);
   const [isLoadingManagement, setIsLoadingManagement] = useState(false);
+  const [expandedDismissedGroups, setExpandedDismissedGroups] = useState<Set<string>>(new Set());
+  const showContextMenu = useContextMenu();
 
   const GROUPS_PER_PAGE = 100;
 
@@ -1104,31 +1131,33 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         stats={activeStats}
       />
 
-      <div
-        className="algorithm-management"
-        style={{
-          marginTop: '16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <button
-          className="duplicate-file__show-button"
-          onClick={toggleManagement}
-          title={showManagement ? 'Hide dismissed groups' : 'Manage dismissed groups'}
+      {dismissedGroups.size > 0 && (
+        <div
+          className="algorithm-management"
+          style={{
+            marginTop: '16px',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
         >
-          <span
-            style={{
-              transform: 'scale(0.8)',
-              display: 'inline-block',
-              marginRight: '4px',
-            }}
+          <button
+            className="duplicate-file__show-button"
+            onClick={toggleManagement}
+            title={showManagement ? 'Hide dismissed groups' : 'Manage dismissed groups'}
           >
-            {IconSet.EYE_LOW_VISION}
-          </span>
-          Dismissed ({dismissedGroups.size})
-        </button>
-      </div>
+            <span
+              style={{
+                transform: 'scale(0.8)',
+                display: 'inline-block',
+                marginRight: '4px',
+              }}
+            >
+              {IconSet.EYE_LOW_VISION}
+            </span>
+            Dismissed ({dismissedGroups.size})
+          </button>
+        </div>
+      )}
 
       {showManagement && (
         <div className="management-panel">
@@ -1183,63 +1212,227 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
             </div>
           ) : (
             <div className="management-panel__list">
-              {dismissedGroupsList.map((dismissed) => (
-                <div
-                  key={dismissed.groupHash}
-                  className="dismissed-group-item"
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    padding: '12px',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div className="dismissed-group-item__algorithm">
-                      <strong>
-                        {ALGORITHMS.find((a) => a.id === dismissed.algorithm)?.name ||
-                          dismissed.algorithm}
-                      </strong>
-                    </div>
+              {dismissedGroupsList.map((dismissed) => {
+                const isExpanded = expandedDismissedGroups.has(dismissed.groupHash);
+                const fileIds = JSON.parse(dismissed.fileIds) as string[];
+                const files = fileIds
+                  .map((id) => fileStore.get(id))
+                  .filter((file): file is ClientFile => file !== undefined);
+
+                return (
+                  <div
+                    key={dismissed.groupHash}
+                    className="dismissed-group-item"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '12px',
+                      marginBottom: '12px',
+                    }}
+                  >
                     <div
-                      className="dismissed-group-item__details"
                       style={{
-                        marginTop: '8px',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
                       }}
                     >
-                      <span style={{ marginRight: '8px' }}>
-                        {IconSet.INFO} {JSON.parse(dismissed.fileIds).length} files
-                      </span>
-                      <span style={{ marginRight: '8px' }}>
-                        {IconSet.FILTER_DATE} Dismissed {dismissed.dismissedAt.toLocaleDateString()}{' '}
-                        at {dismissed.dismissedAt.toLocaleTimeString()}
-                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div className="dismissed-group-item__algorithm">
+                          <strong>
+                            {ALGORITHMS.find((a) => a.id === dismissed.algorithm)?.name ||
+                              dismissed.algorithm}
+                          </strong>
+                        </div>
+                        <div
+                          className="dismissed-group-item__details"
+                          style={{
+                            marginTop: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <span style={{ marginRight: '8px' }}>
+                            {IconSet.INFO} {fileIds.length} files ({files.length} still available)
+                          </span>
+                          <span style={{ marginRight: '8px' }}>
+                            {IconSet.FILTER_DATE} Dismissed{' '}
+                            {dismissed.dismissedAt.toLocaleDateString()} at{' '}
+                            {dismissed.dismissedAt.toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className="dismissed-group-item__actions"
+                        style={{ display: 'flex', gap: '8px' }}
+                      >
+                        {files.length > 0 && (
+                          <button
+                            className="duplicate-file__show-button"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedDismissedGroups);
+                              if (isExpanded) {
+                                newExpanded.delete(dismissed.groupHash);
+                              } else {
+                                newExpanded.add(dismissed.groupHash);
+                              }
+                              setExpandedDismissedGroups(newExpanded);
+                            }}
+                            title={isExpanded ? 'Hide files' : 'Show files in this dismissed group'}
+                          >
+                            <span
+                              style={{
+                                transform: 'scale(0.8)',
+                                display: 'inline-block',
+                                marginRight: '4px',
+                              }}
+                            >
+                              {isExpanded ? IconSet.ARROW_UP : IconSet.ARROW_DOWN}
+                            </span>
+                            {isExpanded ? 'Hide Files' : 'Show Files'}
+                          </button>
+                        )}
+                        <button
+                          className="duplicate-file__show-button"
+                          onClick={() => undismissGroup(dismissed)}
+                          title="Undismiss this group so it appears in future analyses"
+                        >
+                          <span
+                            style={{
+                              transform: 'scale(0.8)',
+                              display: 'inline-block',
+                              marginRight: '4px',
+                            }}
+                          >
+                            {IconSet.EYE}
+                          </span>
+                          Undismiss
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="dismissed-group-item__actions">
-                    <button
-                      className="duplicate-file__show-button"
-                      onClick={() => undismissGroup(dismissed)}
-                      title="Undismiss this group so it appears in future analyses"
-                    >
-                      <span
+
+                    {isExpanded && files.length > 0 && (
+                      <div
                         style={{
-                          transform: 'scale(0.8)',
-                          display: 'inline-block',
-                          marginRight: '4px',
+                          marginTop: '12px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid var(--border-color)',
                         }}
                       >
-                        {IconSet.EYE}
-                      </span>
-                      Undismiss
-                    </button>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                            gap: '8px',
+                          }}
+                        >
+                          {files.map((file) => (
+                            <div
+                              key={file.id}
+                              className="dismissed-file-preview"
+                              style={{
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                              }}
+                              onClick={() => {
+                                // Select the file
+                                select(file, false, false);
+                              }}
+                              onDoubleClick={() => {
+                                // Select the file and open preview (slide mode)
+                                if (!file.isBroken) {
+                                  uiStore.selectFile(file, true);
+                                  uiStore.enableSlideMode();
+                                }
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                if (!file.isBroken) {
+                                  showContextMenu(
+                                    e.clientX,
+                                    e.clientY,
+                                    <Menu>
+                                      <MenuItem
+                                        onClick={() => {
+                                          uiStore.selectFile(file, true);
+                                          uiStore.enableSlideMode();
+                                        }}
+                                        text="View at Full Size"
+                                        icon={IconSet.SEARCH}
+                                      />
+                                      <MenuItem
+                                        onClick={() => {
+                                          uiStore.selectFile(file, true);
+                                          uiStore.openPreviewWindow();
+                                        }}
+                                        text="Open In Preview Window"
+                                        icon={IconSet.PREVIEW}
+                                      />
+                                      <MenuDivider />
+                                      <MenuItem
+                                        onClick={() => shell.showItemInFolder(file.absolutePath)}
+                                        text="Reveal in File Browser"
+                                        icon={IconSet.FOLDER_CLOSE}
+                                      />
+                                    </Menu>,
+                                  );
+                                }
+                              }}
+                              title={`${file.name} - Click to select, double-click to preview, right-click for options`}
+                            >
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '80px',
+                                  overflow: 'hidden',
+                                  background: 'var(--surface-secondary)',
+                                }}
+                              >
+                                <Thumbnail
+                                  file={file}
+                                  mounted={true}
+                                  forceNoThumbnail={false}
+                                  hovered={false}
+                                  galleryVideoPlaybackMode="disabled"
+                                  isSlideMode={false}
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  padding: '4px',
+                                  fontSize: '0.7rem',
+                                  color: 'var(--text-secondary)',
+                                  textAlign: 'center',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {file.name.length > 15 ? `${file.name.slice(0, 12)}...` : file.name}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {files.length < fileIds.length && (
+                          <div
+                            style={{
+                              marginTop: '8px',
+                              fontSize: '0.8rem',
+                              color: 'var(--text-secondary)',
+                              fontStyle: 'italic',
+                            }}
+                          >
+                            Note: {fileIds.length - files.length} file(s) from this group are no
+                            longer available (may have been moved or deleted)
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

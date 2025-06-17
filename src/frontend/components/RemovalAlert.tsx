@@ -57,13 +57,15 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
   const { uiStore } = useStore();
   const { object } = props;
   const tagsToRemove = Array.from(
-    object.isSelected
-      ? [...uiStore.tagSelection].flatMap((obj) => [...obj.getSubTree()])
-      : object.getSubTree(),
-    (t) => <Tag key={t.id} text={t.name} color={t.viewColor} />,
-  );
+    new Map(
+      (object.isSelected
+        ? [...uiStore.tagSelection].flatMap((obj) => [...obj.getSubTree()])
+        : [...object.getSubTree()]
+      ).map((t) => [t.id, t]),
+    ).values(),
+  ).map((t) => <Tag key={t.id} text={t.name} color={t.viewColor} />);
 
-  const text = `Are you sure you want to delete the tag "${object.name}"?`;
+  const text = 'Are you sure you want to delete this tag(s)?';
 
   return (
     <RemovalAlert
@@ -90,7 +92,7 @@ export const TagRemoval = observer((props: IRemovalProps<ClientTag>) => {
 export const ExtraPropertyRemoval = observer((props: IRemovalProps<ClientExtraProperty>) => (
   <RemovalAlert
     open
-    title={`Are you sure you want to delete the "${props.object.name}" extra property ?`}
+    title={`Are you sure you want to delete the "${props.object.name}" extra property?`}
     information="This will permanently remove the extra property and all of its values from all files in Allusion."
     onCancel={props.onClose}
     onConfirm={() => {

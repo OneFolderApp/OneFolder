@@ -1,6 +1,6 @@
 import { action, computed, makeObservable, observable } from 'mobx';
 import { DataStorage } from '../../api/data-storage';
-import { ExtraPropertyDTO, ExtraPropertyType } from '../../api/extraProperty';
+import { ExtraPropertyDTO, ExtraPropertyType, ExtraPropertyValue } from '../../api/extraProperty';
 import { generateId, ID } from '../../api/id';
 import { ClientExtraProperty } from '../entities/ExtraProperty';
 import RootStore from './RootStore';
@@ -44,6 +44,16 @@ class ExtraPropertyStore {
     return undefined;
   }
 
+  // Returns true if already exists an extraa property with the same name
+  @action exists(name: string): boolean {
+    for (const [, extraProperty] of this.extraPropertiesMap) {
+      if (extraProperty.name === name) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @computed get extraPropertiesList(): readonly ClientExtraProperty[] {
     return Array.from(this.extraPropertiesMap.values()).sort((a, b) =>
       a.name.localeCompare(b.name),
@@ -83,7 +93,7 @@ class ExtraPropertyStore {
   @action.bound setOnFiles(
     files: ClientFile[],
     extraProperty: ClientExtraProperty,
-    value: number,
+    value: ExtraPropertyValue,
   ): void {
     files.forEach((f) => f.setExtraProperty(extraProperty, value));
   }

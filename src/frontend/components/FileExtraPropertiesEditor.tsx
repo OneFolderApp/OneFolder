@@ -20,22 +20,25 @@ import { debounce } from 'common/timeout';
 import { IAction } from '../containers/types';
 import { ID } from 'src/api/id';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
-import { ExtraPropertyValue } from 'src/api/extraProperty';
+import { ExtraPropertyType, ExtraPropertyValue } from 'src/api/extraProperty';
 import { createPortal } from 'react-dom';
 import { Placement } from '@floating-ui/core';
+
+const PANEL_HEIGHT_ID = 'extra-properties-editor-height';
 
 export type ExtraPropertiesCounter = IComputedValue<
   Map<ClientExtraProperty, [number, ExtraPropertyValue | undefined]>
 >;
 
 interface FileExtraPropertiesEditorProps {
+  id?: string;
   file?: ClientFile;
   addButtonContainerID?: string;
   menuPlacement?: Placement;
 }
 
 export const FileExtraPropertiesEditor = observer(
-  ({ file, addButtonContainerID, menuPlacement }: FileExtraPropertiesEditorProps) => {
+  ({ id, file, addButtonContainerID, menuPlacement }: FileExtraPropertiesEditorProps) => {
     const { uiStore, fileStore } = useStore();
     const [deletableExtraProperty, setDeletableExtraProperty] = useState<ClientExtraProperty>();
     const [removableExtraProperty, setRemovableExtraProperty] = useState<{
@@ -45,7 +48,7 @@ export const FileExtraPropertiesEditor = observer(
     const [assignableExtPropertyValue, setAssignableExtPropertyValue] = useState<{
       files: ClientFile[];
       extraProperty: ClientExtraProperty;
-      value: number;
+      value: ExtraPropertyValue;
     }>();
     const [editorState, dispatch] = useReducer(reducer, {
       editableNode: undefined,
@@ -82,7 +85,7 @@ export const FileExtraPropertiesEditor = observer(
       [files],
     );
     const onUpdate = useCallback(
-      (extraProperty: ClientExtraProperty, value: number) => {
+      (extraProperty: ClientExtraProperty, value: ExtraPropertyValue) => {
         setAssignableExtPropertyValue({ files: files, extraProperty: extraProperty, value: value });
       },
       [files],
@@ -146,8 +149,43 @@ export const FileExtraPropertiesEditor = observer(
       }
     });
 
+    //resize
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [storedHeight] = useState(localStorage.getItem(`${PANEL_HEIGHT_ID}-${id}`));
+    useEffect(() => {
+      if (!panelRef.current) {
+        return;
+      }
+      const storeHeight = debounce((val: string) =>
+        localStorage.setItem(`${PANEL_HEIGHT_ID}-${id}`, val),
+      );
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (
+            mutation.type == 'attributes' &&
+            mutation.attributeName === 'style' &&
+            panelRef.current
+          ) {
+            storeHeight(panelRef.current.style.height);
+          }
+        });
+      });
+      observer.observe(panelRef.current, { attributes: true });
+
+      return () => {
+        observer.disconnect();
+      };
+    }, []);
+
+    const [buttonPopoverUpdDep, updateButtonPopover] = useReducer((x) => x + 1, 0);
+
     return (
-      <div className="extra-property-editor">
+      <div
+        id={id}
+        ref={panelRef}
+        style={{ height: storedHeight ?? undefined }}
+        className="extra-property-editor scroll-hover"
+      >
         {deletableExtraProperty && (
           <ExtraPropertyRemoval
             object={deletableExtraProperty}
@@ -176,11 +214,12 @@ export const FileExtraPropertiesEditor = observer(
               menuID={extraPropertySelectorButtonMenuID}
               placement={menuPlacement ? menuPlacement : 'left-start'}
               strategy="fixed"
-              updateDependency={file}
+              updateDependency={buttonPopoverUpdDep}
             >
               <ExtraPropertySelector
                 counter={counter}
                 onSelect={onSelect}
+                onChange={updateButtonPopover}
                 onContextMenu={handleContextMenu}
               />
             </MenuButton>
@@ -370,7 +409,7 @@ interface ExtraPropertyListEditorProps {
   editorState: State;
   dispatch: React.Dispatch<Action>;
   counter: ExtraPropertiesCounter;
-  onUpdate: (extraProperty: ClientExtraProperty, value: number) => void;
+  onUpdate: (extraProperty: ClientExtraProperty, value: ExtraPropertyValue) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, extraProperty: ClientExtraProperty) => void;
 }
 
@@ -394,7 +433,7 @@ const ExtraPropertyListEditor = observer(
             key={extraProperty.id}
             extraProperty={extraProperty}
             count={SelectionSize > 1 ? `${count}/${SelectionSize}` : ''}
-            value={typeof val === 'number' ? val : undefined}
+            value={val}
             onUpdate={onUpdate}
             isEditingName={editorState.editableNode === extraProperty.id}
             onUpdateName={onUpdateName}
@@ -411,13 +450,13 @@ const ExtraPropertyListEditor = observer(
 interface IExtraPropertyListOptionProps {
   extraProperty: ClientExtraProperty;
   count: string | number;
-  value?: number;
+  value?: ExtraPropertyValue;
   isEditingName: boolean;
-  onUpdate: (extraProperty: ClientExtraProperty, value: number) => void;
+  onUpdate: (extraProperty: ClientExtraProperty, value: ExtraPropertyValue) => void;
   onUpdateName: (target: EventTarget & HTMLInputElement) => void;
   handleRename: (extraProperty: ClientExtraProperty) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, extraProperty: ClientExtraProperty) => void;
-  handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 const ExtraPropertyListOption = observer(
@@ -432,28 +471,6 @@ const ExtraPropertyListOption = observer(
     onContextMenu,
     handleKeyDown,
   }: IExtraPropertyListOptionProps) => {
-    const [inputValue, setInputValue] = useState(value !== undefined ? value : '');
-
-    useEffect(() => {
-      setInputValue(value !== undefined ? value : '');
-    }, [value]);
-
-    const debounceOnUpdate = useMemo(() => debounce(onUpdate, 500), [onUpdate]);
-
-    const handleValueOnChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const eValue = e.target.value;
-        //only accept number values and ignore anything else
-        if (/^\d*\.?\d*$/.test(eValue)) {
-          const newValue = eValue === '' ? 0 : parseFloat(eValue);
-          if (newValue < 100000000) {
-            setInputValue(newValue);
-            debounceOnUpdate(extraProperty, newValue);
-          }
-        }
-      },
-      [debounceOnUpdate, extraProperty],
-    );
     return (
       <div
         className="extra-property-list-option"
@@ -474,20 +491,210 @@ const ExtraPropertyListOption = observer(
           </div>
         </div>
         <div className="extra-property-value">
-          <input
-            type="number"
-            data-tooltip={inputValue}
-            title={inputValue.toString()}
-            value={inputValue}
-            onChange={handleValueOnChange}
+          <ExtraPropertyInput
+            extraProperty={extraProperty}
             onKeyDown={handleKeyDown}
-            className={'input'}
+            onUpdate={onUpdate}
+            value={value}
           />
         </div>
       </div>
     );
   },
 );
+
+type ExtraPropertyHandler<T extends ExtraPropertyValue> = {
+  isValid: (val: string) => boolean;
+  parse: (val: string) => T;
+  format: (val?: ExtraPropertyValue) => string;
+  inputType: string;
+  shouldUpdate: (val: T) => boolean;
+  getKeyDownHandler?: (context: {
+    extraProperty: ClientExtraProperty;
+    isMultiline: boolean;
+    setIsMultiline: (v: boolean) => void;
+    setInputValue: (v: string) => void;
+    debounceOnUpdate: (ep: ClientExtraProperty, v: ExtraPropertyValue) => void;
+    inputRef: React.RefObject<HTMLInputElement>;
+    cursorPos: React.MutableRefObject<number>;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+    handler: ExtraPropertyHandler<any>;
+  }) => (e: React.KeyboardEvent) => void;
+};
+
+const typeHandlers: Record<ExtraPropertyType, ExtraPropertyHandler<any>> = {
+  [ExtraPropertyType.number]: {
+    isValid: (val: string) => /^\d*\.?\d*$/.test(val),
+    parse: (val: string) => (val === '' ? 0 : parseFloat(val)),
+    format: (val) => (typeof val === 'number' ? val.toString() : ''),
+    inputType: 'number',
+    shouldUpdate: (val: number) => val < 100000000,
+  },
+  [ExtraPropertyType.text]: {
+    isValid: (_: string) => true, // eslint-disable-line @typescript-eslint/no-unused-vars
+    parse: (val: string) => val,
+    format: (val) => (typeof val === 'string' ? val : ''),
+    inputType: 'text',
+    shouldUpdate: (_: string) => true, // eslint-disable-line @typescript-eslint/no-unused-vars
+    getKeyDownHandler: ({
+      extraProperty,
+      isMultiline,
+      setIsMultiline,
+      setInputValue,
+      debounceOnUpdate,
+      inputRef,
+      cursorPos,
+      onKeyDown,
+      handler,
+    }) => {
+      return (e: React.KeyboardEvent) => {
+        onKeyDown(e);
+        if (!isMultiline && e.key === 'Enter') {
+          e.preventDefault();
+          const element = inputRef.current;
+          if (element && element.selectionStart && element.selectionEnd) {
+            const { selectionStart, selectionEnd, value } = element;
+            const newValue = value.slice(0, selectionStart) + '\n' + value.slice(selectionEnd);
+            cursorPos.current = selectionStart + 1;
+            setIsMultiline(true);
+            setInputValue(newValue);
+            debounceOnUpdate(extraProperty, handler.parse(newValue));
+          }
+        }
+      };
+    },
+  },
+};
+
+interface ExtraPropertyInputProps {
+  extraProperty: ClientExtraProperty;
+  value?: ExtraPropertyValue;
+  onUpdate: (extraProperty: ClientExtraProperty, value: ExtraPropertyValue) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+}
+
+const ExtraPropertyInput = ({
+  extraProperty,
+  value,
+  onUpdate,
+  onKeyDown,
+}: ExtraPropertyInputProps) => {
+  const hasLineBreak = useRef(
+    (val?: ExtraPropertyValue): boolean => typeof val === 'string' && val.includes('\n'),
+  ).current;
+  const handler = typeHandlers[extraProperty.type];
+  const [inputValue, setInputValue] = useState(handler.format(value));
+  const [isMultiline, setIsMultiline] = useState(hasLineBreak(value));
+  const cursorPos = useRef<number>(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setInputValue(handler.format(value));
+  }, [handler, value]);
+
+  const handleBeforeSwitch = useRef(() => {
+    const active = document.activeElement;
+    // check if the active element belongs to this component to avoid interference from other instances
+    if (active === inputRef.current || active === textareaRef.current) {
+      const el = active as HTMLInputElement | HTMLTextAreaElement;
+      if (el.selectionStart != null) {
+        cursorPos.current = el.selectionStart;
+      }
+    }
+  }).current;
+
+  //auto switch between input/textarea and update textarea height
+  useEffect(() => {
+    if (inputRef.current) {
+      const input = inputRef.current;
+      if (hasLineBreak(inputValue) || input.scrollWidth > input.clientWidth) {
+        handleBeforeSwitch();
+        setIsMultiline(true);
+      }
+    } else if (textareaRef.current) {
+      textareaRef.current.rows = 1; // Reset rows to measure properly
+      const lineHeightStr = getComputedStyle(textareaRef.current).lineHeight;
+      const lineHeight = parseFloat(lineHeightStr);
+      if (lineHeight && !isNaN(lineHeight)) {
+        const currentRows = Math.floor(textareaRef.current.scrollHeight / lineHeight);
+        if (currentRows > 1) {
+          textareaRef.current.rows = Math.min(currentRows, 15);
+        } else {
+          handleBeforeSwitch();
+          setIsMultiline(false);
+        }
+      }
+    }
+  }, [handleBeforeSwitch, hasLineBreak, inputValue, isMultiline]);
+
+  // Autofocus when swtiching input/textarea
+  useEffect(() => {
+    const element = isMultiline ? textareaRef.current : inputRef.current;
+    if (element) {
+      if (cursorPos.current > -1) {
+        element.focus();
+        element.setSelectionRange(cursorPos.current, cursorPos.current);
+        cursorPos.current = -1;
+      }
+    }
+  }, [isMultiline]);
+
+  const debounceOnUpdate = useMemo(() => debounce(onUpdate, 500), [onUpdate]);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<any>) => {
+      const val = e.target.value;
+      if (!handler.isValid(val)) {
+        return;
+      }
+      const parsed = handler.parse(val);
+      if (handler.shouldUpdate(parsed)) {
+        setInputValue(val);
+        debounceOnUpdate(extraProperty, parsed);
+      }
+    },
+    [debounceOnUpdate, extraProperty, handler],
+  );
+
+  const handleKeyDown = useMemo(
+    () =>
+      handler.getKeyDownHandler?.({
+        extraProperty,
+        isMultiline,
+        setIsMultiline,
+        setInputValue,
+        debounceOnUpdate,
+        inputRef,
+        cursorPos,
+        onKeyDown,
+        handler,
+      }) ?? onKeyDown,
+    [debounceOnUpdate, extraProperty, handler, isMultiline, onKeyDown],
+  );
+
+  return isMultiline ? (
+    <textarea
+      ref={textareaRef}
+      value={inputValue}
+      onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.value } })}
+      onKeyDown={handleKeyDown}
+      className="input" // scroll-hover"
+      rows={2}
+      //data-tooltip={inputValue}
+    />
+  ) : (
+    <input
+      ref={inputRef}
+      type={handler.inputType}
+      value={inputValue}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className="input"
+      data-tooltip={inputValue}
+    />
+  );
+};
 
 interface ILabelProps {
   text: string;
@@ -497,13 +704,26 @@ interface ILabelProps {
   tooltip?: string;
 }
 
-const Label = (props: ILabelProps) =>
-  props.isEditing ? (
+const Label = (props: ILabelProps) => {
+  const divRef = useRef<HTMLDivElement | null>(null);
+  const [inputWidth, setInputWidth] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!props.isEditing && divRef.current) {
+      const width = divRef.current.offsetWidth;
+      setInputWidth(width);
+    }
+  }, [props.isEditing]);
+
+  return props.isEditing ? (
     <input
       className="input"
       autoFocus
       type="text"
       defaultValue={props.text}
+      style={{
+        width: inputWidth ? `calc(${inputWidth}px + 1ch)` : undefined,
+      }}
       onBlur={(e) => {
         const value = e.currentTarget.value.trim();
         if (value.length > 0) {
@@ -525,10 +745,11 @@ const Label = (props: ILabelProps) =>
       onClick={(e) => e.stopPropagation()}
     />
   ) : (
-    <div className="extra-property-label" data-tooltip={props.tooltip}>
+    <div ref={divRef} className="extra-property-label" data-tooltip={props.tooltip}>
       {props.text}
     </div>
   );
+};
 
 const enum Flag {
   EnableEditing,

@@ -53,7 +53,7 @@ export class ClientExtraProperty {
   serialize(): ExtraPropertyDTO {
     return {
       id: this.id,
-      type: ExtraPropertyType.number,
+      type: this.type,
       name: this.name,
       dateAdded: this.dateAdded,
     };

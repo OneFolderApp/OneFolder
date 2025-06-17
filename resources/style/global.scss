@@ -69,6 +69,15 @@ input {
   line-height: 1.5rem;
 }
 
+textarea {
+  vertical-align: top;
+  color: inherit;
+  padding: 0;
+  padding-left: 0.25rem;
+  padding-block: 0.25rem;
+  line-height: 1rem;
+}
+
 table {
   color: inherit;
   font-size: inherit;

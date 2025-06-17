@@ -12,6 +12,7 @@ import { ClientTag } from '../entities/Tag';
 import { AppToaster } from './Toaster';
 import { ClientExtraProperty } from '../entities/ExtraProperty';
 import { ClientFile } from '../entities/File';
+import { ExtraPropertyValue } from 'src/api/extraProperty';
 
 interface IRemovalProps<T> {
   object: T;
@@ -141,7 +142,7 @@ export const ExtraPropertyOverwrite = observer(
     props: IRemovalProps<{
       files: ClientFile[];
       extraProperty: ClientExtraProperty;
-      value: number;
+      value: ExtraPropertyValue;
     }>,
   ) => {
     const { extraPropertyStore } = useStore();

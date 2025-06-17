@@ -41,6 +41,7 @@ const FileEditorsPanel = observer(({ className }: Partial<MultiSplitPaneProps>) 
         title: 'Extra File Properties Editor',
         content: (
           <FileExtraPropertiesEditor
+            id="outliner-extra-porperties"
             addButtonContainerID="file-editors-panel-header"
             menuPlacement="right-start"
           />

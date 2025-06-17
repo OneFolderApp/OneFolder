@@ -21,6 +21,7 @@ import { ExtraPropertyType } from 'src/api/extraProperty';
 interface IExtraPropertySelectorProps {
   counter?: ExtraPropertiesCounter;
   onSelect: (item: ClientExtraProperty) => void;
+  onChange?: () => void;
   disabled?: boolean;
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, extraProperty: ClientExtraProperty) => void;
 }
@@ -28,12 +29,13 @@ interface IExtraPropertySelectorProps {
 export const ExtraPropertySelector = (props: IExtraPropertySelectorProps) => {
   const gridId = useId();
   const tagSelectorID = useId();
-  const { counter, onSelect, onContextMenu } = props;
+  const { counter, onSelect, onContextMenu, onChange } = props;
   const [inputText, setInputText] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInput = useRef((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.();
     setInputText(e.target.value);
   }).current;
 
@@ -187,7 +189,7 @@ const ExtraPropertyList = observer(
             />
           );
         })}
-        <CreateOption
+        <CreateOptions
           inputText={inputText}
           hasMatches={matches.length > 0}
           resetTextBox={resetTextBox}
@@ -235,9 +237,12 @@ export const ExtraPropertyOption = observer(
         valueIsHtml
       >
         {hint !== undefined && hint.length > 0 ? (
-          <GridCell className="tag-option-hint" __html={hint}></GridCell>
+          <GridCell
+            className="tag-option-hint"
+            __html={`${extraProperty.type} (${hint})`}
+          ></GridCell>
         ) : (
-          <GridCell />
+          <GridCell className="tag-option-hint" __html={`${extraProperty.type}`} />
         )}
       </Row>
     );
@@ -248,38 +253,40 @@ interface CreateOptionProps {
   inputText: string;
   hasMatches: boolean;
   resetTextBox: () => void;
-  type?: ExtraPropertyType;
 }
 
-const CreateOption = ({
-  inputText,
-  hasMatches,
-  resetTextBox,
-  type = ExtraPropertyType.number,
-}: CreateOptionProps) => {
+const CreateOptions = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps) => {
   const { extraPropertyStore, uiStore } = useStore();
 
-  const createExtraProperty = useCallback(async () => {
-    const newExtraProperty = await extraPropertyStore.createExtraProperty(inputText, type);
-    runInAction(() => uiStore.fileSelection.forEach((f) => f.setExtraProperty(newExtraProperty)));
-    resetTextBox();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputText, resetTextBox, type]);
+  const createExtraProperty = useCallback(
+    async (type: ExtraPropertyType) => {
+      const newExtraProperty = await extraPropertyStore.createExtraProperty(inputText, type);
+      runInAction(() => uiStore.fileSelection.forEach((f) => f.setExtraProperty(newExtraProperty)));
+      resetTextBox();
+    },
+    [extraPropertyStore, inputText, resetTextBox, uiStore],
+  );
 
-  if (inputText.length === 0) {
+  //Dont render if inputext is empty or already exists an extra property with the same name
+  if (inputText.length === 0 || extraPropertyStore.exists(inputText)) {
     return null;
   }
 
   return (
     <>
       {hasMatches && <RowSeparator />}
-      <Row
-        id="extra-property-create-option"
-        selected={false}
-        value={`Create Extra Property "${inputText}"`}
-        onClick={createExtraProperty}
-        icon={IconSet.PLUS}
-      />
+      {Object.values(ExtraPropertyType).map((type) => (
+        <Row
+          key={type}
+          id={`extra-property-create-option-${type}`}
+          selected={false}
+          value={`Create Property "${inputText}"`}
+          onClick={() => createExtraProperty(type)}
+          icon={IconSet.PLUS}
+        >
+          <GridCell className="tag-option-hint" __html={type} />
+        </Row>
+      ))}
     </>
   );
 };

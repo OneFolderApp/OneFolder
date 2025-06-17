@@ -93,12 +93,12 @@ export const ImportExport = observer(() => {
 
         <ButtonGroup>
           <Button
-            text="Import tags from file metadata"
+            text="Import tags and properties from file metadata"
             onClick={fileStore.readTagsFromFiles}
             styling="outlined"
           />
           <Button
-            text="Export tags to file metadata"
+            text="Export tags and properties to file metadata"
             onClick={() => setConfirmingMetadataExport(true)}
             styling="outlined"
           />

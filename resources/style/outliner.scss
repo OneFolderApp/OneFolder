@@ -79,7 +79,9 @@
 
   h2 {
     cursor: pointer;
-    flex-grow: 1;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   [role='toolbar'] {

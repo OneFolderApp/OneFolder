@@ -1,7 +1,11 @@
 .extra-property-editor {
+  max-height: calc(100vh - var(--toolbar-height) - 5rem);
+  overflow: auto;
+  resize: vertical;
 
   .floating-panel & {
-    margin: 0.6rem;
+    padding: 0.6rem;
+    padding-right: 0.3rem;
   }
 
   .btn-content-text {
@@ -23,7 +27,7 @@
 }
 
 .extra-property-selector-pane {
-  width: 20rem;
+  max-width: 70vw;
   display: flex;
   flex-direction: column;
   overflow: auto;
@@ -50,6 +54,10 @@
       height: 1px;
       margin: 0.5rem 1rem;
     }
+
+    .tag-option-hint {
+      margin-inline-start: 0.5rem;
+    }
   }
 }
 
@@ -59,10 +67,9 @@
 
 .extra-property-list-editor {
   display: grid;
-  grid-template-columns: repeat(2, auto);
-  align-items: center;
+  grid-template-columns: max-content 1fr;
+  align-items: flex-start;
   gap: 0px;
-  width: fit-content;
   max-width: 100%;
 
   .extra-property-list-option {
@@ -90,7 +97,7 @@
   
   .extra-property-value {
     padding: 0;
-    padding-left: 0.5rem;
+    padding-inline: 0.5rem;
     word-break: break-word;
     line-height: normal;
   }
@@ -101,11 +108,16 @@
     align-items: center;
     width: 100%;
   }
+
+  .count-hint, .extra-property-label { 
+    line-height: 1.5625rem;
+    margin-block: 2px;
+  }
+
   .count-hint {
     padding-left: 0.5rem;
     min-width: fit-content;
     display: inline-block;
-    margin-left: auto;
     vertical-align: middle;
     font-size: smaller;
     overflow: hidden;
@@ -113,7 +125,9 @@
     text-overflow: ellipsis;
     color: var(--accent-color)
   }
+
   .extra-property-label {
+    flex: 1 0 auto;
     display: inline-block;
     overflow: hidden;
     text-overflow: clip;
@@ -121,7 +135,7 @@
     vertical-align: middle;
   }
 
-  input {
+  input, textarea {
     color: var(--text-color);
     margin-top: 2px;
     margin-bottom: 2px;
@@ -130,8 +144,8 @@
     width: 100%;
   }
 
-  .extra-property-value input {
-    width: 5rem;
+  textarea {
+    resize: vertical;
   }
 
   .label-container input {

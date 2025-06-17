@@ -11,16 +11,10 @@ export function useGalleryInputKeydownHandler() {
       return;
     }
     // if Alt is not pressed, stop propagation to keep focus on the selected item.
-
+    e.stopPropagation(); //Prevent event to propagate to the gallery
+    // execute default behavior
     switch (e.key) {
-      // Prevent backspace from navigating back to main view when having an image open
-      case 'Backspace':
-      // move text cursor as expected
-      case 'ArrowLeft':
-      case 'ArrowRight': {
-        e.stopPropagation(); //Prevent event to propagate to the gallery
-        break;
-      }
+      // Add extra behavior if needed
       default:
         break;
     }

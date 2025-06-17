@@ -47,6 +47,7 @@ const Inspector = observer(() => {
               <h2>Extra properties</h2>
             </header>
             <FileExtraPropertiesEditor
+              id="inspector-extra-porperties"
               file={first}
               addButtonContainerID="inspector-extra-porperties-header"
               menuPlacement="left-start"

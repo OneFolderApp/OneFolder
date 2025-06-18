@@ -77,10 +77,16 @@ export const FileExtraPropertiesEditor = observer(
       return counter;
     });
 
+    // Create a copy of the selected files to ensure that callbacks
+    // retain the original file selection if it changes between call and execution/confirmation.
     const files = Array.from(uiStore.fileSelection);
     const onSelect = useCallback(
       (extraProperty: ClientExtraProperty) => {
-        files.forEach((f) => f.setExtraProperty(extraProperty));
+        files.forEach((f) => {
+          if (!f.extraProperties.has(extraProperty)) {
+            f.setExtraProperty(extraProperty);
+          }
+        });
       },
       [files],
     );
@@ -485,7 +491,7 @@ const ExtraPropertyListOption = observer(
               setText={extraProperty.rename}
               isEditing={isEditingName}
               onSubmit={onUpdateName}
-              tooltip={extraProperty.name}
+              tooltip={`${extraProperty.name} (${extraProperty.type})`}
             />
             <div className="count-hint">{count}</div>
           </div>

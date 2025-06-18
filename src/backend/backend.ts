@@ -388,20 +388,20 @@ async function orderByExtraProperty(
   }
 }
 
+function castOrDefault<T>(value: unknown, fallback: T, expectedType: string): T {
+  return typeof value === expectedType ? (value as T) : fallback;
+}
+
 async function orderByCustomNumberField(
   collection: Dexie.Collection<FileDTO, string>,
   extraPropertyID: ID,
   fileOrder: OrderDirection,
 ): Promise<FileDTO[]> {
   const files = await collection.toArray();
+  const fallback = fileOrder === OrderDirection.Desc ? -Infinity : Infinity;
   files.sort((a, b) => {
-    const valueA: number =
-      (a.extraProperties[extraPropertyID] as number | undefined) ??
-      (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
-    const valueB: number =
-      (b.extraProperties[extraPropertyID] as number | undefined) ??
-      (fileOrder === OrderDirection.Desc ? -Infinity : Infinity);
-
+    const valueA: number = castOrDefault(a.extraProperties[extraPropertyID], fallback, 'number');
+    const valueB: number = castOrDefault(b.extraProperties[extraPropertyID], fallback, 'number');
     return fileOrder === OrderDirection.Desc ? valueB - valueA : valueA - valueB;
   });
   return files;
@@ -413,14 +413,22 @@ async function orderByCustomTextField(
   fileOrder: OrderDirection,
 ): Promise<FileDTO[]> {
   const files = await collection.toArray();
+  const fallback = fileOrder === OrderDirection.Desc ? '\u0000' : '\uffff';
   files.sort((a, b) => {
-    const valueA = (a.extraProperties[extraPropertyID] as string | undefined)?.toLowerCase() ?? '';
-    const valueB = (b.extraProperties[extraPropertyID] as string | undefined)?.toLowerCase() ?? '';
-    if (fileOrder === OrderDirection.Desc) {
-      return valueB.localeCompare(valueA);
-    } else {
-      return valueA.localeCompare(valueB);
-    }
+    const valueA: string = castOrDefault(
+      a.extraProperties[extraPropertyID],
+      fallback,
+      'string',
+    ).toLowerCase();
+    const valueB: string = castOrDefault(
+      b.extraProperties[extraPropertyID],
+      fallback,
+      'string',
+    ).toLowerCase();
+
+    return fileOrder === OrderDirection.Desc
+      ? valueB.localeCompare(valueA)
+      : valueA.localeCompare(valueB);
   });
   return files;
 }

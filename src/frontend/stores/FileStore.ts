@@ -291,14 +291,12 @@ class FileStore {
 
   @action.bound orderFilesBy(prop: OrderBy<FileDTO> = 'dateAdded'): void {
     this.setOrderBy(prop);
+    this.setOrderByExtraProperty('');
     this.refetch();
   }
 
-  @action.bound orderFilesByExtraProperty(
-    prop: OrderBy<FileDTO> = 'dateAdded',
-    extraProperty: ClientExtraProperty,
-  ): void {
-    this.setOrderBy(prop);
+  @action.bound orderFilesByExtraProperty(extraProperty: ClientExtraProperty): void {
+    this.setOrderBy('extraProperty');
     this.setOrderByExtraProperty(extraProperty.id);
     this.refetch();
   }

@@ -115,7 +115,11 @@ export const SortMenuItems = observer(() => {
           text={sortExtraPropertyData.text}
           checked={orderBy === sortExtraPropertyData.prop}
           accelerator={
-            orderBy === sortExtraPropertyData.prop && !sortExtraPropertyData.hideDirection ? orderIcon : <></>
+            orderBy === sortExtraPropertyData.prop && !sortExtraPropertyData.hideDirection ? (
+              orderIcon
+            ) : (
+              <></>
+            )
           }
         >
           <ExtraPropertySelector
@@ -123,7 +127,7 @@ export const SortMenuItems = observer(() => {
             onSelect={(extraProperty: ClientExtraProperty) =>
               orderByExtraProperty === extraProperty.id
                 ? switchOrderDirection()
-                : orderFilesByExtraProperty(sortExtraPropertyData.prop, extraProperty)
+                : orderFilesByExtraProperty(extraProperty)
             }
           />
         </MenuSubItem>,

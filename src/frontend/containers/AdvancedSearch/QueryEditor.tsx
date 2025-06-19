@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 
 import { ID } from 'src/api/id';
 import { IconSet } from 'widgets/icons';
@@ -6,6 +6,7 @@ import { Callout, InfoButton } from 'widgets/notifications';
 import { Radio, RadioGroup } from 'widgets/radio';
 import { KeySelector, OperatorSelector, ValueInput } from './Inputs';
 import { Criteria } from './data';
+import { useStore } from 'src/frontend/contexts/StoreContext';
 
 export type Query = Map<string, Criteria>;
 export type QueryDispatch = React.Dispatch<React.SetStateAction<Query>>;
@@ -88,6 +89,12 @@ export const EditableCriteria = ({ index, id, criteria, dispatch }: EditableCrit
     const c = fn(criteria);
     dispatch((query) => new Map(query.set(id, c)));
   };
+  const { extraPropertyStore } = useStore();
+  const epID = 'extraProperty' in criteria ? criteria.extraProperty : undefined;
+  const extraProperty = useMemo(
+    () => (epID !== undefined ? extraPropertyStore.get(epID) : undefined),
+    [epID, extraPropertyStore],
+  );
 
   return (
     <tr>
@@ -95,7 +102,12 @@ export const EditableCriteria = ({ index, id, criteria, dispatch }: EditableCrit
         {index + 1}
       </th>
       <td>
-        <KeySelector labelledby={`${id} col-key`} keyValue={criteria.key} dispatch={setCriteria} />
+        <KeySelector
+          labelledby={`${id} col-key`}
+          keyValue={criteria.key}
+          dispatch={setCriteria}
+          extraProperty={extraProperty}
+        />
       </td>
       <td>
         <OperatorSelector
@@ -103,6 +115,7 @@ export const EditableCriteria = ({ index, id, criteria, dispatch }: EditableCrit
           keyValue={criteria.key}
           value={criteria.operator}
           dispatch={setCriteria}
+          extraProperty={extraProperty}
         />
       </td>
       <td>
@@ -111,6 +124,7 @@ export const EditableCriteria = ({ index, id, criteria, dispatch }: EditableCrit
           keyValue={criteria.key}
           value={criteria.value}
           dispatch={setCriteria}
+          extraProperty={extraProperty}
         />
       </td>
       <td>

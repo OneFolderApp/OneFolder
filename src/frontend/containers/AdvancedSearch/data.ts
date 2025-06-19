@@ -11,6 +11,7 @@ import {
   ClientTagSearchCriteria,
 } from '../../entities/SearchCriteria';
 import TagStore from '../../stores/TagStore';
+import { ExtraPropertyValue } from 'src/api/extraProperty';
 
 export function generateCriteriaId() {
   return generateWidgetId('__criteria');
@@ -22,7 +23,9 @@ export type Criteria =
   | Field<'extension', BinaryOperatorType, string>
   | Field<'size', NumberOperatorType, number>
   | Field<'width' | 'height', NumberOperatorType, number>
-  | Field<'dateAdded', NumberOperatorType, Date>;
+  | Field<'dateAdded', NumberOperatorType, Date>
+  | ExtraPropertyField<ExtraPropertyID, NumberOperatorType, number>
+  | ExtraPropertyField<ExtraPropertyID, StringOperatorType, string>;
 
 interface Field<K extends Key, O extends Operator, V extends Value> {
   key: K;
@@ -30,13 +33,30 @@ interface Field<K extends Key, O extends Operator, V extends Value> {
   value: V;
 }
 
+interface ExtraPropertyField<
+  EP extends ExtraPropertyID,
+  O extends Operator = StringOperatorType | NumberOperatorType,
+  V extends Value = ExtraPropertyValue,
+> extends Field<'extraProperties', O, V> {
+  extraProperty: EP;
+}
+
 export type Key = keyof Pick<
   FileDTO,
-  'name' | 'absolutePath' | 'tags' | 'extension' | 'size' | 'width' | 'height' | 'dateAdded'
+  | 'name'
+  | 'absolutePath'
+  | 'tags'
+  | 'extension'
+  | 'size'
+  | 'width'
+  | 'height'
+  | 'dateAdded'
+  | 'extraProperties'
 >;
 export type Operator = OperatorType;
-export type Value = string | number | Date | TagValue;
+export type Value = string | number | Date | TagValue | ExtraPropertyValue;
 export type TagValue = ID | undefined;
+export type ExtraPropertyID = ID | undefined;
 
 export function defaultQuery(key: Key): Criteria {
   if (key === 'name' || key === 'absolutePath') {
@@ -55,8 +75,15 @@ export function defaultQuery(key: Key): Criteria {
       operator: 'equals',
       value: new Date(),
     };
+  } else if (key === 'extraProperties') {
+    return {
+      extraProperty: undefined,
+      key: 'extraProperties',
+      value: 0,
+      operator: 'equals',
+    };
   } else {
-    return { key, operator: 'greaterThanOrEquals', value: 0 };
+    return { key: key, operator: 'greaterThanOrEquals', value: 0 };
   }
 }
 

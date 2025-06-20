@@ -124,6 +124,7 @@ const TagSelector = (props: TagSelectorProps) => {
         e.preventDefault();
         setQuery('');
         setIsOpen(false);
+        inputRef.current?.blur();
       } else {
         handleGalleryInput(e);
         handleGridFocus(e);

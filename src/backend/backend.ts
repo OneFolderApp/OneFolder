@@ -4,12 +4,18 @@ import { retainArray, shuffleArray } from '../../common/core';
 import { DataStorage } from '../api/data-storage';
 import {
   ArrayConditionDTO,
+  BaseIndexSignature,
   ConditionDTO,
   DateConditionDTO,
+  IndexSignatureConditionDTO,
   NumberConditionDTO,
   OrderBy,
   OrderDirection,
   StringConditionDTO,
+  NumberOperators,
+  StringOperators,
+  isNumberOperator,
+  isStringOperator,
 } from '../api/data-storage-search';
 import { FileDTO } from '../api/file';
 import { FileSearchDTO } from '../api/file-search';
@@ -485,7 +491,8 @@ async function filter<T>(
 
   // Then just chain a loop of and() calls. A .every() feels more efficient than chaining table.and() calls
   if (otherCrits.length) {
-    table = table.and((item) => otherCrits.every((crit) => filterLambda(crit)(item)));
+    const critLambdas = otherCrits.map(filterLambda);
+    table = table.and((item) => critLambdas.every((lambda) => lambda(item)));
   }
   // for (const crit of otherCrits) {
   //   table = table.and(this._filterLambda(crit));
@@ -514,6 +521,8 @@ function filterWhere<T>(
       return filterNumberWhere(where, crit);
     case 'date':
       return filterDateWhere(where, crit);
+    case 'indexSignature':
+      return filterIndexSignatureLambda(crit);
   }
 }
 
@@ -527,6 +536,8 @@ function filterLambda<T>(crit: ConditionDTO<T>): (val: T) => boolean {
       return filterNumberLambda(crit);
     case 'date':
       return filterDateLambda(crit);
+    case 'indexSignature':
+      return filterIndexSignatureLambda(crit);
   }
 }
 
@@ -653,6 +664,49 @@ function filterNumberLambda<T>(crit: NumberConditionDTO<T>): (t: any) => boolean
     default:
       const _exhaustiveCheck: never = crit.operator;
       return _exhaustiveCheck;
+  }
+}
+
+function filterIndexSignatureLambda<T>(
+  crit: IndexSignatureConditionDTO<T, any>,
+): (t: any) => boolean {
+  const {
+    value: [keyIS, valueIS],
+  } = crit;
+
+  switch (typeof valueIS) {
+    case 'number':
+      if (isNumberOperator(crit.operator)) {
+        const numberCrit: NumberConditionDTO<BaseIndexSignature> = {
+          key: keyIS,
+          operator: crit.operator,
+          value: valueIS,
+          valueType: 'number',
+        };
+        const lamda = filterNumberLambda<BaseIndexSignature>(numberCrit);
+        return (t: any) => {
+          const obj = t[crit.key];
+          return typeof obj[keyIS] === 'number' ? lamda(obj) : false;
+        };
+      }
+      return () => false;
+    case 'string':
+      if (isStringOperator(crit.operator)) {
+        const stringCrit: StringConditionDTO<BaseIndexSignature> = {
+          key: keyIS,
+          operator: crit.operator,
+          value: valueIS,
+          valueType: 'string',
+        };
+        const lamda = filterStringLambda<BaseIndexSignature>(stringCrit);
+        return (t: any) => {
+          const obj = t[crit.key];
+          return typeof obj[keyIS] === 'string' ? lamda(obj) : false;
+        };
+      }
+      return () => false;
+    default:
+      return () => false;
   }
 }
 

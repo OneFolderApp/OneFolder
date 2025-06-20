@@ -5,13 +5,14 @@ import { ID } from '../../../api/id';
 import { BinaryOperatorType, OperatorType, TagOperatorType } from '../../../api/search-criteria';
 import {
   ClientDateSearchCriteria,
+  ClientExtraPropertySearchCriteria,
   ClientFileSearchCriteria,
   ClientNumberSearchCriteria,
   ClientStringSearchCriteria,
   ClientTagSearchCriteria,
 } from '../../entities/SearchCriteria';
 import TagStore from '../../stores/TagStore';
-import { ExtraPropertyValue } from 'src/api/extraProperty';
+import { ExtraPropertyType, ExtraPropertyValue } from 'src/api/extraProperty';
 
 export function generateCriteriaId() {
   return generateWidgetId('__criteria');
@@ -58,7 +59,7 @@ export type Value = string | number | Date | TagValue | ExtraPropertyValue;
 export type TagValue = ID | undefined;
 export type ExtraPropertyID = ID | undefined;
 
-export function defaultQuery(key: Key): Criteria {
+export function defaultQuery(key: Key, extraPropertyType?: ExtraPropertyType): Criteria {
   if (key === 'name' || key === 'absolutePath') {
     return { key, operator: 'contains', value: '' };
   } else if (key === 'tags') {
@@ -76,6 +77,23 @@ export function defaultQuery(key: Key): Criteria {
       value: new Date(),
     };
   } else if (key === 'extraProperties') {
+    if (extraPropertyType !== undefined) {
+      if (extraPropertyType === ExtraPropertyType.number) {
+        return {
+          extraProperty: undefined,
+          key: 'extraProperties',
+          value: 0,
+          operator: 'equals',
+        };
+      } else if (extraPropertyType === ExtraPropertyType.text) {
+        return {
+          extraProperty: undefined,
+          key: 'extraProperties',
+          value: '',
+          operator: 'contains',
+        };
+      }
+    }
     return {
       extraProperty: undefined,
       key: 'extraProperties',
@@ -109,6 +127,18 @@ export function fromCriteria(criteria: ClientFileSearchCriteria): [ID, Criteria]
     (criteria.key === 'width' || criteria.key === 'height')
   ) {
     query.value = criteria.value;
+  } else if (
+    criteria instanceof ClientExtraPropertySearchCriteria &&
+    criteria.key === 'extraProperties'
+  ) {
+    (
+      query as ExtraPropertyField<
+        ExtraPropertyID,
+        StringOperatorType | NumberOperatorType,
+        ExtraPropertyValue
+      >
+    ).extraProperty = criteria.value[0];
+    query.value = criteria.value[1];
   } else {
     return [generateCriteriaId(), query];
   }
@@ -129,6 +159,12 @@ export function intoCriteria(query: Criteria, tagStore: TagStore): ClientFileSea
   } else if (query.key === 'tags') {
     const tag = query.value !== undefined ? tagStore.get(query.value) : undefined;
     return new ClientTagSearchCriteria('tags', tag?.id, query.operator);
+  } else if (query.key === 'extraProperties') {
+    return new ClientExtraPropertySearchCriteria(
+      query.key,
+      [query.extraProperty ?? '', query.value],
+      query.operator,
+    );
   } else {
     return new ClientTagSearchCriteria('tags');
   }

@@ -79,18 +79,29 @@ export const KeySelector = forwardRef(function KeySelector(
     [dispatch],
   );
 
-  const handleExtraPropertySelect = (extraProperty: ClientExtraProperty) => {
-    setShowExtraSelector(false);
-    dispatch(() => {
-      const criteria: Criteria = {
-        extraProperty: extraProperty.id,
-        key: 'extraProperties',
-        value: '',
-        operator: 'contains',
-      };
-      return criteria;
-    });
-  };
+  const handleExtraPropertySelect = useCallback(
+    (eventExtraProperty: ClientExtraProperty) => {
+      setShowExtraSelector(false);
+      dispatch((criteria) => {
+        if (
+          criteria.key === 'extraProperties' &&
+          'extraProperty' in criteria &&
+          extraProperty !== undefined &&
+          extraProperty.type === eventExtraProperty.type
+        ) {
+          criteria.extraProperty = eventExtraProperty.id;
+          return { ...criteria };
+        } else {
+          const newCriteria: Criteria = defaultQuery('extraProperties', eventExtraProperty.type);
+          if ('extraProperty' in newCriteria) {
+            newCriteria.extraProperty = eventExtraProperty.id;
+          }
+          return newCriteria;
+        }
+      });
+    },
+    [dispatch, extraProperty],
+  );
 
   const actualValue = keyValue === 'extraProperties' && extraProperty !== undefined ? '' : keyValue;
   const counter =

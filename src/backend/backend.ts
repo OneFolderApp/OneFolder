@@ -12,8 +12,6 @@ import {
   OrderBy,
   OrderDirection,
   StringConditionDTO,
-  NumberOperators,
-  StringOperators,
   isNumberOperator,
   isStringOperator,
 } from '../api/data-storage-search';
@@ -24,7 +22,7 @@ import { LocationDTO } from '../api/location';
 import { ROOT_TAG_ID, TagDTO } from '../api/tag';
 import { ExtraPropertyDTO, ExtraPropertyType } from '../api/extraProperty';
 
-const USE_TIMING_PROXY = true;
+const USE_TIMING_PROXY = false;
 
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
@@ -71,6 +69,7 @@ export default class Backend implements DataStorage {
         });
       }
     });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return USE_TIMING_PROXY ? createTimingProxy(backend) : backend;
   }
 
@@ -473,7 +472,7 @@ async function filter<T>(
     if (allWheres && table) {
       return table;
     } else {
-      const critLambdas = criterias.map((crit) => filterLambda(crit));
+      const critLambdas = criterias.map(filterLambda);
       return collection.filter((t) => critLambdas.some((lambda) => lambda(t)));
     }
   }

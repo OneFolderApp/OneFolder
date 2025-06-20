@@ -11,7 +11,11 @@ import { ID } from '../../api/id';
 import { AppToaster } from '../components/Toaster';
 import { ClientFile, mergeMovedFile } from '../entities/File';
 import { ClientLocation } from '../entities/Location';
-import { ClientStringSearchCriteria, ClientTagSearchCriteria } from '../entities/SearchCriteria';
+import {
+  ClientFileSearchCriteria,
+  ClientStringSearchCriteria,
+  ClientTagSearchCriteria,
+} from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
 import { ClientExtraProperty } from '../entities/ExtraProperty';
@@ -37,6 +41,13 @@ export const enum Content {
   Untagged,
   Query,
 }
+
+const ContentLabels: Record<Content, string> = {
+  [Content.All]: 'All',
+  [Content.Missing]: 'Missing',
+  [Content.Untagged]: 'Untagged',
+  [Content.Query]: 'Query',
+};
 
 class FileStore {
   private readonly backend: DataStorage;
@@ -75,7 +86,7 @@ class FileStore {
    * - Second element: filesFromBackend ID
    * */
   readonly fetchTaskIdPair = observable<[number, number]>([0, 0]);
-  readonly averageFetchTimes = observable(new Map<Content, number>([]));
+  readonly averageFetchTimes = observable(new Map<string, number>([]));
 
   debouncedRefetch: () => void;
   debouncedSaveFilesToSave: () => Promise<void>;
@@ -301,15 +312,49 @@ class FileStore {
     this.refetch();
   }
 
-  @action.bound setAverageFetchTime(content: Content, duration: number, numItems: number): void {
-    // Avoid divide with 0
-    duration = duration / (numItems || 1);
-    const prev = this.averageFetchTimes.get(content) ?? duration;
+  @computed get activeAverageFetchTimeKey(): string {
+    const firstCiteria = this.rootStore.uiStore.searchCriteriaList[0] as
+      | ClientFileSearchCriteria
+      | undefined;
+    const condition = firstCiteria?.toCondition(this.rootStore);
+    if (condition !== undefined && this.content === Content.Query) {
+      // If the condition type needs 'where' or 'lambda' filters mixed in,
+      // the fetch time varies depending on the operator
+      if (condition.valueType === 'string' || condition.valueType === 'array') {
+        return `${condition.valueType}-${condition.operator}`;
+      } else {
+        // The remaining types do not mix in 'lambda' or 'where' filters,
+        // so a single average value is sufficient
+        return `${condition.valueType}`;
+      }
+    } else {
+      return `${this.content}`;
+    }
+  }
+
+  @computed get activeAverageFetchTime(): number {
+    return this.averageFetchTimes.get(this.activeAverageFetchTimeKey) ?? 5000;
+  }
+
+  @action.bound setAverageFetchTime(duration: number): void {
+    const key = this.activeAverageFetchTimeKey;
+    const prev = this.averageFetchTimes.get(key) ?? duration;
     const average = (prev + duration) / 2;
+    this.averageFetchTimes.set(key, average);
+
+    const format = (num: number) =>
+      num.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const color1 = 'color: #4D88FF;';
+    const color2 = 'color: #9980FF;';
     console.debug(
-      `Adjusted average time for content type (${content}): avg: ${average} new: ${duration} prev: ${prev}`,
+      `%cAdjusted average time for content "%c(${
+        ContentLabels[this.content]
+      }) ${key}%c": new: %c${format(duration)}ms%c, prev: %c${format(prev)}ms%c, avg: %c${format(
+        average,
+      )}ms`,
+      // eslint-disable-next-line prettier/prettier
+      color1, color2, color1, color2, color1, color2, color1, color2
     );
-    this.averageFetchTimes.set(content, average);
   }
 
   @action.bound setNumLoadedFiles(val: number): void {
@@ -431,7 +476,7 @@ class FileStore {
         this.orderByExtraProperty,
       );
       const end = performance.now();
-      this.setAverageFetchTime(Content.All, end - start, fetchedFiles.length);
+      this.setAverageFetchTime(end - start);
       // continue if the current taskId is the same else abort the fetch
       const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
       if (start === currentFetchId) {
@@ -461,7 +506,7 @@ class FileStore {
         uiStore.searchMatchAny,
       );
       const end = performance.now();
-      this.setAverageFetchTime(Content.Untagged, end - start, fetchedFiles.length);
+      this.setAverageFetchTime(end - start);
       // continue if the current taskId is the same else abort the fetch
       const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
       if (start === currentFetchId) {
@@ -496,7 +541,7 @@ class FileStore {
         orderByExtraProperty,
       );
       const end = performance.now();
-      this.setAverageFetchTime(Content.All, end - start, backendFiles.length);
+      this.setAverageFetchTime(end - start);
       // continue if the current taskId is the same else abort the fetch
       const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
       if (!(start === currentFetchId)) {
@@ -581,7 +626,7 @@ class FileStore {
         uiStore.searchMatchAny,
       );
       const end = performance.now();
-      this.setAverageFetchTime(Content.Query, end - start, fetchedFiles.length);
+      this.setAverageFetchTime(end - start);
       // continue if the current taskId is the same else abort the fetch
       const currentFetchId = runInAction(() => this.fetchTaskIdPair[0]);
       if (start === currentFetchId) {

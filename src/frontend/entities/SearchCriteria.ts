@@ -73,6 +73,7 @@ export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
     makeObservable(this);
   }
 
+  // The component who call this metod must be observer.
   abstract getLabel(dict: SearchKeyDict, rootStore: RootStore): string;
   abstract serialize(rootStore: RootStore): SearchCriteria;
   abstract toCondition(rootStore: RootStore): ConditionDTO<FileDTO>;
@@ -135,10 +136,9 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
     return !this.value && !this.operator.toLowerCase().includes('not');
   };
 
-  @action.bound getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (
-    dict,
-    rootStore,
-  ) => {
+  // don't use action on this because ClientTag.name can change and action is not reactive.
+  // The component who call this metod must be observer.
+  getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (dict, rootStore) => {
     if (!this.value && !this.operator.toLowerCase().includes('not')) {
       return 'Untagged images';
     }
@@ -196,10 +196,9 @@ export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria 
     makeObservable(this);
   }
 
-  @action.bound getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (
-    _,
-    rootStore,
-  ) => {
+  // don't use action on this because ClientExtraProperty.name can change and action is not reactive.
+  // The component who call this metod must be observer.
+  getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (_, rootStore) => {
     const ep = rootStore.extraPropertyStore.get(this.value[0]);
     let operatorString = undefined;
     if (ep !== undefined) {
@@ -219,7 +218,7 @@ export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria 
       key: this.key,
       valueType: this.valueType,
       operator: this.operator as StringOperatorType | NumberOperatorType,
-      value: this.value,
+      value: Array.from(this.value) as [string, ExtraPropertyValue],
     };
   };
 

@@ -368,14 +368,16 @@ const SavedSearchesPanel = observer((props: Partial<MultiSplitPaneProps>) => {
 
   const saveCurrentSearch = async () => {
     const savedSearch = await searchStore.create(
-      new ClientFileSearchItem(
-        generateId(),
-        uiStore.searchCriteriaList.map((c) => c.getLabel(CustomKeyDict, rootStore)).join(', ') ||
-          'New search',
-        uiStore.searchCriteriaList.map((c) => c.serialize(rootStore)),
-        uiStore.searchMatchAny,
-        searchStore.searchList.length,
-      ),
+      runInAction(() => {
+        return new ClientFileSearchItem(
+          generateId(),
+          uiStore.searchCriteriaList.map((c) => c.getLabel(CustomKeyDict, rootStore)).join(', ') ||
+            'New search',
+          uiStore.searchCriteriaList.map((c) => c.serialize(rootStore)),
+          uiStore.searchMatchAny,
+          searchStore.searchList.length,
+        );
+      }),
     );
     setEditableSearch(savedSearch);
   };

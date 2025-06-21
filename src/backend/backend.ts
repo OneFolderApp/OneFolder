@@ -604,6 +604,8 @@ function filterStringLambda<T>(crit: StringConditionDTO<T>): (t: any) => boolean
 
   switch (crit.operator) {
     case 'equals':
+      return (t: any) => (t[key] as string) === crit.value;
+    case 'equalsIgnoreCase':
       return (t: any) => (t[key] as string).toLowerCase() === valLow;
     case 'notEqual':
       return (t: any) => (t[key] as string).toLowerCase() !== valLow;
@@ -612,6 +614,8 @@ function filterStringLambda<T>(crit: StringConditionDTO<T>): (t: any) => boolean
     case 'notContains':
       return (t: any) => !(t[key] as string).toLowerCase().includes(valLow);
     case 'startsWith':
+      return (t: any) => (t[key] as string).startsWith(crit.value);
+    case 'startsWithIgnoreCase':
       return (t: any) => (t[key] as string).toLowerCase().startsWith(valLow);
     case 'notStartsWith':
       return (t: any) => !(t[key] as string).toLowerCase().startsWith(valLow);

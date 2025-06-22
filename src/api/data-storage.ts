@@ -6,6 +6,7 @@ import { FileSearchDTO } from './file-search';
 import { ID } from './id';
 import { LocationDTO } from './location';
 import { TagDTO } from './tag';
+import { VisualHashDTO } from './visual-hash';
 
 /**
  * The user generated persisted data edited or viewed by one or multiple actors (users, multiple devices etc.).
@@ -49,4 +50,10 @@ export interface DataStorage {
   fetchDismissedDuplicateGroups(): Promise<DismissedDuplicateGroupDTO[]>;
   createDismissedDuplicateGroup(dismissedGroup: DismissedDuplicateGroupDTO): Promise<void>;
   removeDismissedDuplicateGroup(groupHash: string): Promise<void>;
+
+  // Visual Hash Cache
+  fetchVisualHashes(absolutePaths: string[]): Promise<VisualHashDTO[]>;
+  saveVisualHashes(hashes: VisualHashDTO[]): Promise<void>;
+  removeVisualHashes(absolutePaths: string[]): Promise<void>;
+  clearVisualHashCache(): Promise<void>;
 }

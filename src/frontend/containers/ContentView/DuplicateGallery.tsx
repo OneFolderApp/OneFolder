@@ -10,6 +10,7 @@ import { Thumbnail } from './GalleryItem';
 import { CommandDispatcher } from './Commands';
 import { GalleryProps } from './utils';
 import { DismissedDuplicateGroupDTO } from '../../../api/dismissed-duplicate-group';
+import { visualSimilarityManager } from '../../workers/VisualSimilarityManager';
 
 export enum DuplicateAlgorithm {
   FileSize = 'fileSize',
@@ -17,6 +18,7 @@ export enum DuplicateAlgorithm {
   FileHash = 'fileHash',
   Metadata = 'metadata',
   Combined = 'combined',
+  ThumbnailVisual = 'thumbnailVisual',
 }
 
 interface AlgorithmInfo {
@@ -89,6 +91,28 @@ const ALGORITHMS: AlgorithmInfo[] = [
     accuracy: 'High',
     technical: 'Weighted score: size(30%) + name(20%) + metadata(50%), threshold > 0.7',
   },
+  {
+    id: DuplicateAlgorithm.ThumbnailVisual,
+    name: 'Visual Similarity (Enhanced)',
+    description: 'Advanced perceptual hashing with Web Workers for optimal performance',
+    pros: [
+      'Detects visually similar images with high accuracy',
+      'Catches resized/cropped/edited duplicates',
+      'Works regardless of filename/metadata',
+      'Enhanced pHash algorithm with DCT transform',
+      'Non-blocking Web Worker processing',
+      'Automatic fallback to basic algorithm',
+    ],
+    cons: [
+      'More CPU intensive than metadata methods',
+      'May group similar but different scenes',
+      'Requires thumbnail generation',
+      'Needs modern browser features',
+    ],
+    speed: 'Medium',
+    accuracy: 'Very High',
+    technical: 'Enhanced perceptual hash (pHash) using DCT in Web Workers, with aHash fallback',
+  },
 ];
 
 interface DuplicateGroup {
@@ -99,6 +123,12 @@ interface DuplicateGroup {
   algorithm: DuplicateAlgorithm;
   details?: string;
   hash: string; // Unique hash for persistent dismissal
+}
+
+interface ThumbnailHash {
+  fileId: string;
+  hash: string;
+  similarity?: number; // For visual algorithm results
 }
 
 interface DuplicateItemProps {
@@ -446,6 +476,11 @@ const DuplicateItem = observer(({ group, select, onDismiss, isDismissing }: Dupl
         <div className="duplicate-group__details">
           <span style={{ marginRight: '8px', verticalAlign: 'middle' }}>{IconSet.INFO}</span>
           <small>{group.details}</small>
+          {group.algorithm === DuplicateAlgorithm.ThumbnailVisual && (
+            <div style={{ marginTop: '4px', fontSize: '0.8rem', opacity: 0.7 }}>
+              💡 <em>Tip: Adjust the similarity threshold above to find more or fewer matches</em>
+            </div>
+          )}
         </div>
       )}
 
@@ -466,54 +501,109 @@ const AlgorithmSelector = ({
   onAnalyze,
   isAnalyzing,
   stats,
+  similarityThreshold,
+  onSimilarityThresholdChange,
 }: {
   selectedAlgorithm: DuplicateAlgorithm;
   onAlgorithmChange: (algorithm: DuplicateAlgorithm) => void;
   onAnalyze: () => void;
   isAnalyzing: boolean;
   stats: AlgorithmStats | null;
+  similarityThreshold: number;
+  onSimilarityThresholdChange: (threshold: number) => void;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-  const [showAlgorithmSelector, setShowAlgorithmSelector] = useState(false);
-  const selectedAlgoInfo = ALGORITHMS.find((a) => a.id === selectedAlgorithm)!;
   const rootStore = useStore();
   const { uiStore, fileStore } = rootStore;
   const hasFilters = uiStore.searchCriteriaList.length > 0;
   const fileCount = fileStore.fileList.length;
+  const selectedAlgoInfo = ALGORITHMS.find((a) => a.id === selectedAlgorithm)!;
 
   return (
     <div className="algorithm-selector">
-      <div className="current-algorithm">
-        <div className="current-algorithm__content">
-          <div className="current-algorithm__name">
-            Algorithm: <strong>{selectedAlgoInfo.name}</strong>
-          </div>
-          <div className="current-algorithm__description">
-            {selectedAlgoInfo.description}{' '}
-            <button
-              className="current-algorithm__toggle-btn"
-              onClick={() => setShowDetails(!showDetails)}
-            >
-              [{showDetails ? 'show less' : 'show more'}]
-            </button>
-          </div>
-        </div>
+      <div className="algorithm-selection">
+        <label htmlFor="algorithm-select">
+          <strong>Algorithm:</strong>
+        </label>
+        <select
+          id="algorithm-select"
+          value={selectedAlgorithm}
+          onChange={(e) => onAlgorithmChange(e.target.value as DuplicateAlgorithm)}
+          style={{
+            marginLeft: '8px',
+            padding: '4px 8px',
+            fontSize: '14px',
+            border: '1px solid var(--border-color)',
+            borderRadius: '4px',
+            backgroundColor: 'var(--surface-primary)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          {ALGORITHMS.map((algo) => (
+            <option key={algo.id} value={algo.id}>
+              {algo.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {showDetails && (
-        <div className="current-algorithm-details">
-          <div className="algorithm-details">
-            <div className="algorithm-details__section">
+      {/* Algorithm Description */}
+      <div className="algorithm-description" style={{ marginTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            {selectedAlgoInfo.description}
+          </span>
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              fontSize: '0.8rem',
+              color: 'var(--text-secondary)',
+              opacity: 0.7,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+            title={showDetails ? 'Hide details' : 'Show details'}
+          >
+            details
+            <span
+              style={{
+                transform: showDetails ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                fontSize: '0.7rem',
+              }}
+            >
+              ▼
+            </span>
+          </button>
+        </div>
+
+        {showDetails && (
+          <div
+            className="algorithm-details"
+            style={{
+              marginTop: '12px',
+              padding: '12px',
+              backgroundColor: 'var(--surface-secondary)',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+            }}
+          >
+            <div className="algorithm-details__section" style={{ marginBottom: '8px' }}>
               <strong>Advantages:</strong>
-              <ul>
+              <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
                 {selectedAlgoInfo.pros.map((pro, i) => (
                   <li key={i}>{pro}</li>
                 ))}
               </ul>
             </div>
-            <div className="algorithm-details__section">
+            <div className="algorithm-details__section" style={{ marginBottom: '8px' }}>
               <strong>Limitations:</strong>
-              <ul>
+              <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
                 {selectedAlgoInfo.cons.map((con, i) => (
                   <li key={i}>{con}</li>
                 ))}
@@ -521,87 +611,45 @@ const AlgorithmSelector = ({
             </div>
             <div className="algorithm-details__section">
               <strong>Technical Implementation:</strong>
-              <p>{selectedAlgoInfo.technical}</p>
+              <p style={{ margin: '4px 0' }}>{selectedAlgoInfo.technical}</p>
             </div>
           </div>
-        </div>
-      )}
-
-      <div className="algorithm-change-section">
-        <button
-          className="current-algorithm__change-btn"
-          onClick={() => setShowAlgorithmSelector(!showAlgorithmSelector)}
-        >
-          {showAlgorithmSelector ? 'Cancel' : 'Change Algorithm'}
-        </button>
+        )}
       </div>
 
-      {showAlgorithmSelector && (
-        <div className="algorithm-grid-container">
-          <label className="algorithm-grid-label">Choose Detection Method:</label>
-          <div className="algorithm-grid">
-            {ALGORITHMS.map((algo) => (
-              <div
-                key={algo.id}
-                className={`algorithm-card ${
-                  selectedAlgorithm === algo.id ? 'algorithm-card--selected' : ''
-                }`}
-                onClick={() => {
-                  onAlgorithmChange(algo.id);
-                  setShowAlgorithmSelector(false);
-                }}
-              >
-                <div className="algorithm-card__header">
-                  <h4 className="algorithm-card__name">{algo.name}</h4>
-                  <div className="algorithm-card__badges">
-                    <span className={`badge badge--speed badge--${algo.speed.toLowerCase()}`}>
-                      {algo.speed}
-                    </span>
-                    <span
-                      className={`badge badge--accuracy badge--${algo.accuracy
-                        .toLowerCase()
-                        .replace(' ', '-')}`}
-                    >
-                      {algo.accuracy}
-                    </span>
-                  </div>
-                </div>
-                <p className="algorithm-card__description">{algo.description}</p>
-                <div className="algorithm-card__preview">
-                  <div className="algorithm-card__pros">
-                    <strong>✓ Best for:</strong> {algo.pros[0]}
-                  </div>
-                  <div className="algorithm-card__tech-preview">
-                    <strong>Method:</strong> {algo.technical.split('.')[0]}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div
-              className="algorithm-card algorithm-card--suggest"
-              onClick={() => {
-                shell.openExternal(
-                  'https://onefolder.canny.io/feedback/p/what-duplication-algorithm-we-should-add',
-                );
+      {/* Similarity Threshold for Visual Algorithm */}
+      {selectedAlgorithm === DuplicateAlgorithm.ThumbnailVisual && (
+        <div className="algorithm-threshold-section" style={{ marginTop: '16px' }}>
+          <div className="threshold-controls">
+            <label htmlFor="similarity-threshold" className="threshold-label">
+              <strong>Similarity Threshold: {similarityThreshold}%</strong>
+            </label>
+            <input
+              id="similarity-threshold"
+              type="range"
+              min="70"
+              max="98"
+              step="1"
+              value={similarityThreshold}
+              onChange={(e) => onSimilarityThresholdChange(Number(e.target.value))}
+              className="threshold-slider"
+              style={{
+                width: '100%',
+                marginTop: '8px',
               }}
-            >
-              <div className="algorithm-card__header">
-                <h4 className="algorithm-card__name">💡 Suggest New Algorithm</h4>
-              </div>
-              <p className="algorithm-card__description">
-                Have an idea for a better duplicate detection method? We&apos;d love to hear your
-                suggestions!
-              </p>
-              <div className="algorithm-card__cta">
-                <strong>→ Submit your idea</strong>
-                <span>Help improve OneFolder</span>
-              </div>
+            />
+            <div className="threshold-description" style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+              <span style={{ opacity: 0.7 }}>
+                Lower values find more similar images (may include false positives). Higher values
+                find only very similar images (may miss some duplicates).
+              </span>
             </div>
           </div>
         </div>
       )}
 
+      <br />
+      <br />
       <div className="algorithm-actions">
         <div className="analyze-section">
           <button className="btn-analyze-new" onClick={onAnalyze} disabled={isAnalyzing}>
@@ -678,7 +726,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<DuplicateAlgorithm>(
-    DuplicateAlgorithm.FileHash,
+    DuplicateAlgorithm.ThumbnailVisual,
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
   const [displayedGroupsCount, setDisplayedGroupsCount] = useState(100);
@@ -688,6 +736,12 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [dismissedGroupsList, setDismissedGroupsList] = useState<DismissedDuplicateGroupDTO[]>([]);
   const [isLoadingManagement, setIsLoadingManagement] = useState(false);
   const [expandedDismissedGroups, setExpandedDismissedGroups] = useState<Set<string>>(new Set());
+  const [similarityThreshold, setSimilarityThreshold] = useState(90); // 90% similarity for visual algorithm
+  const [analysisProgress, setAnalysisProgress] = useState<{
+    phase: 'processing' | 'comparing';
+    progress: number;
+    details: string;
+  } | null>(null);
   const showContextMenu = useContextMenu();
 
   const GROUPS_PER_PAGE = 100;
@@ -717,6 +771,99 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16);
+  };
+
+  // Thumbnail processing utilities for visual similarity
+  const loadThumbnailAsImageData = async (thumbnailPath: string): Promise<ImageData | null> => {
+    try {
+      // Remove the ?v=1 suffix if present
+      const cleanPath = thumbnailPath.split('?v=1')[0];
+
+      // For Electron, we need to use the file:// protocol
+      const fileUrl = cleanPath.startsWith('file://') ? cleanPath : `file://${cleanPath}`;
+
+      // Create an image element to load the thumbnail
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = (e) => reject(new Error(`Failed to load image: ${e}`));
+        img.src = fileUrl;
+      });
+
+      // Create a canvas to extract ImageData
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Resize to 64x64 for consistent processing
+      canvas.width = 64;
+      canvas.height = 64;
+      ctx.drawImage(img, 0, 0, 64, 64);
+
+      return ctx.getImageData(0, 0, 64, 64);
+    } catch (error) {
+      console.warn('Failed to load thumbnail:', thumbnailPath, error);
+      return null;
+    }
+  };
+
+  // Convert ImageData to grayscale
+  const toGrayscale = (imageData: ImageData): number[] => {
+    const grayscale: number[] = [];
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      // Standard grayscale conversion formula
+      const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      grayscale.push(gray);
+    }
+
+    return grayscale;
+  };
+
+  // Simple perceptual hash implementation (aHash - Average Hash)
+  // This is simpler than pHash but still effective for duplicate detection
+  const generatePerceptualHash = (grayscaleData: number[]): string => {
+    // Calculate average brightness
+    const average = grayscaleData.reduce((sum, val) => sum + val, 0) / grayscaleData.length;
+
+    // Generate binary hash based on whether each pixel is above or below average
+    let hash = '';
+    for (let i = 0; i < grayscaleData.length; i++) {
+      hash += grayscaleData[i] >= average ? '1' : '0';
+    }
+
+    return hash;
+  };
+
+  // Calculate Hamming distance between two binary strings
+  const hammingDistance = (hash1: string, hash2: string): number => {
+    if (hash1.length !== hash2.length) {
+      return Infinity;
+    }
+
+    let distance = 0;
+    for (let i = 0; i < hash1.length; i++) {
+      if (hash1[i] !== hash2[i]) {
+        distance++;
+      }
+    }
+
+    return distance;
+  };
+
+  // Calculate similarity percentage (100% = identical, 0% = completely different)
+  const calculateSimilarity = (hash1: string, hash2: string): number => {
+    const distance = hammingDistance(hash1, hash2);
+    if (distance === Infinity) {
+      return 0;
+    }
+
+    const maxDistance = hash1.length;
+    const similarity = ((maxDistance - distance) / maxDistance) * 100;
+    return Math.round(similarity * 100) / 100; // Round to 2 decimal places
   };
 
   const detectDuplicatesBySize = (files: ClientFile[]): DuplicateGroup[] => {
@@ -915,6 +1062,223 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
     return groups;
   };
 
+  const detectDuplicatesByThumbnailVisual = async (
+    files: ClientFile[],
+  ): Promise<DuplicateGroup[]> => {
+    // Check if worker is available
+    if (!visualSimilarityManager.isWorkerAvailable()) {
+      console.warn('⚠️ Visual similarity worker not available, falling back to basic algorithm');
+      return detectDuplicatesByThumbnailVisualBasic(files);
+    }
+
+    try {
+      // Filter files for visual analysis
+      const eligibleFiles = files.filter(
+        (file) =>
+          file.thumbnailPath &&
+          !['gif', 'mp4', 'webm', 'mov'].includes(file.extension.toLowerCase()),
+      );
+
+      console.log(
+        `🚀 Starting enhanced cached visual analysis for ${eligibleFiles.length} files...`,
+      );
+
+      // Create cache manager for persistent hash storage
+      const cacheManager = {
+        fetchCachedHashes: async (paths: string[]) => {
+          const cachedHashes = await fileStore.fetchVisualHashes(paths);
+          return cachedHashes.map((hash) => {
+            // Find the corresponding file to check modification date
+            const file = eligibleFiles.find((f) => f.absolutePath === hash.absolutePath);
+            const isValid = file
+              ? file.dateModified.getTime() <= hash.dateModified.getTime()
+              : false;
+
+            return {
+              absolutePath: hash.absolutePath,
+              hash: hash.hash,
+              hashType: hash.hashType,
+              isValid,
+            };
+          });
+        },
+        saveCachedHashes: async (hashes: any[]) => {
+          await fileStore.saveVisualHashes(hashes);
+        },
+      };
+
+      // Run cached analysis with progress tracking
+      const result = await visualSimilarityManager.analyzeVisualSimilarityWithCache(
+        eligibleFiles,
+        similarityThreshold,
+        (progressData) => {
+          const details =
+            progressData.phase === 'processing'
+              ? `Processing thumbnails: ${progressData.processed || 0}/${
+                  progressData.total || 0
+                } (found ${progressData.found || 0} hashes)`
+              : `Comparing hashes: ${progressData.comparisons || 0}/${
+                  progressData.totalComparisons || 0
+                }`;
+
+          setAnalysisProgress({
+            phase: progressData.phase,
+            progress: progressData.progress,
+            details,
+          });
+        },
+        cacheManager,
+      );
+
+      // Clear progress
+      setAnalysisProgress(null);
+
+      // Convert worker results to DuplicateGroup format
+      const groups: DuplicateGroup[] = result.groups.map((group, index) => {
+        const groupFiles = group.files
+          .map((fileId) => files.find((f) => f.id === fileId))
+          .filter((file): file is ClientFile => file !== undefined);
+
+        return {
+          id: `visual-enhanced-${index}`,
+          files: groupFiles,
+          reason: 'Enhanced visual similarity',
+          confidence: Math.min(0.95, group.similarity / 100),
+          algorithm: DuplicateAlgorithm.ThumbnailVisual,
+          details: `Enhanced pHash analysis: ${group.similarity.toFixed(
+            1,
+          )}% similarity (threshold: ${similarityThreshold}%) • Processed ${
+            result.processedFiles
+          } files in ${result.processingTime}ms`,
+          hash: generateGroupHash(groupFiles, DuplicateAlgorithm.ThumbnailVisual),
+        };
+      });
+
+      console.log(`✅ Enhanced analysis complete: ${groups.length} groups found`);
+      return groups;
+    } catch (error) {
+      console.error('❌ Enhanced visual analysis failed:', error);
+      setAnalysisProgress(null);
+
+      // Fallback to basic algorithm
+      console.log('🔄 Falling back to basic visual algorithm...');
+      return detectDuplicatesByThumbnailVisualBasic(files);
+    }
+  };
+
+  // Fallback basic algorithm (original Phase 1 implementation)
+  const detectDuplicatesByThumbnailVisualBasic = async (
+    files: ClientFile[],
+  ): Promise<DuplicateGroup[]> => {
+    const groups: DuplicateGroup[] = [];
+    const thumbnailHashes: ThumbnailHash[] = [];
+
+    console.log('🔍 Starting basic visual similarity analysis for', files.length, 'files...');
+
+    let processedCount = 0;
+    const totalFiles = files.length;
+
+    for (const file of files) {
+      try {
+        // Skip files that don't have thumbnails or are videos/gifs
+        if (
+          !file.thumbnailPath ||
+          file.extension === 'gif' ||
+          file.extension === 'mp4' ||
+          file.extension === 'webm'
+        ) {
+          processedCount++;
+          continue;
+        }
+
+        const imageData = await loadThumbnailAsImageData(file.thumbnailPath);
+        if (!imageData) {
+          console.warn('⚠️ Could not load thumbnail for:', file.name);
+          processedCount++;
+          continue;
+        }
+
+        const grayscaleData = toGrayscale(imageData);
+        const hash = generatePerceptualHash(grayscaleData);
+
+        thumbnailHashes.push({
+          fileId: file.id,
+          hash,
+        });
+
+        processedCount++;
+
+        // Log progress every 100 files
+        if (processedCount % 100 === 0 || processedCount === totalFiles) {
+          console.log(
+            `📊 Processed ${processedCount}/${totalFiles} files (${Math.round(
+              (processedCount / totalFiles) * 100,
+            )}%)`,
+          );
+        }
+      } catch (error) {
+        console.warn('❌ Failed to process thumbnail for', file.name, error);
+        processedCount++;
+      }
+    }
+
+    // Compare hashes and create groups (simplified for fallback)
+    const processed = new Set<string>();
+    let groupId = 0;
+
+    for (let i = 0; i < thumbnailHashes.length; i++) {
+      if (processed.has(thumbnailHashes[i].fileId)) {
+        continue;
+      }
+
+      const similarHashes = [thumbnailHashes[i]];
+      processed.add(thumbnailHashes[i].fileId);
+
+      for (let j = i + 1; j < thumbnailHashes.length; j++) {
+        if (processed.has(thumbnailHashes[j].fileId)) {
+          continue;
+        }
+
+        const similarity = calculateSimilarity(thumbnailHashes[i].hash, thumbnailHashes[j].hash);
+
+        if (similarity >= similarityThreshold) {
+          thumbnailHashes[j].similarity = similarity;
+          similarHashes.push(thumbnailHashes[j]);
+          processed.add(thumbnailHashes[j].fileId);
+        }
+      }
+
+      if (similarHashes.length > 1) {
+        const similarFiles = similarHashes
+          .map((hashData) => files.find((f) => f.id === hashData.fileId))
+          .filter((file): file is ClientFile => file !== undefined);
+
+        if (similarFiles.length > 1) {
+          const avgSimilarity =
+            similarHashes
+              .filter((h) => h.similarity !== undefined)
+              .reduce((sum, h) => sum + (h.similarity || 0), 0) /
+            (similarHashes.length - 1);
+
+          groups.push({
+            id: `visual-basic-${groupId++}`,
+            files: similarFiles,
+            reason: 'Basic visual similarity',
+            confidence: Math.min(0.95, avgSimilarity / 100),
+            algorithm: DuplicateAlgorithm.ThumbnailVisual,
+            details: `Basic aHash analysis: ${avgSimilarity.toFixed(
+              1,
+            )}% average similarity (threshold: ${similarityThreshold}%)`,
+            hash: generateGroupHash(similarFiles, DuplicateAlgorithm.ThumbnailVisual),
+          });
+        }
+      }
+    }
+
+    console.log('Found', groups.length, 'visual duplicate groups (basic)');
+    return groups;
+  };
+
   const detectDuplicates = action(async () => {
     setIsAnalyzing(true);
     const startTime = Date.now();
@@ -937,6 +1301,9 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
           break;
         case DuplicateAlgorithm.Combined:
           groups = detectDuplicatesCombined(fileStore.fileList);
+          break;
+        case DuplicateAlgorithm.ThumbnailVisual:
+          groups = await detectDuplicatesByThumbnailVisual(fileStore.fileList);
           break;
       }
 
@@ -974,6 +1341,14 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
 
     loadDismissedGroups();
   }, []); // Only run once on mount
+
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any ongoing progress when component unmounts
+      setAnalysisProgress(null);
+    };
+  }, []);
 
   // Clear results when algorithm changes (user must manually re-analyze)
   useEffect(() => {
@@ -1115,12 +1490,63 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
 
   return (
     <div className="duplicate-gallery">
-      <div className="duplicate-gallery__header">
-        <h2>Duplicate Detection</h2>
-        <p>
-          Choose an algorithm below to analyze your photo collection for duplicates. Each method has
-          different strengths and trade-offs.
-        </p>
+      <div
+        className="duplicate-gallery__header"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
+        <div>
+          <h2 style={{ margin: '0 0 8px 0' }}>Duplicate Detection</h2>
+          <p style={{ margin: 0 }}>
+            Choose an algorithm below to analyze your photo collection for duplicates. Each method
+            has different strengths and trade-offs.
+          </p>
+        </div>
+        <div className="duplicate-gallery__settings">
+          <button
+            className="settings-button"
+            onClick={(e) => {
+              e.preventDefault();
+              showContextMenu(
+                e.clientX,
+                e.clientY,
+                <Menu>
+                  <MenuItem
+                    onClick={async () => {
+                      try {
+                        await fileStore.clearVisualHashCache();
+                        alert('Visual hash cache cleared successfully!');
+                      } catch (error) {
+                        console.error('Failed to clear cache:', error);
+                        alert('Failed to clear cache. Check console for details.');
+                      }
+                    }}
+                    text="Clear Visual Hash Cache"
+                    icon={IconSet.CLEAR_DATABASE}
+                  />
+                </Menu>,
+              );
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '4px',
+              color: 'var(--text-secondary)',
+              opacity: 0.7,
+              transition: 'opacity 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            title="Settings"
+          >
+            <span style={{ fontSize: '16px' }}>⚙️</span>
+          </button>
+        </div>
       </div>
 
       <AlgorithmSelector
@@ -1129,6 +1555,8 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
         onAnalyze={detectDuplicates}
         isAnalyzing={isAnalyzing}
         stats={activeStats}
+        similarityThreshold={similarityThreshold}
+        onSimilarityThresholdChange={setSimilarityThreshold}
       />
 
       {dismissedGroups.size > 0 && (
@@ -1446,6 +1874,48 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
               Analyzing files for duplicates using{' '}
               {ALGORITHMS.find((a) => a.id === selectedAlgorithm)?.name}...
             </p>
+            {selectedAlgorithm === DuplicateAlgorithm.ThumbnailVisual && (
+              <div style={{ marginTop: '8px' }}>
+                {analysisProgress ? (
+                  <div className="enhanced-progress">
+                    <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
+                      <strong>
+                        {analysisProgress.phase === 'processing'
+                          ? '🔍 Processing Thumbnails'
+                          : '🔄 Comparing Images'}
+                      </strong>{' '}
+                      ({analysisProgress.progress}%)
+                    </div>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '8px',
+                        backgroundColor: 'var(--border-color)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${analysisProgress.progress}%`,
+                          height: '100%',
+                          backgroundColor: 'var(--accent-color)',
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                      {analysisProgress.details}
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                    Enhanced visual analysis with Web Workers for better performance.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         ) : duplicateGroups.length === 0 && stats === null ? (
           <div className="duplicate-gallery__empty">

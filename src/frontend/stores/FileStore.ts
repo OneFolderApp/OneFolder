@@ -832,6 +832,55 @@ class FileStore {
       throw error; // Re-throw so UI can handle it
     }
   }
+
+  // VISUAL HASH CACHE
+  // VISUAL HASH CACHE
+  // VISUAL HASH CACHE
+
+  /** Fetch cached visual hashes for the given file paths */
+  async fetchVisualHashes(
+    absolutePaths: string[],
+  ): Promise<import('../../api/visual-hash').VisualHashDTO[]> {
+    try {
+      return await this.backend.fetchVisualHashes(absolutePaths);
+    } catch (error) {
+      console.error('Failed to fetch visual hashes:', error);
+      return [];
+    }
+  }
+
+  /** Save computed visual hashes to the database */
+  async saveVisualHashes(hashes: import('../../api/visual-hash').VisualHashDTO[]): Promise<void> {
+    try {
+      await this.backend.saveVisualHashes(hashes);
+      console.log('Successfully saved', hashes.length, 'visual hashes');
+    } catch (error) {
+      console.error('Failed to save visual hashes:', error);
+      throw error;
+    }
+  }
+
+  /** Remove visual hashes for deleted or moved files */
+  async removeVisualHashes(absolutePaths: string[]): Promise<void> {
+    try {
+      await this.backend.removeVisualHashes(absolutePaths);
+      console.log('Successfully removed visual hashes for', absolutePaths.length, 'files');
+    } catch (error) {
+      console.error('Failed to remove visual hashes:', error);
+      throw error;
+    }
+  }
+
+  /** Clear all cached visual hashes (useful for cache management) */
+  async clearVisualHashCache(): Promise<void> {
+    try {
+      await this.backend.clearVisualHashCache();
+      console.log('Successfully cleared visual hash cache');
+    } catch (error) {
+      console.error('Failed to clear visual hash cache:', error);
+      throw error;
+    }
+  }
 }
 
 export default FileStore;

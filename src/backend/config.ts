@@ -151,6 +151,16 @@ const dbConfig: DBVersioningConfig[] = [
       },
     ],
   },
+  {
+    // Version 12, Visual Hash Cache - Store computed visual hashes for performance
+    version: 12,
+    collections: [
+      {
+        name: 'visualHashes',
+        schema: '++id, &absolutePath, fileSize, dateModified, hashType, hash, dateComputed',
+      },
+    ],
+  },
 ];
 
 type DBVersioningConfig = {

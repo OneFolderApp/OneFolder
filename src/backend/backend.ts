@@ -17,6 +17,7 @@ import { FileSearchDTO } from '../api/file-search';
 import { ID } from '../api/id';
 import { LocationDTO } from '../api/location';
 import { ROOT_TAG_ID, TagDTO } from '../api/tag';
+import { VisualHashDTO } from '../api/visual-hash';
 
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
@@ -30,6 +31,7 @@ export default class Backend implements DataStorage {
   #locations: Table<LocationDTO, ID>;
   #searches: Table<FileSearchDTO, ID>;
   #dismissedDuplicateGroups: Table<DismissedDuplicateGroupDTO, ID>;
+  #visualHashes: Table<VisualHashDTO, ID>;
   #db: Dexie;
   #notifyChange: () => void;
 
@@ -41,9 +43,34 @@ export default class Backend implements DataStorage {
     this.#locations = db.table('locations');
     this.#searches = db.table('searches');
     this.#dismissedDuplicateGroups = db.table('dismissedDuplicateGroups');
+    this.#visualHashes = db.table('visualHashes');
     this.#db = db;
     this.#notifyChange = notifyChange;
   }
+
+  async fetchVisualHashes(absolutePaths: string[]): Promise<VisualHashDTO[]> {
+    console.info('IndexedDB: Fetching visual hashes for', absolutePaths.length, 'files...');
+    return this.#visualHashes.where('absolutePath').anyOf(absolutePaths).toArray();
+  }
+
+  async saveVisualHashes(hashes: VisualHashDTO[]): Promise<void> {
+    console.info('IndexedDB: Saving', hashes.length, 'visual hashes...');
+    await this.#visualHashes.bulkPut(hashes);
+    this.#notifyChange();
+  }
+
+  async removeVisualHashes(absolutePaths: string[]): Promise<void> {
+    console.info('IndexedDB: Removing visual hashes for', absolutePaths.length, 'files...');
+    await this.#visualHashes.where('absolutePath').anyOf(absolutePaths).delete();
+    this.#notifyChange();
+  }
+
+  async clearVisualHashCache(): Promise<void> {
+    console.info('IndexedDB: Clearing all visual hash cache...');
+    await this.#visualHashes.clear();
+    this.#notifyChange();
+  }
+
   async fetchDismissedDuplicateGroups(): Promise<DismissedDuplicateGroupDTO[]> {
     console.info('IndexedDB: Fetching dismissed duplicate groups...');
     return this.#dismissedDuplicateGroups.orderBy('dismissedAt').reverse().toArray();

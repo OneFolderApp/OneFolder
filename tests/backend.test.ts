@@ -23,6 +23,7 @@ describe('Backend', () => {
     subTags: [],
     impliedTags: [],
     isHidden: false,
+    skipInherit: false,
   };
 
   const mockLocationPath = 'c:/test';

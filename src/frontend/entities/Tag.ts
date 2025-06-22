@@ -19,6 +19,7 @@ export class ClientTag {
   @observable name: string;
   @observable color: string;
   @observable isHidden: boolean;
+  @observable skipInherit: boolean;
   @observable private _parent: ClientTag | undefined;
   readonly subTags = observable<ClientTag>([]);
   @observable private _impliedByTags = observable<ClientTag>([]);
@@ -40,6 +41,7 @@ export class ClientTag {
     dateAdded: Date,
     color?: string,
     isHidden?: boolean,
+    skipInherit?: boolean,
   ) {
     this.store = store;
     this.id = id;
@@ -48,6 +50,7 @@ export class ClientTag {
     this.color = color ?? 'inherit';
     this.fileCount = 0;
     this.isHidden = isHidden ?? false;
+    this.skipInherit = skipInherit ?? false;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -396,6 +399,7 @@ export class ClientTag {
       subTags: this.subTags.map((subTag) => subTag.id),
       isHidden: this.isHidden,
       impliedTags: this.impliedTags.map((impliedTag) => impliedTag.id),
+      skipInherit: this.skipInherit,
     };
   }
 

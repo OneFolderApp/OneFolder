@@ -5,6 +5,7 @@ import { FileDTO } from '../api/file';
 import { TagDTO } from 'src/api/tag';
 import { ID } from '../api/id';
 import { ExtraProperties, ExtraPropertyType } from 'src/api/extraProperty';
+import { LocationDTO, SubLocationDTO } from 'src/api/location';
 
 // The name of the IndexedDB
 export const DB_NAME = 'Allusion';
@@ -213,12 +214,21 @@ const dbConfig: DBVersioningConfig[] = [
           return tag;
         });
 
-      // Add campo tags to locations
+      // Add tags to locations and sublocations
+      function addTagsRecursively(location: any): any {
+        location.tags = [];
+        if (Array.isArray(location.subLocations)) {
+          location.subLocations = location.subLocations.map((sublocation: any) =>
+            addTagsRecursively({ ...sublocation }),
+          );
+        }
+        return location;
+      }
+
       tx.table('locations')
         .toCollection()
         .modify((location: any) => {
-          location.tags = [];
-          return location;
+          return addTagsRecursively(location);
         });
     },
   },

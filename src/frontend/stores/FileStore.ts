@@ -692,14 +692,7 @@ class FileStore {
   }
 
   getTags(ids: ID[]): Set<ClientTag> {
-    const tags = new Set<ClientTag>();
-    for (const id of ids) {
-      const tag = this.rootStore.tagStore.get(id);
-      if (tag !== undefined) {
-        tags.add(tag);
-      }
-    }
-    return tags;
+    return this.rootStore.tagStore.getTags(ids);
   }
 
   getExtraProperties(

@@ -72,12 +72,14 @@ class RootStore {
     });
 
     await Promise.all([
+      // The tag store needs to be awaited because file and location entities have references
+      // to tag entities.
+      rootStore.tagStore.init(),
+    ]);
+    await Promise.all([
       // The location store must be initiated because the file entity constructor
       // uses the location reference to set values.
       rootStore.locationStore.init(),
-      // The tag store needs to be awaited because file entities have references
-      // to tag entities.
-      rootStore.tagStore.init(),
       rootStore.extraPropertyStore.init(),
       rootStore.exifTool.initialize(),
       rootStore.imageLoader.init(),

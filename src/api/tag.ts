@@ -11,4 +11,5 @@ export type TagDTO = {
   impliedTags: ID[];
   /** Whether any files with this tag should be hidden */
   isHidden: boolean;
+  skipInherit: boolean;
 };

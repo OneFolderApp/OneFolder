@@ -50,6 +50,17 @@ class TagStore {
     return this.tagGraph.get(tag);
   }
 
+  @action getTags(ids: ID[]): Set<ClientTag> {
+    const tags = new Set<ClientTag>();
+    for (const id of ids) {
+      const tag = this.rootStore.tagStore.get(id);
+      if (tag !== undefined) {
+        tags.add(tag);
+      }
+    }
+    return tags;
+  }
+
   @computed get root(): ClientTag {
     const root = this.tagGraph.get(ROOT_TAG_ID);
     if (!root) {

@@ -606,7 +606,7 @@ const AlgorithmSelector = ({
         <div className="analyze-section">
           <button className="btn-analyze-new" onClick={onAnalyze} disabled={isAnalyzing}>
             <div className="analyze-content">
-              <span className="analyze-icon">{IconSet.SEARCH}</span>
+              <span className="analyze-icon">{IconSet.DUPLICATE}</span>
               <div className="analyze-main-content">
                 <span className="analyze-text">
                   {isAnalyzing ? 'Analyzing...' : `Analyze ${fileCount.toLocaleString()} files`}
@@ -678,7 +678,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<DuplicateAlgorithm>(
-    DuplicateAlgorithm.FileSize,
+    DuplicateAlgorithm.FileHash,
   );
   const [stats, setStats] = useState<AlgorithmStats | null>(null);
   const [displayedGroupsCount, setDisplayedGroupsCount] = useState(100);

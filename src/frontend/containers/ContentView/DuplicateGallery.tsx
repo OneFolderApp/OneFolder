@@ -652,17 +652,90 @@ const AlgorithmSelector = ({
       <br />
       <div className="algorithm-actions">
         <div className="analyze-section">
-          <button className="btn-analyze-new" onClick={onAnalyze} disabled={isAnalyzing}>
-            <div className="analyze-content">
-              <span className="analyze-icon">{IconSet.DUPLICATE}</span>
-              <div className="analyze-main-content">
-                <span className="analyze-text">
+          <button
+            className="btn-analyze-new"
+            onClick={onAnalyze}
+            disabled={isAnalyzing}
+            style={{
+              backgroundColor: isAnalyzing ? 'var(--border-color)' : '#007bff',
+              color: 'white',
+              border: 'none',
+              cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isAnalyzing) {
+                e.currentTarget.style.backgroundColor = '#0056b3';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isAnalyzing) {
+                e.currentTarget.style.backgroundColor = '#007bff';
+              }
+            }}
+          >
+            <div
+              className="analyze-content"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <span
+                className="analyze-icon"
+                style={{
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '24px',
+                  minHeight: '24px',
+                  flexShrink: 0,
+                }}
+              >
+                {IconSet.INTELLIGENCE}
+              </span>
+              <div
+                className="analyze-main-content"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  flex: 1,
+                }}
+              >
+                <span className="analyze-text" style={{ color: 'white' }}>
                   {isAnalyzing ? 'Analyzing...' : `Analyze ${fileCount.toLocaleString()} files`}
                 </span>
                 {hasFilters && !isAnalyzing && (
-                  <div className="analyze-filters-line">
+                  <div
+                    className="analyze-filters-line"
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '4px',
+                      marginTop: '4px',
+                      maxWidth: '100%',
+                    }}
+                  >
                     {uiStore.searchCriteriaList.map((criteria: any, index: number) => (
-                      <span key={index} className="analyze-filter-pill">
+                      <span
+                        key={index}
+                        className="analyze-filter-pill"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                          color: 'white',
+                          border: '1px solid rgba(255, 255, 255, 0.3)',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontSize: '0.8rem',
+                          display: 'inline-block',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          lineHeight: '1.2',
+                        }}
+                      >
                         {criteria.getLabel({ tags: 'Tags', absolutePath: 'Path' }, rootStore)}
                       </span>
                     ))}
@@ -1544,7 +1617,7 @@ const DuplicateGallery = observer(({ select }: GalleryProps) => {
             }}
             title="Settings"
           >
-            <span style={{ fontSize: '16px' }}>⚙️</span>
+            {IconSet.COG}
           </button>
         </div>
       </div>

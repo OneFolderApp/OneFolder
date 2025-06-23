@@ -12,7 +12,7 @@ const ImageDuplicates = ({ file }: ImageDuplicatesProps) => {
   return (
     <div className="inspector-section">
       <div className="tools">
-        <button disabled={true}>{IconSet.CART_FLATBED}HEIC to JPEG</button>
+        <button disabled={true}>{IconSet.INTELLIGENCE}HEIC to JPEG</button>
         <button disabled={true}>{IconSet.CARROT}Optimize JPEG</button>
         <button disabled={true}>{IconSet.EYE_LOW_VISION}Fix red eyes</button>
         <button disabled={true}>{IconSet.PALETTE}Colorize black and white image</button>

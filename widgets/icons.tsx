@@ -32,6 +32,7 @@ import CHROME_CLOSE from 'resources/icons/chrome-close.svg';
 import CHROME_MAXIMIZE from 'resources/icons/chrome-maximize.svg';
 import CHROME_MINIMIZE from 'resources/icons/chrome-minimize.svg';
 import CHROME_RESTORE from 'resources/icons/chrome-restore.svg';
+import COG from 'resources/icons/cog.svg';
 import DB_ERROR from 'resources/icons/db-error.svg';
 import DELETE from 'resources/icons/delete.svg';
 // import DESELECT_ALL_FILL from 'resources/icons/deselect-all-fill.svg';
@@ -58,6 +59,7 @@ import FOLDER_STRUCTURE from 'resources/icons/folder-structure.svg';
 import GITHUB from 'resources/icons/github.svg';
 import HIDDEN from 'resources/icons/hidden.svg';
 import IMPORT from 'resources/icons/import.svg';
+import INTELLIGENCE from 'resources/icons/intelligence.svg';
 import HELPCENTER from 'resources/icons/helpcenter.svg';
 import INFO from 'resources/icons/info.svg';
 // import ITEM_COLLAPSE from 'resources/icons/item-collaps.svg';
@@ -150,6 +152,7 @@ const IconSet = {
   CHROME_MAXIMIZE: toSvg(CHROME_MAXIMIZE),
   CHROME_MINIMIZE: toSvg(CHROME_MINIMIZE),
   CHROME_RESTORE: toSvg(CHROME_RESTORE),
+  COG: toSvg(COG),
   DB_ERROR: toSvg(DB_ERROR),
   DELETE: toSvg(DELETE),
   // DESELECT_ALL_FILL: toSvg(DESELECT_ALL_FILL),
@@ -176,6 +179,7 @@ const IconSet = {
   GITHUB: toSvg(GITHUB),
   HIDDEN: toSvg(HIDDEN),
   IMPORT: toSvg(IMPORT),
+  INTELLIGENCE: toSvg(INTELLIGENCE),
   HELPCENTER: toSvg(HELPCENTER),
   INFO: toSvg(INFO),
   // ITEM_COLLAPSE: toSvg(ITEM_COLLAPSE),

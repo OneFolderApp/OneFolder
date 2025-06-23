@@ -92,6 +92,9 @@ export class RendererMessenger {
   static onFullScreenChanged = (cb: (val: boolean) => void) =>
     ipcRenderer.on(FULL_SCREEN_CHANGED, (_, val: boolean) => cb(val));
 
+  static onSetZoomFactor = (cb: (level: number) => void) =>
+    ipcRenderer.on(SET_ZOOM_FACTOR, (_, level) => cb(level));
+
   static setZoomFactor = (level: number) => ipcRenderer.invoke(SET_ZOOM_FACTOR, level);
 
   static getZoomFactor = (): number => ipcRenderer.sendSync(GET_ZOOM_FACTOR);

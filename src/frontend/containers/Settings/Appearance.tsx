@@ -111,11 +111,12 @@ export const Appearance = observer(() => {
 
 const Zoom = () => {
   const [localZoomFactor, setLocalZoomFactor] = useState(RendererMessenger.getZoomFactor);
+  const { uiStore } = useStore();
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(event.target.value);
     setLocalZoomFactor(value);
-    RendererMessenger.setZoomFactor(value);
+    uiStore.setZoomFactor(value);
   };
 
   return (

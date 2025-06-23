@@ -100,6 +100,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
 
 /** These fields are stored and recovered when the application opens up */
 type PersistentPreferenceFields =
+  | 'zoomFactor'
   | 'theme'
   | 'scrollbarsStyle'
   | 'isOutlinerOpen'
@@ -141,6 +142,7 @@ class UiStore {
   @observable scrollbarsStyle: 'classic' | 'hover' = 'hover';
 
   // UI
+  @observable zoomFactor: number = 1;
   @observable isOutlinerOpen: boolean = true;
   @observable isInspectorOpen: boolean = true;
   @observable isSettingsOpen: boolean = false;
@@ -344,6 +346,12 @@ class UiStore {
   /** This does not actually set the window to full-screen, just for bookkeeping! Use RendererMessenger instead */
   @action.bound setFullScreen(val: boolean): void {
     this.isFullScreen = val;
+  }
+
+  /** This does not actually set the window zoomFactor, just for bookkeeping and restore the preference on load! Use RendererMessenger instead */
+  @action.bound setZoomFactor(val: number): void {
+    this.zoomFactor = val;
+    RendererMessenger.setZoomFactor(this.zoomFactor);
   }
 
   @action.bound enableThumbnailTagOverlay(): void {
@@ -956,6 +964,9 @@ class UiStore {
     if (prefsString) {
       try {
         const prefs = JSON.parse(prefsString);
+        if (prefs.zoomFactor) {
+          this.setZoomFactor(prefs.zoomFactor);
+        }
         if (prefs.theme) {
           this.setTheme(prefs.theme);
         }
@@ -1043,6 +1054,7 @@ class UiStore {
 
   getPersistentPreferences(): Partial<Record<keyof UiStore, unknown>> {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
+      zoomFactor: this.zoomFactor,
       theme: this.theme,
       scrollbarsStyle: this.scrollbarsStyle,
       isOutlinerOpen: this.isOutlinerOpen,

@@ -239,7 +239,7 @@ function createWindow() {
         accelerator: 'CommandOrControl+0',
         click: (_, browserWindow) => {
           if (browserWindow) {
-            browserWindow.webContents.zoomFactor = 1;
+            MainMessenger.setZoomFactor(browserWindow.webContents, 1);
           }
         },
       },
@@ -249,7 +249,8 @@ function createWindow() {
         accelerator: 'CommandOrControl+=',
         click: (_, browserWindow) => {
           if (browserWindow !== undefined) {
-            browserWindow.webContents.setZoomFactor(
+            MainMessenger.setZoomFactor(
+              browserWindow.webContents,
               Math.min(browserWindow.webContents.zoomFactor + 0.1, MAX_ZOOM_FACTOR),
             );
           }
@@ -260,7 +261,8 @@ function createWindow() {
         accelerator: 'CommandOrControl+-',
         click: (_, browserWindow) => {
           if (browserWindow !== undefined) {
-            browserWindow.webContents.setZoomFactor(
+            MainMessenger.setZoomFactor(
+              browserWindow.webContents,
               Math.max(browserWindow.webContents.zoomFactor - 0.1, MIN_ZOOM_FACTOR),
             );
           }

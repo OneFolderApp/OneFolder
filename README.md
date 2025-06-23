@@ -77,6 +77,7 @@ When you want to create a new release, follow these steps:
 3. Commit that change (`git commit -am v1.2.3`)
 4. Tag your commit (`git tag v1.2.3`). Make sure your tag name's format is `v*.*.*`. Your workflow will use this tag to detect when to create a release
 5. Push your changes to GitHub (`git push && git push --tags`)
+
 note: the release name of the release has to start with the version number and a hyphen (e.g. `1.0.19 - ...`) if not the auto downloader won't pick it up
 
 After building successfully, the action will publish your release artifacts. By default, a new release draft will be created on GitHub with download links for your app. If you want to change this behavior, have a look at the [`electron-builder` docs](https://www.electron.build).

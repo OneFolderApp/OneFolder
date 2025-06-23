@@ -14,6 +14,7 @@ import ExternalLink from 'src/frontend/components/ExternalLink';
 export const Advanced = observer(() => {
   const { uiStore, fileStore } = useStore();
   const thumbnailDirectory = uiStore.thumbnailDirectory;
+  const aiTagUrl: string = fileStore.aiTagUrl;
 
   const [defaultThumbnailDir, setDefaultThumbnailDir] = useState('');
   useEffect(() => {
@@ -73,6 +74,12 @@ export const Advanced = observer(() => {
         <h3 className="filepicker-label">Thumbnail Directory</h3>
         <div className="filepicker-path">{thumbnailDirectory}</div>
       </div>
+
+      <h3>AI Tagging API</h3>
+      <Callout icon={IconSet.INFO}>
+        A tagging service such as <ExternalLink url="https://github.com/cmeka/media-tag-service">media-tag-service</ExternalLink> must be running.
+      </Callout>
+      <input name="aiTagUrl" defaultValue={aiTagUrl} size={40} onChange={fileStore.setAiTagUrl}></input>
 
       <h3>Development</h3>
       <ButtonGroup>

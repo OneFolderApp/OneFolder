@@ -5,6 +5,8 @@ import { action } from 'mobx';
 import { useStore } from 'src/frontend/contexts/StoreContext';
 import { IconSet } from 'widgets';
 import { Alert, DialogButton } from 'widgets/popovers';
+import { VirtualizedGrid } from 'widgets/combobox/Grid';
+import { FileRow } from './RemovalAlert';
 
 export const ManyOpenExternal = observer(() => {
   const { uiStore } = useStore();
@@ -31,11 +33,13 @@ export const ManyOpenExternal = observer(() => {
       }}
     >
       <p>This may severely slow down your computer, to the point of it becoming unresponsive.</p>
-      <div className="deletion-confirmation-list">
-        {Array.from(selection).map((f) => (
-          <div key={f.id}>{f.absolutePath}</div>
-        ))}
-      </div>
+      {uiStore.isManyExternalFilesOpen ? (
+        <div className="deletion-confirmation-list">
+          <VirtualizedGrid itemData={Array.from(selection)} itemsInView={10} children={FileRow} />
+        </div>
+      ) : (
+        <></>
+      )}
     </Alert>
   );
 });

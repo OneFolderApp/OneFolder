@@ -13,6 +13,7 @@ import { AppToaster } from './Toaster';
 import { ClientExtraProperty } from '../entities/ExtraProperty';
 import { ClientFile } from '../entities/File';
 import { ExtraPropertyValue } from 'src/api/extraProperty';
+import { VirtualizedGrid, VirtualizedGridRowProps } from 'widgets/combobox/Grid';
 
 interface IRemovalProps<T> {
   object: T;
@@ -185,6 +186,15 @@ export const ExtraPropertyOverwrite = observer(
   },
 );
 
+export const FileRow = ({ index, style, data }: VirtualizedGridRowProps<ClientFile>) => {
+  const item = data[index];
+  return (
+    <div key={item.id} style={style}>
+      {item.absolutePath}
+    </div>
+  );
+};
+
 export const FileRemoval = observer(() => {
   const { fileStore, uiStore } = useStore();
   const selection = uiStore.fileSelection;
@@ -208,11 +218,13 @@ export const FileRemoval = observer(() => {
       }?`}
       information="Deleting files will permanently remove them from Allusion, so any tags saved on them will be lost. If you move files back into their location, they will be automatically detected by Allusion."
       body={
-        <div className="deletion-confirmation-list">
-          {Array.from(selection).map((f) => (
-            <div key={f.id}>{f.absolutePath}</div>
-          ))}
-        </div>
+        uiStore.isToolbarFileRemoverOpen ? (
+          <div className="deletion-confirmation-list">
+            <VirtualizedGrid itemData={Array.from(selection)} itemsInView={10} children={FileRow} />
+          </div>
+        ) : (
+          <></>
+        )
       }
       onCancel={uiStore.closeToolbarFileRemover}
       onConfirm={handleConfirm}
@@ -263,11 +275,13 @@ export const MoveFilesToTrashBin = observer(() => {
         isMulti ? 'them' : 'it'
       } in Allusion will be lost.`}
       body={
-        <div className="deletion-confirmation-list">
-          {Array.from(selection).map((f) => (
-            <div key={f.id}>{f.absolutePath}</div>
-          ))}
-        </div>
+        uiStore.isMoveFilesToTrashOpen ? (
+          <div className="deletion-confirmation-list">
+            <VirtualizedGrid itemData={Array.from(selection)} itemsInView={10} children={FileRow} />
+          </div>
+        ) : (
+          <></>
+        )
       }
       onCancel={uiStore.closeMoveFilesToTrash}
       onConfirm={handleConfirm}

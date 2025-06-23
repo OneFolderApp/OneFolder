@@ -190,7 +190,7 @@ export const FileExtraPropertiesEditor = observer(
         id={id}
         ref={panelRef}
         style={{ height: storedHeight ?? undefined }}
-        className="extra-property-editor scroll-hover"
+        className="extra-property-editor"
       >
         {deletableExtraProperty && (
           <ExtraPropertyRemoval
@@ -685,7 +685,7 @@ const ExtraPropertyInput = ({
       value={inputValue}
       onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.value } })}
       onKeyDown={handleKeyDown}
-      className="input" // scroll-hover"
+      className="input"
       rows={2}
       //data-tooltip={inputValue}
     />

@@ -25,7 +25,7 @@ const Settings = () => {
       closeOnEscape
       additionalCloseKey={uiStore.hotkeyMap.toggleSettings}
     >
-      <div id="settings" className={uiStore.theme}>
+      <div id="settings" className={`${uiStore.theme} scrollbar-classic`}>
         <Tabs />
       </div>
     </PopupWindow>

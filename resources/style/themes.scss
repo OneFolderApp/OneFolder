@@ -54,25 +54,50 @@
   --hover-color: var(--shade1);
   --hover-color-alt: var(--shade2);
 
-  --scrollbar-track-color: var(--shade1);
-  --scrollbar-thumb-color: var(--text-color-muted);
-  --scrollbar-thumb-hover-color: var(--text-color);
-
-  --border-color: var(--shade2);
-  --input-color: var(--shade1);
-  --input-color-hover: var(--shade2);
-
-  --hover-color: var(--shade1);
-  --hover-color-alt: var(--shade2);
-
-  --scrollbar-track-color: var(--shade1);
-  --scrollbar-thumb-color: var(--text-color-muted);
-  --scrollbar-thumb-hover-color: var(--text-color);
-
   --border-color: var(--shade2);
 
   color: var(--text-color);
   background: var(--background-color);
 
   --thumbnail-radius: 0.25rem;
+}
+
+// Scrollbar themes
+.scrollbar-classic {
+  --scrollbar-width: 0.5rem;
+  --scrollbar-height: 0.5rem;
+  --scrollbar-padding: 0.125rem;
+  --scrollbar-border: 0.0625rem solid var(--border-color);
+  --scrollbar-border-radius: 0.125rem;
+
+  --scrollbar-track-color: var(--shade1);
+  --scrollbar-thumb-color: var(--text-color-muted);
+  --scrollbar-thumb-hover-color: var(--text-color);
+  --scrollbar-thumb-border: 0.0625rem solid var(--border-color);
+
+  --scrollbar-border-not-hover: 0.0625rem solid var(--shade2);
+  --scrollbar-thumb-not-hover: var(--text-color-muted);
+
+  --multi-scroll-width: 0.45rem;
+}
+
+.scrollbar-hover {
+  --scrollbar-opacity: 0.02;
+  --scrollbar-opacity-hover: 0.4;
+  --scrollbar-width: 0.5rem;
+  --scrollbar-height: 0.5rem;
+  --scrollbar-padding: 0.125rem;
+  --scrollbar-border: 0.0625rem solid transparent;
+  --scrollbar-border-radius: 0.125rem;
+
+  --scrollbar-track-color: transparent;
+  --scrollbar-thumb-color: rgba(var(--text-color-raw), 0.36);
+  --scrollbar-thumb-hover-color: rgba(var(--text-color-strong-raw), 0.6);
+  --scrollbar-thumb-border: 0.0625rem solid transparent;
+
+  --scrollbar-border-not-hover: 0.0625rem solid transparent;
+  --scrollbar-thumb-not-hover: rgba(var(--text-color-muted-raw), 0.02);
+  
+
+  --multi-scroll-width: 0.44rem;
 }

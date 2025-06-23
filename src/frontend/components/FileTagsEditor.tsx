@@ -396,7 +396,7 @@ const TagSummary = observer(({ counter, removeTag, onContextMenu }: TagSummaryPr
     .map((pair) => pair[0]);
 
   return (
-    <div onMouseDown={(e) => e.preventDefault()}>
+    <div className="config-scrollbar" onMouseDown={(e) => e.preventDefault()}>
       {sortedTags.map((t) => (
         <Tag
           key={t.id}

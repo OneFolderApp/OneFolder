@@ -7,7 +7,7 @@ const Overlay = observer(({ document = window.document }: { document?: Document 
   const { uiStore } = useStore();
 
   return (
-    <div className={uiStore.theme}>
+    <div className={`${uiStore.theme} scrollbar-classic`}>
       <TooltipLayer document={document} />
     </div>
   );

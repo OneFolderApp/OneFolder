@@ -30,6 +30,15 @@ export const Appearance = observer(() => {
           <Radio value="dark">Dark</Radio>
         </RadioGroup>
         <CustomThemePicker />
+        <RadioGroup
+          orientation="horizontal"
+          name="Scrollbar style"
+          value={uiStore.scrollbarsStyle}
+          onChange={uiStore.setScrollbarsStyle}
+        >
+          <Radio value="classic">Classic</Radio>
+          <Radio value="hover">Hover</Radio>
+        </RadioGroup>
       </div>
 
       <h3>Display</h3>

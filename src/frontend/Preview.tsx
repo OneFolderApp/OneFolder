@@ -37,7 +37,9 @@ const PreviewApp = observer(() => {
   return (
     <div
       id="preview"
-      className={`${uiStore.theme} ${isInitializing ? 'preview-window-initializing' : ''}`}
+      className={`${uiStore.theme} scrollbar-classic ${
+        isInitializing ? 'preview-window-initializing' : ''
+      }`}
     >
       <ErrorBoundary>
         <Toolbar id="toolbar" label="Preview Command Bar" controls="content-view" isCompact>

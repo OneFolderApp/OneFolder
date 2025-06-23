@@ -175,7 +175,7 @@ const TagSelector = (props: TagSelectorProps) => {
       aria-expanded={isOpen}
       aria-haspopup="grid"
       aria-owns={gridId}
-      className={`input multiautocomplete tag-selector ${multiline ? 'multiline' : ''}`}
+      className={`tag-selector input multiautocomplete ${multiline ? 'multiline' : ''}`}
       onBlur={handleBlur}
       onClick={handleBackgroundClick}
     >

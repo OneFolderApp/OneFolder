@@ -24,7 +24,7 @@ const Inspector = observer(() => {
   const path = first ? first.absolutePath : '...';
 
   return (
-    <aside id="inspector" className="scroll-hover">
+    <aside id="inspector" className="multi-scroll">
       <section>{first && <ImageInfo file={first} />}</section>
       <section>
         <header>

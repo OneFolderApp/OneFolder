@@ -101,6 +101,7 @@ export const defaultHotkeyMap: IHotkeyMap = {
 /** These fields are stored and recovered when the application opens up */
 type PersistentPreferenceFields =
   | 'theme'
+  | 'scrollbarsStyle'
   | 'isOutlinerOpen'
   | 'isInspectorOpen'
   | 'areFileEditorsDocked'
@@ -137,6 +138,7 @@ class UiStore {
 
   // Theme
   @observable theme: 'light' | 'dark' = 'dark';
+  @observable scrollbarsStyle: 'classic' | 'hover' = 'hover';
 
   // UI
   @observable isOutlinerOpen: boolean = true;
@@ -571,6 +573,10 @@ class UiStore {
     RendererMessenger.setTheme({ theme });
   }
 
+  @action.bound setScrollbarsStyle(style: 'classic' | 'hover' = 'hover'): void {
+    this.scrollbarsStyle = style;
+  }
+
   @action.bound toggleAdvancedSearch(): void {
     this.isAdvancedSearchOpen = !this.isAdvancedSearchOpen;
   }
@@ -953,6 +959,9 @@ class UiStore {
         if (prefs.theme) {
           this.setTheme(prefs.theme);
         }
+        if (prefs.scrollbarsStyle) {
+          this.setScrollbarsStyle(prefs.scrollbarsStyle);
+        }
         this.setIsOutlinerOpen(prefs.isOutlinerOpen);
         this.isInspectorOpen = Boolean(prefs.isInspectorOpen);
         if (prefs.thumbnailDirectory) {
@@ -1035,6 +1044,7 @@ class UiStore {
   getPersistentPreferences(): Partial<Record<keyof UiStore, unknown>> {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
       theme: this.theme,
+      scrollbarsStyle: this.scrollbarsStyle,
       isOutlinerOpen: this.isOutlinerOpen,
       isInspectorOpen: this.isInspectorOpen,
       areFileEditorsDocked: this.areFileEditorsDocked,

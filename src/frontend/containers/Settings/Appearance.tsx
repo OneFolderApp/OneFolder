@@ -63,12 +63,6 @@ export const Appearance = observer(() => {
 
       <div className="vstack">
         <Toggle
-          checked={uiStore.isThumbnailTagOverlayEnabled}
-          onChange={uiStore.toggleThumbnailTagOverlay}
-        >
-          Show assigned tags
-        </Toggle>
-        <Toggle
           checked={uiStore.isThumbnailFilenameOverlayEnabled}
           onChange={uiStore.toggleThumbnailFilenameOverlay}
         >
@@ -80,6 +74,16 @@ export const Appearance = observer(() => {
         >
           Show resolution
         </Toggle>
+        <RadioGroup
+          orientation="horizontal"
+          name="Show tags"
+          value={uiStore.thumbnailTagOverlayMode}
+          onChange={uiStore.setThumbnailTagOverlayMode}
+        >
+          <Radio value="all">All</Radio>
+          <Radio value="selected">Selected</Radio>
+          <Radio value="disabled">Disabled</Radio>
+        </RadioGroup>
         <RadioGroup
           orientation="horizontal"
           name="Shape"

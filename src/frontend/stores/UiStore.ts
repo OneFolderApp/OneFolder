@@ -22,6 +22,7 @@ export const enum ViewMethod {
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
+type ThumbnailTagOverlayModeType = 'all' | 'selected' | 'disabled';
 export type UpscaleMode = 'smooth' | 'pixelated';
 export type GalleryVideoPlaybackMode = 'auto' | 'hover' | 'disabled';
 export const PREFERENCES_STORAGE_KEY = 'preferences';
@@ -117,7 +118,7 @@ type PersistentPreferenceFields =
   | 'upscaleMode'
   | 'galleryVideoPlaybackMode'
   | 'hotkeyMap'
-  | 'isThumbnailTagOverlayEnabled'
+  | 'thumbnailTagOverlayMode'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'outlinerWidth'
@@ -160,7 +161,7 @@ class UiStore {
   readonly outlinerHeights = observable<number>([0, 0, 0, 0]);
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
-  @observable isThumbnailTagOverlayEnabled: boolean = true;
+  @observable thumbnailTagOverlayMode: ThumbnailTagOverlayModeType = 'all';
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -354,16 +355,8 @@ class UiStore {
     RendererMessenger.setZoomFactor(this.zoomFactor);
   }
 
-  @action.bound enableThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = true;
-  }
-
-  @action.bound disableThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = false;
-  }
-
-  @action.bound toggleThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = !this.isThumbnailTagOverlayEnabled;
+  @action.bound setThumbnailTagOverlayMode(val: ThumbnailTagOverlayModeType): void {
+    this.thumbnailTagOverlayMode = val;
   }
 
   @action.bound toggleThumbnailFilenameOverlay(): void {
@@ -1003,7 +996,9 @@ class UiStore {
         if (prefs.outlinerHeights) {
           this.setOutlinerHeights(prefs.outlinerHeights);
         }
-        this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
+        if (prefs.thumbnailTagOverlayMode) {
+          this.setThumbnailTagOverlayMode(prefs.thumbnailTagOverlayMode);
+        }
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
@@ -1072,7 +1067,7 @@ class UiStore {
       galleryVideoPlaybackMode: this.galleryVideoPlaybackMode,
       hotkeyMap: { ...this.hotkeyMap },
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
-      isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
+      thumbnailTagOverlayMode: this.thumbnailTagOverlayMode,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerExpansion: this.outlinerExpansion.slice(),
       outlinerHeights: this.outlinerHeights.slice(),

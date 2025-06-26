@@ -85,10 +85,10 @@ export class ClientTag {
     function* tree(
       tag: ClientTag,
       depth: number,
-      visited = new Set<string>(),
-      path = new Set<string>(),
+      visited = new Set<ClientTag>(),
+      path = new Set<ClientTag>(),
     ): Generator<ClientTag> {
-      if (path.has(tag.id)) {
+      if (path.has(tag)) {
         tag.store.showTagToast(
           tag,
           'has circular relations with other tags',
@@ -99,14 +99,14 @@ export class ClientTag {
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
         return;
-      } else if (!visited.has(tag.id)) {
-        path.add(tag.id);
-        visited.add(tag.id);
+      } else if (!visited.has(tag)) {
+        path.add(tag);
+        visited.add(tag);
         yield tag;
         for (const subTag of tag.subTags) {
           yield* tree(subTag, depth + 1, visited, path);
         }
-        path.delete(tag.id);
+        path.delete(tag);
       }
     }
     return tree(this, 0);
@@ -117,10 +117,10 @@ export class ClientTag {
     function* tree(
       tag: ClientTag,
       depth: number,
-      visited = new Set<string>(),
-      path = new Set<string>(),
+      visited = new Set<ClientTag>(),
+      path = new Set<ClientTag>(),
     ): Generator<ClientTag> {
-      if (path.has(tag.id)) {
+      if (path.has(tag)) {
         tag.store.showTagToast(
           tag,
           'has circular implied relations with other tags',
@@ -130,9 +130,9 @@ export class ClientTag {
         console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Subtree has too many tags. Maximum tag depth exceeded', tag);
-      } else if (!visited.has(tag.id)) {
-        path.add(tag.id);
-        visited.add(tag.id);
+      } else if (!visited.has(tag)) {
+        path.add(tag);
+        visited.add(tag);
         yield tag;
         for (const subTag of tag.subTags) {
           yield* tree(subTag, depth + 1, visited, path);
@@ -140,7 +140,7 @@ export class ClientTag {
         for (const subTag of tag._impliedByTags) {
           yield* tree(subTag, depth + 1, visited, path);
         }
-        path.delete(tag.id);
+        path.delete(tag);
       }
     }
     return tree(this, 0);
@@ -151,10 +151,10 @@ export class ClientTag {
     function* ancestors(
       tag: ClientTag,
       depth: number,
-      visited = new Set<string>(),
-      path = new Set<string>(),
+      visited = new Set<ClientTag>(),
+      path = new Set<ClientTag>(),
     ): Generator<ClientTag> {
-      if (path.has(tag.id)) {
+      if (path.has(tag)) {
         tag.store.showTagToast(
           tag,
           'has circular relations with other tags',
@@ -164,12 +164,12 @@ export class ClientTag {
         console.error(`Tag "${tag.name}" has circular relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
-      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag.id)) {
-        path.add(tag.id);
-        visited.add(tag.id);
+      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag)) {
+        path.add(tag);
+        visited.add(tag);
         yield tag;
         yield* ancestors(tag.parent, depth + 1, visited, path);
-        path.delete(tag.id);
+        path.delete(tag);
       }
     }
     return ancestors(this, 0);
@@ -180,10 +180,10 @@ export class ClientTag {
     function* ancestors(
       tag: ClientTag,
       depth: number,
-      visited = new Set<string>(),
-      path = new Set<string>(),
+      visited = new Set<ClientTag>(),
+      path = new Set<ClientTag>(),
     ): Generator<ClientTag> {
-      if (path.has(tag.id)) {
+      if (path.has(tag)) {
         tag.store.showTagToast(
           tag,
           'has circular implied relations with other tags',
@@ -193,15 +193,15 @@ export class ClientTag {
         console.error(`Tag "${tag.name}" has circular implied relations with other tags`, tag);
       } else if (depth > MAX_TAG_DEPTH) {
         console.error('Tag has too many ancestors. Maximum tag depth exceeded', tag);
-      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag.id)) {
-        path.add(tag.id);
-        visited.add(tag.id);
+      } else if (tag.id !== ROOT_TAG_ID && !visited.has(tag)) {
+        path.add(tag);
+        visited.add(tag);
         yield tag;
         yield* ancestors(tag.parent, depth + 1, visited, path);
         for (const impliedTag of tag.impliedTags) {
           yield* ancestors(impliedTag, depth + 1, visited, path);
         }
-        path.delete(tag.id);
+        path.delete(tag);
       }
     }
     return ancestors(this, 0);

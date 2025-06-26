@@ -26,6 +26,7 @@ const POPUP_ID = 'tag-editor-popup';
 const PANEL_SIZE_ID = 'tag-editor-height';
 const PANEL_SUMMARY_SIZE_ID = 'tag-editor-summary-height';
 const REM_VALUE = parseFloat(getComputedStyle(document.documentElement).fontSize);
+const MIN_SUMMARY_THRESHOLD = REM_VALUE * 2.1;
 
 export const FileTagsEditor = observer(() => {
   const { uiStore } = useStore();
@@ -44,18 +45,16 @@ export const FileTagsEditor = observer(() => {
   const counter = useComputed(() => {
     // Count how often tags are used // Aded las bool value indicating if is an inherited tag -> should not show delete button;
     const counter = new Map<ClientTag, [number, boolean]>();
-    for (const file of uiStore.fileSelection) {
-      for (const tag of file.inheritedTags) {
+    uiStore.fileSelection.forEach((file) => {
+      for (let j = 0; j < file.inheritedTags.length; j++) {
+        const tag = file.inheritedTags[j];
         const counterTag = counter.get(tag);
         const count = counterTag?.[0];
-        const counterNotInherited = counterTag?.[1];
-        const notInherited = file.tags.has(tag);
-        counter.set(tag, [
-          count !== undefined ? count + 1 : 1,
-          counterNotInherited || notInherited,
-        ]);
+        const isAlreadyExplicit = counterTag?.[1];
+        const isExplicit = file.tags.has(tag);
+        counter.set(tag, [count !== undefined ? count + 1 : 1, isAlreadyExplicit || isExplicit]);
       }
-    }
+    });
     return counter;
   });
 
@@ -81,7 +80,7 @@ export const FileTagsEditor = observer(() => {
   const [storedHeight] = useState(localStorage.getItem(PANEL_SIZE_ID));
   const [storedSummaryHeight] = useState(localStorage.getItem(PANEL_SUMMARY_SIZE_ID));
   const [showSummary, setShowSummary] = useState(
-    storedSummaryHeight ? parseFloat(storedSummaryHeight) > REM_VALUE * 1.6 : true,
+    storedSummaryHeight ? parseFloat(storedSummaryHeight) > MIN_SUMMARY_THRESHOLD : true,
   );
   useEffect(() => {
     if (!panelRef.current || !summaryRef.current) {
@@ -91,19 +90,38 @@ export const FileTagsEditor = observer(() => {
     const storeSummaryHeight = debounce((val: string) =>
       localStorage.setItem(PANEL_SUMMARY_SIZE_ID, val),
     );
+    const updateMaxSummaryHeight = () => {
+      if (panelRef.current && inputRef.current && summaryRef.current) {
+        const containerHeight = panelRef.current.clientHeight;
+        const computedStyle = getComputedStyle(inputRef.current);
+        const offsetHeight = inputRef.current.offsetHeight;
+        const marginTop = parseFloat(computedStyle.marginTop);
+        const marginBottom = parseFloat(computedStyle.marginBottom);
+        const totalInputHeight = offsetHeight + marginTop + marginBottom;
+        const maxSummaryHeight = containerHeight - totalInputHeight;
+        summaryRef.current.style.maxHeight = `${maxSummaryHeight}px`;
+      }
+    };
+    let rafID = 0;
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
           mutation.type == 'attributes' &&
           mutation.attributeName === 'style' &&
-          panelRef.current
+          panelRef.current &&
+          inputRef.current
         ) {
           storeHeight(panelRef.current.style.height);
+          if (rafID) {
+            cancelAnimationFrame(rafID);
+          }
+          rafID = requestAnimationFrame(() => {
+            updateMaxSummaryHeight();
+          });
         }
       });
     });
     observer.observe(panelRef.current, { attributes: true });
-    let rafID = 0;
     const summaryObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
@@ -117,12 +135,13 @@ export const FileTagsEditor = observer(() => {
             cancelAnimationFrame(rafID);
           }
           rafID = requestAnimationFrame(() => {
-            setShowSummary(parseFloat(height) > REM_VALUE * 1.6);
+            setShowSummary(parseFloat(height) > MIN_SUMMARY_THRESHOLD);
           });
         }
       });
     });
     summaryObserver.observe(summaryRef.current, { attributes: true });
+    updateMaxSummaryHeight();
 
     return () => {
       observer.disconnect();

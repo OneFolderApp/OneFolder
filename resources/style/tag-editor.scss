@@ -4,8 +4,9 @@
   max-height: calc(100vh - var(--toolbar-height) - 5rem);
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   resize: vertical;
+  transition: height 0.1s ease-out;
 
   // Intended layout behavior:
   // - Input element has a static height
@@ -48,11 +49,11 @@
     height: calc(1.5rem * 3.5); // 3.5 rows of tags
     //Allow resizing and move the resize handle to the top of the div
     resize: vertical;
+    transition: height 0.1s ease-out;
     transform: scaleY(-1);
     //Important to avoid the main resize handler to overlap with this resize handler
-    min-height: 1.5rem;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem; // Is bottom because the div is inverted, so it will appear on the top
+    min-height: 2rem;
+    padding-block: 0.5rem; // Is bottom because the div is inverted, so it will appear on the top
     border-bottom: 0.0625rem solid var(--border-color); // bottom bc the same
 
     > * {

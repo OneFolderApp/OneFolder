@@ -121,8 +121,10 @@ export class ClientFile {
     makeObservable(this);
   }
 
-  //Gets his tags and all inherithed tags from parent and implied tags from his tags
-  @computed get inheritedTags(): Set<ClientTag> {
+  /**
+   * Gets his tags and all inherithed tags from parent and implied tags from his tags.
+   */
+  @computed get inheritedTags(): ClientTag[] {
     const inheritedTagSet = new Set<ClientTag>();
     for (const tag of this.tags) {
       if (!inheritedTagSet.has(tag)) {
@@ -133,7 +135,7 @@ export class ClientFile {
         }
       }
     }
-    return inheritedTagSet;
+    return Array.from(inheritedTagSet).sort((a, b) => a.flatIndex - b.flatIndex);
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {

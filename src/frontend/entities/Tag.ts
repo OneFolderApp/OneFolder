@@ -25,6 +25,10 @@ export class ClientTag {
   @observable private _impliedByTags = observable<ClientTag>([]);
   @observable impliedTags = observable<ClientTag>([]);
 
+  // Not observable but lighter and good enough for quick sorting in the UI.
+  // Gets recalculated when TagStore.tagList is recomputed.
+  flatIndex: number = 0;
+
   // icon, (fileCount?)
 
   /** The amount of files that has this tag assigned to it

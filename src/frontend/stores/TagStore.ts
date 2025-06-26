@@ -75,7 +75,10 @@ class TagStore {
         yield* tag.getSubTree();
       }
     }
-    return Array.from(list(this.root.subTags));
+    return Array.from(list(this.root.subTags), (tag, index) => {
+      tag.flatIndex = index;
+      return tag;
+    });
   }
 
   @computed get count(): number {

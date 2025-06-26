@@ -56,14 +56,14 @@ const FileTags = observer(({ file }: IFileTagProp) => {
     return <></>;
   }
 
-  const isNotInherithedMap = [
-    ...Array.from(file.inheritedTags).map((t) => [t, file.tags.has(t)] as [ClientTag, boolean]),
-  ];
+  const isExplicitEntries = file.inheritedTags.map(
+    (t) => [t, file.tags.has(t)] as [ClientTag, boolean],
+  );
 
   return (
     <TagSelector
       disabled={file.isBroken}
-      selection={isNotInherithedMap}
+      selection={isExplicitEntries}
       onClear={file.clearTags}
       onDeselect={file.removeTag}
       onSelect={file.addTag}

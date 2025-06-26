@@ -87,6 +87,15 @@ export const TagItemContextMenu = observer((props: IContextMenuProps) => {
   const { tagStore, uiStore } = useStore();
   const ctxTags = uiStore.getTagContextItems(tag.id);
 
+  const handleVisibleInherit = (val: boolean) => {
+    if (tag.isSelected) {
+      uiStore.VisibleInheritSelectedTagsAndCollections(tag.id, val);
+    } else {
+      tag.setVisibleInherited(val);
+    }
+  };
+  const isVisibleInherited = tag.isVisibleInherited;
+
   return (
     <Menu>
       <MenuItem
@@ -121,6 +130,11 @@ export const TagItemContextMenu = observer((props: IContextMenuProps) => {
         icon={IconSet.DELETE}
       />
       <MenuDivider />
+      <MenuCheckboxItem
+        checked={isVisibleInherited}
+        text="Visible When Inherited"
+        onClick={() => handleVisibleInherit(!isVisibleInherited)}
+      />
       <MenuItem
         onClick={() => dispatch(Factory.enableModifyImpliedTags(tag))}
         text="Modify implied tags"

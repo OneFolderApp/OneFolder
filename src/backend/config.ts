@@ -154,7 +154,7 @@ const dbConfig: DBVersioningConfig[] = [
     },
   },
   {
-    // Version 12 29-5-25: Rename table Scores to extraProperties, redefine scores in files to extraProperties, add skipInherit: bool to tags and add tags to locations.
+    // Version 12 29-5-25: Rename table Scores to extraProperties, redefine scores in files to extraProperties, add isVisibleInherited: bool to tags and add tags to locations.
     version: 12,
     collections: [
       {
@@ -206,11 +206,11 @@ const dbConfig: DBVersioningConfig[] = [
           return file;
         });
 
-      // Add skipInherit to tags
+      // Add isVisibleInherited to tags
       tx.table('tags')
         .toCollection()
         .modify((tag: any) => {
-          tag.skipInherit = false;
+          tag.isVisibleInherited = true;
           return tag;
         });
 

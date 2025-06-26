@@ -19,7 +19,8 @@ export class ClientTag {
   @observable name: string;
   @observable color: string;
   @observable isHidden: boolean;
-  @observable skipInherit: boolean;
+  /** Whether a tag is marked as Visible when inherited */
+  @observable isVisibleInherited: boolean;
   @observable private _parent: ClientTag | undefined;
   readonly subTags = observable<ClientTag>([]);
   @observable private _impliedByTags = observable<ClientTag>([]);
@@ -45,7 +46,7 @@ export class ClientTag {
     dateAdded: Date,
     color?: string,
     isHidden?: boolean,
-    skipInherit?: boolean,
+    isVisibleInherited?: boolean,
   ) {
     this.store = store;
     this.id = id;
@@ -54,7 +55,7 @@ export class ClientTag {
     this.color = color ?? 'inherit';
     this.fileCount = 0;
     this.isHidden = isHidden ?? false;
-    this.skipInherit = skipInherit ?? false;
+    this.isVisibleInherited = isVisibleInherited ?? true;
 
     // observe all changes to observable fields
     this.saveHandler = reaction(
@@ -394,6 +395,18 @@ export class ClientTag {
     this.store.refetchFiles();
   }
 
+  @action.bound setVisibleInherited(val: boolean): void {
+    this.isVisibleInherited = val;
+  }
+
+  /**
+   * Similar to this.isVisibleInherited but
+   * takes into account inheritedTagsVisibilityMode from UiStore
+   */
+  @computed get shouldShowWhenInherited(): boolean {
+    return this.store.shouldShowWhenInherited(this);
+  }
+
   serialize(): TagDTO {
     return {
       id: this.id,
@@ -403,7 +416,7 @@ export class ClientTag {
       subTags: this.subTags.map((subTag) => subTag.id),
       isHidden: this.isHidden,
       impliedTags: this.impliedTags.map((impliedTag) => impliedTag.id),
-      skipInherit: this.skipInherit,
+      isVisibleInherited: this.isVisibleInherited,
     };
   }
 

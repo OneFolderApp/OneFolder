@@ -13,6 +13,8 @@ import { ClientFileSearchCriteria, ClientTagSearchCriteria } from '../entities/S
 import { ClientTag } from '../entities/Tag';
 import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
+import { IExpansionState } from '../containers/types';
+import { ROOT_TAG_ID } from 'src/api/tag';
 
 export const enum ViewMethod {
   List,
@@ -710,9 +712,18 @@ class UiStore {
     const ctx = this.getTagContextItems(activeElementId);
     const colorCollection = (tag: ClientTag) => {
       tag.setColor(color);
-      tag.subTags.forEach((tag) => tag.setColor(color));
+      // Perhaps the color should be applied only to selected tags to give the user more control.
+      //tag.subTags.forEach((tag) => tag.setColor(color));
     };
     ctx.forEach(colorCollection);
+  }
+
+  @action.bound VisibleInheritSelectedTagsAndCollections(activeElementId: ID, val: boolean): void {
+    const ctx = this.getTagContextItems(activeElementId);
+    const setVisibility = (tag: ClientTag) => {
+      tag.setVisibleInherited(val);
+    };
+    ctx.forEach(setVisibility);
   }
 
   /**

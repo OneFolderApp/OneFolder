@@ -25,6 +25,7 @@ export const enum ViewMethod {
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
 type ThumbnailTagOverlayModeType = 'all' | 'selected' | 'disabled';
+export type InheritedTagsVisibilityModeType = 'all' | 'visible-when-inherited' | 'disabled';
 export type UpscaleMode = 'smooth' | 'pixelated';
 export type GalleryVideoPlaybackMode = 'auto' | 'hover' | 'disabled';
 export const PREFERENCES_STORAGE_KEY = 'preferences';
@@ -121,6 +122,7 @@ type PersistentPreferenceFields =
   | 'galleryVideoPlaybackMode'
   | 'hotkeyMap'
   | 'thumbnailTagOverlayMode'
+  | 'inheritedTagsVisibilityMode'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'outlinerWidth'
@@ -164,6 +166,8 @@ class UiStore {
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
   @observable thumbnailTagOverlayMode: ThumbnailTagOverlayModeType = 'all';
+  @observable inheritedTagsVisibilityMode: InheritedTagsVisibilityModeType =
+    'visible-when-inherited';
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -359,6 +363,10 @@ class UiStore {
 
   @action.bound setThumbnailTagOverlayMode(val: ThumbnailTagOverlayModeType): void {
     this.thumbnailTagOverlayMode = val;
+  }
+
+  @action.bound setInheritedTagsVisibilityMode(val: InheritedTagsVisibilityModeType): void {
+    this.inheritedTagsVisibilityMode = val;
   }
 
   @action.bound toggleThumbnailFilenameOverlay(): void {
@@ -1035,6 +1043,9 @@ class UiStore {
         if (prefs.thumbnailTagOverlayMode) {
           this.setThumbnailTagOverlayMode(prefs.thumbnailTagOverlayMode);
         }
+        if (prefs.inheritedTagsVisibilityMode) {
+          this.setInheritedTagsVisibilityMode(prefs.inheritedTagsVisibilityMode);
+        }
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
@@ -1104,6 +1115,7 @@ class UiStore {
       hotkeyMap: { ...this.hotkeyMap },
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
       thumbnailTagOverlayMode: this.thumbnailTagOverlayMode,
+      inheritedTagsVisibilityMode: this.inheritedTagsVisibilityMode,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerExpansion: this.outlinerExpansion.slice(),
       outlinerHeights: this.outlinerHeights.slice(),

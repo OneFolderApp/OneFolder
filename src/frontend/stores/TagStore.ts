@@ -118,6 +118,24 @@ class TagStore {
     return this.tagList.find((t) => t.name === name);
   }
 
+  /**
+   * Computes a reusable and concise callback function used by all tags
+   * to determine if they should be visible on inheritance, based on the
+   * inheritedTagsVisibilityMode from UiStore.
+   *
+   * This avoids having each tag perform all the condition checks on every reaction.
+   */
+  @computed get shouldShowWhenInherited(): (tag: ClientTag) => boolean {
+    switch (this.rootStore.uiStore.inheritedTagsVisibilityMode) {
+      case 'all':
+        return () => true;
+      case 'visible-when-inherited':
+        return (tag: ClientTag) => tag.isVisibleInherited;
+      default:
+        return () => false;
+    }
+  }
+
   @action.bound async delete(tag: ClientTag): Promise<void> {
     const {
       rootStore: { uiStore, fileStore },

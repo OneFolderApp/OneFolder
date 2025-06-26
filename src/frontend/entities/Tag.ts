@@ -180,8 +180,12 @@ export class ClientTag {
     return ancestors(this, 0);
   }
 
-  /** Returns this tag and all its implied ancestors (excluding root tag). */
-  @action getImpliedAncestors(): Generator<ClientTag> {
+  /**
+   * Returns this tag and all its implied ancestors (excluding root tag).
+   * Accepts an optional `visited` set to avoid redundant traversal
+   * across multiple calls (when resolving ancestors for many tags).
+   */
+  @action getImpliedAncestors(visited?: Set<ClientTag>): Generator<ClientTag> {
     function* ancestors(
       tag: ClientTag,
       depth: number,
@@ -209,7 +213,7 @@ export class ClientTag {
         path.delete(tag);
       }
     }
-    return ancestors(this, 0);
+    return ancestors(this, 0, visited);
   }
 
   /** Returns the tags up the hierarchy from this tag, excluding the root tag */

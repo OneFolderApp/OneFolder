@@ -6,6 +6,7 @@ import useCustomTheme from 'src/frontend/hooks/useCustomTheme';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { Button, IconSet, Radio, RadioGroup, Toggle } from 'widgets';
 import { useStore } from '../../contexts/StoreContext';
+import { InheritedTagsVisibilityModeType } from 'src/frontend/stores/UiStore';
 
 export const Appearance = observer(() => {
   const { uiStore } = useStore();
@@ -92,6 +93,28 @@ export const Appearance = observer(() => {
         >
           <Radio value="square">Square</Radio>
           <Radio value="letterbox">Letterbox</Radio>
+        </RadioGroup>
+      </div>
+
+      <h3>File Tags</h3>
+
+      <div className="vstack">
+        <RadioGroup
+          orientation="vertical"
+          name="Inherited Tags Visibility"
+          value={uiStore.inheritedTagsVisibilityMode}
+          onChange={uiStore.setInheritedTagsVisibilityMode}
+        >
+          <Radio value={'all' as InheritedTagsVisibilityModeType}>Show All</Radio>
+          <Radio
+            value={'visible-when-inherited' as InheritedTagsVisibilityModeType}
+            tooltip="Configure a tag's visibility when inherited by right-clicking the tag"
+          >
+            Show &quot;Visible When Inherited&quot; tags
+          </Radio>
+          <Radio value={'disabled' as InheritedTagsVisibilityModeType}>
+            Do Not Show Inherited Tags
+          </Radio>
         </RadioGroup>
       </div>
 

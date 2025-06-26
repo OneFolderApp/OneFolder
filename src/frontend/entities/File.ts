@@ -126,14 +126,20 @@ export class ClientFile {
    */
   @computed get inheritedTags(): ClientTag[] {
     const inheritedTagSet = new Set<ClientTag>();
+    const visited = new Set<ClientTag>();
     for (const tag of this.tags) {
+      // If the tag is already on the set all it's ancestors are too so skip it.
       if (!inheritedTagSet.has(tag)) {
-        for (const inheritedTag of tag.getImpliedAncestors()) {
-          if (!inheritedTagSet.has(inheritedTag)) {
+        for (const inheritedTag of tag.getImpliedAncestors(visited)) {
+          // If the tag should be shown add it to the set.
+          if (inheritedTag.shouldShowWhenInherited) {
             inheritedTagSet.add(inheritedTag);
           }
         }
       }
+      // Ensure to add the explicit assigned tags,
+      // it might have been excluded by not passing inheritedTag.shouldShowWhenInherited
+      inheritedTagSet.add(tag);
     }
     return Array.from(inheritedTagSet).sort((a, b) => a.flatIndex - b.flatIndex);
   }

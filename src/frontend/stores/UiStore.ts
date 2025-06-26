@@ -657,14 +657,39 @@ class UiStore {
   }
 
   /** Selects a range of tags, where indices correspond to the flattened tag list. */
-  @action.bound selectTagRange(start: number, end: number, additive?: boolean): void {
+  @action.bound selectTagRange(
+    start: number,
+    end: number,
+    additive?: boolean,
+    // If expansions is undefined behave as deep/sub-tree selection.
+    expansions?: IExpansionState,
+  ): void {
+    const excluded = new Set<ClientTag>();
     const tagTreeList = this.rootStore.tagStore.tagList;
+    const slice = tagTreeList.slice(start, end + 1);
+    const tagsToSelect =
+      // If expansions is avalible filter out items that are not visible because of the colapse
+      expansions !== undefined
+        ? slice.filter((tag) => {
+            if (excluded.has(tag)) {
+              return false;
+            }
+            const parentId = tag.parent.id;
+            const isValid = parentId === ROOT_TAG_ID || expansions[parentId];
+            if (!isValid) {
+              for (const st of tag.getSubTree()) {
+                excluded.add(st);
+              }
+            }
+            return isValid;
+          })
+        : slice;
     if (!additive) {
-      this.tagSelection.replace(tagTreeList.slice(start, end + 1));
+      this.tagSelection.replace(tagsToSelect);
       return;
     }
-    for (let i = start; i <= end; i++) {
-      this.tagSelection.add(tagTreeList[i]);
+    for (const tag of tagsToSelect) {
+      this.tagSelection.add(tag);
     }
   }
 

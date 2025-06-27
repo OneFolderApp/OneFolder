@@ -24,7 +24,7 @@ export const FileExtraPropertiesEditorButton = () => {
     <>
       <ToolbarButton
         id="file-extra-properties-editor-button"
-        icon={IconSet.META_INFO}
+        icon={IconSet.OUTLINER4}
         onClick={uiStore.toggleFileExtraPropertiesEditor}
         text="File extra properties"
         tooltip="Add or remove extra properties from selected images"

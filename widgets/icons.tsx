@@ -69,7 +69,7 @@ import META_INFO from 'resources/icons/meta-info.svg';
 // import META_INFO_2 from 'resources/icons/meta-info-2.svg';
 import MORE from 'resources/icons/more.svg';
 import OPEN_EXTERNAL from 'resources/icons/open-external.svg';
-// import OUTLINER from 'resources/icons/outliner.svg';
+import OUTLINER4 from 'resources/icons/outliner4.svg';
 import PLUS from 'resources/icons/plus.svg';
 import PREVIEW from 'resources/icons/preview.svg';
 import RELOAD from 'resources/icons/reload.svg';
@@ -164,7 +164,7 @@ const IconSet = {
   // ITEM_EXPAND: toSvg(ITEM_EXPAND),
   ITEM_MOVE_DOWN: toSvg(ITEM_MOVE_DOWN),
   ITEM_MOVE_UP: toSvg(ITEM_MOVE_UP),
-  // OUTLINER: toSvg(OUTLINER),
+  OUTLINER4: toSvg(OUTLINER4),
   LOADING: toSvg(LOADING),
   LOGO: toSvg(LOGO),
   // LOGO_MARK_BLACK: toSvg(LOGOMARK_BLACK),

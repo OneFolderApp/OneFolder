@@ -353,29 +353,45 @@ const PAGE_DATA: () => IPageData[] = () => [
               To organize your tags, simply drag the list items across the outliner. You can drop
               items onto one another to create a hierarchy. In this way you can turn a list of many
               tags into a structured shape, so that it is easy for you to find the specific tags you
-              were looking for.
+              were looking for. Alternatively, you can search for a tag in the File tags editor,
+              right-click the tag you're searching for, and select "Reveal in tags panel" to quickly
+              find a tag.
             </p>
             <p>
               Finally, to remove or edit an entry, right-click it and choose an action from the
-              context menu.
+              context menu. The tag tree also supports versatile selection using modifier keys: hold{' '}
+              <strong>Alt</strong> to select whole tag collections (a tag and its sub-tags);
+              otherwise, only visible tags are selected. Hold <strong>Command</strong>/
+              <strong>Control</strong> to enable additive/subtractive selection. Hold{' '}
+              <strong>Shift</strong> to select multiple items in range.
             </p>
           </>
         ),
       },
       {
-        title: 'implied tags and inherited tags',
+        title: 'Implied Tags and Inherited Tags',
         content: (
           <>
             <p>
               You can set implied relationships to a tag through the tag's contextual menu option
-              "Modify implied tags". When you tag a file, it also inherits all its ancestor tags and
-              implied tags and inherits those from them too automatically, to be used in search. For
-              example, if the tag dog implies mammal, and mammal implies animal, if you search for
-              animal, files with tag dog will also be included because of the implied relationship.
+              "Modify implied tags." When you tag a file, it also inherits all its ancestor tags and
+              implied tags (and those from them too) automatically, to be used in search. For
+              example, if the tag <em>dog</em> implies <em>mammal</em>, and <em>mammal</em> implies
+              <em>animal</em>, then if you search for <em>animal</em>, files with the tag
+              <em>dog</em> will also be included because of the implied relationship.
             </p>
             <p>
               Inherited tags can't be removed from a file unless you remove all the tags that cause
               them to be automatically inherited.
+            </p>
+            <p>
+              It is possible to configure the visibility of tags and collections when they are
+              inherited. You can decide exactly which tags appear in file thumbnails and tag lists
+              by setting each tag’s "Visible When Inherited" status using the tag right-click menu.
+              You can also configure the global inherited tags visibility mode in the Appearance
+              settings. Available modes are: Show all (even those with "Visible When Inherited"
+              status disabled), Show only "Visible When Inherited" tags (default mode), and Do not
+              show inherited tags.
             </p>
             <p>
               When exporting tags to file metadata, only the explicitly assigned tags get exported
@@ -415,9 +431,62 @@ const PAGE_DATA: () => IPageData[] = () => [
           <>
             <p>
               When you have a large library of tags, it could be hard to find or remember where a
-              tag is in the hierarchy, so you can search for the tag on the tag editor panel or in
-              assigned tags in a file, and right-click them to show the option "Reveal in tags
-              panel."
+              tag is in the hierarchy, in this case you can search for the tag on the tag editor
+              panel or in assigned tags in a file, and right-click them to show the option "Reveal
+              in tags panel" to quickly find a tag.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    title: 'Extra Properties',
+    icon: IconSet.OUTLINER4,
+    sections: [
+      {
+        title: 'Extra Properties',
+        content: (
+          <>
+            <p>
+              You can define extra properties and add values to files using the Extra File
+              Properties Editor panel (shortcut key 4) or the Inspector. Extra properties allow you
+              to store additional information alongside your files and potentially use it to curate
+              and organize your library even further.
+            </p>
+            <p>
+              To create a new extra property definition, go to the Extra File Properties Editor or
+              the Inspector and click the "+" plus icon button. Then enter a name for the new
+              property and select one of the available creation options: currently, you can define
+              properties of type number or text.
+            </p>
+            <p>
+              To add an extra property to a file or multiple files, first select the files you want
+              to edit. Then, go to the Extra File Properties Editor or the Inspector and click the
+              "+" button to open the Extra Property Selector. You can search for a specific property
+              using the text input and/or select the one you want to add.
+            </p>
+            <p>
+              To edit the value of an extra property for a file or group of selected files, simply
+              type the new value in the Extra File Properties Editor or in the Inspector.
+              Number-type properties support positive decimal numbers, and text-type properties
+              support multiline input (press Enter to create a new line).
+            </p>
+            <p>
+              To rename, remove from a file, or delete an extra property definition, right-click the
+              property in the Extra File Properties Editor or in the Extra Property Selector.
+            </p>
+            <p>
+              You can sort your files by extra property values using the "Sort by" option in the
+              contextual menu or in the "Sort View Content" panel in the toolbar.
+            </p>
+            <p>
+              You can also use extra properties to create advanced search criteria and filter files
+              based on their values.
+            </p>
+            <p>
+              Extra properties are exported to file metadata when using the "Export Tags to File
+              Metadata" option in the import/export settings menu.
             </p>
           </>
         ),
@@ -470,33 +539,15 @@ const PAGE_DATA: () => IPageData[] = () => [
               To take a closer look, each row in the interface represents one criteria and consists
               of three input fields. First select the type of information you want to look for. You
               can search for tags and file properties such as their name, size, type and creation
-              date. You can then select an operator such as &quote;equals&quote;, &quote;greater
-              than&quote;, &quote;includes&quote; etc. Finally you can enter the value of the
-              selected property you wish to look for. Adding multiple criteria will again help you
-              narrow down a search result.
+              date. You can then select an operator such as "equals", "greater than", "includes"
+              etc. Finally you can enter the value of the selected property you wish to look for.
+              Adding multiple criteria will again help you narrow down a search result.
             </p>
             <p>
               To provide some extra control when searching with multiple queries, you can swap
               between finding images that match all entered queries, or any of them. This toggle is
               available at the bottom of the advanced search panel, and at the right in the search
               bar when two or more queries have been entered.
-            </p>
-          </>
-        ),
-      },
-      {
-        title: 'Scores',
-        content: (
-          <>
-            <p>
-              You can define score categories and add values of them to files with the score editor
-              panel (key 4 shortcut) and with the inspector. Scores give you a way to assign values
-              of one or multiple categories to files and allow you to sort them based on those
-              values.
-            </p>
-            <p>
-              Scores get exported to metadata too when exporting tags to file metadata from the
-              settings import/export menu.
             </p>
           </>
         ),

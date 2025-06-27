@@ -1,5 +1,6 @@
 .extra-property-editor {
   max-height: calc(100vh - var(--toolbar-height) - 5rem);
+  min-height: 3rem;
   overflow: auto;
   resize: vertical;
 
@@ -28,6 +29,8 @@
 
 .extra-property-selector-pane {
   max-width: 70vw;
+  min-height: 7rem;
+  max-height: 50vh;
   display: flex;
   flex-direction: column;
   overflow: auto;

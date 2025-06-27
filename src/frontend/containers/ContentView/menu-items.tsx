@@ -284,7 +284,7 @@ export const FileExtraPropertyMenuItems = observer(
         <MenuItem
           onClick={() => onRemove(extraProperty)}
           text={`Remove extra property from ${isMultiple ? 'files' : 'file'}`}
-          icon={IconSet.META_INFO}
+          icon={IconSet.CLOSE}
         />
         <MenuItem onClick={() => onRename(extraProperty)} text="Rename" icon={IconSet.EDIT} />
         <MenuItem

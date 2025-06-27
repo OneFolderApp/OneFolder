@@ -2,21 +2,28 @@
 
 Fork of [Allusion](https://github.com/allusion-app/Allusion/) with:
 - Video support.
-  - Video and Gif playback options.
+  - Video and GIF playback options.
 - Implied tag relationships.
   - Automatic inheritance of implied tags.
   - Fully compatible with advanced search.
-- Scores
-  - Allows you to set score categories, set multiple values to files, and custom sort them by those values.
-- Quality-of-life improvements.
-  - Refresh hotkey
-  - Fixed weird behavior in the tags tree when dragging/dropping or expanding items
+- Extra Properties.
+  - Allows you to define extra properties for files.
+  - Sort files by their extra property values.
+  - Use those extra properties in advanced searches.
+- Quality of life improvements.
+  - Refresh hotkey.
+  - Fixed weird behavior in the tags tree when dragging/dropping or expanding items.
+  - Versatile tag selection in the tags tree using and combining modifier keys.
+    - Hold Alt to select whole tag collections (a tag and its sub-tags); otherwise, only select visible tags.
+    - Hold Command/Control to enable additive/subtractive selection.
+    - Hold Shift to enable selecting multiple items in range.
   - Improved thumbnail updates when files change.
   - Retry thumbnail generation when it takes too long.
   - Tag editor can be moved to the side in the main gallery.
-  - Find tags with the contextual menu in tag editor.
+  - Find tags using the contextual menu in the tag editor.
   - Adjustable padding for thumbnails in the gallery.
-  - and more.
+  - Multiple optimizations and bug fixes.
+  - And more — see the changelogs in the releases page for more details.
         
 Thanks to the developers and the community for your hard work! ❤️
 

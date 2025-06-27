@@ -1,5 +1,12 @@
-import { action } from 'mobx';
-import React, { ForwardedRef, forwardRef, useState } from 'react';
+import { action, computed, IComputedValue } from 'mobx';
+import React, {
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { camelCaseToSpaced } from 'common/fmt';
 import { NumberOperators, StringOperators } from '../../../api/data-storage-search';
@@ -10,6 +17,12 @@ import { useStore } from '../../contexts/StoreContext';
 import { NumberOperatorSymbols, StringOperatorLabels } from '../../entities/SearchCriteria';
 import { ClientTag } from '../../entities/Tag';
 import { Criteria, Key, Operator, TagValue, Value, defaultQuery } from './data';
+import { MenuSubItem } from 'widgets/menus';
+import { ExtraPropertySelector } from 'src/frontend/components/ExtraPropertySelector';
+import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
+import { usePopover } from 'widgets/popovers/usePopover';
+import { ExtraPropertyType } from 'src/api/extraProperty';
+import { Observer } from 'mobx-react-lite';
 
 type SetCriteria = (fn: (criteria: Criteria) => Criteria) => void;
 
@@ -17,58 +30,140 @@ interface IKeySelector {
   labelledby: string;
   dispatch: SetCriteria;
   keyValue: Key;
+  extraProperty?: ClientExtraProperty;
 }
 
 export const KeySelector = forwardRef(function KeySelector(
-  { labelledby, keyValue, dispatch }: IKeySelector,
+  { labelledby, keyValue, dispatch, extraProperty }: IKeySelector,
   ref: ForwardedRef<HTMLSelectElement>,
 ) {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const key = e.target.value as Key;
-    dispatch((criteria) => {
-      // Keep the text value and operator when switching between name and path
-      if ([criteria.key, key].every((k) => ['name', 'absolutePath'].includes(k))) {
-        criteria.key = key;
-        return { ...criteria };
+  const [showExtraSelector, setShowExtraSelector] = useState(false);
+  const { style, reference, floating, update } = usePopover('bottom-start', [
+    'right',
+    'left',
+    'bottom',
+    'top',
+  ]);
+
+  useLayoutEffect(() => {
+    if (showExtraSelector) {
+      update();
+    }
+  }, [showExtraSelector, update]);
+
+  const handleBlur = useRef((e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setShowExtraSelector(false);
+    }
+  }).current;
+
+  const handleCloseExtraSelector = () => setShowExtraSelector(false);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const key = e.target.value as Key;
+      if (key === 'extraProperties') {
+        setShowExtraSelector(true);
       } else {
-        return defaultQuery(key);
+        dispatch((criteria) => {
+          // Keep the text value and operator when switching between name and path
+          if ([criteria.key, key].every((k) => ['name', 'absolutePath'].includes(k))) {
+            criteria.key = key;
+            return { ...criteria };
+          } else {
+            return defaultQuery(key);
+          }
+        });
       }
-    });
-  };
+    },
+    [dispatch],
+  );
+
+  const handleExtraPropertySelect = useCallback(
+    (eventExtraProperty: ClientExtraProperty) => {
+      setShowExtraSelector(false);
+      dispatch((criteria) => {
+        if (
+          criteria.key === 'extraProperties' &&
+          'extraProperty' in criteria &&
+          extraProperty !== undefined &&
+          extraProperty.type === eventExtraProperty.type
+        ) {
+          criteria.extraProperty = eventExtraProperty.id;
+          return { ...criteria };
+        } else {
+          const newCriteria: Criteria = defaultQuery('extraProperties', eventExtraProperty.type);
+          if ('extraProperty' in newCriteria) {
+            newCriteria.extraProperty = eventExtraProperty.id;
+          }
+          return newCriteria;
+        }
+      });
+    },
+    [dispatch, extraProperty],
+  );
+
+  const actualValue = keyValue === 'extraProperties' && extraProperty !== undefined ? '' : keyValue;
+  const counter =
+    extraProperty !== undefined
+      ? ({
+          get: () =>
+            new Map<ClientExtraProperty, [number, number | undefined]>([
+              [extraProperty, [1, undefined]],
+            ]),
+        } as IComputedValue<Map<ClientExtraProperty, [number, number | undefined]>>)
+      : undefined;
 
   return (
-    <select
-      className="criteria-input"
-      ref={ref}
-      aria-labelledby={labelledby}
-      onChange={handleChange}
-      value={keyValue}
-    >
-      <option key="tags" value="tags">
-        Tags
-      </option>
-      <option key="name" value="name">
-        File Name
-      </option>
-      <option key="absolutePath" value="absolutePath">
-        File Path
-      </option>
-      <option key="extension" value="extension">
-        File Extension
-      </option>
-      <option key="size" value="size">
-        File Size (MB)
-      </option>
-      <option key="width" value="width">
-        Width
-      </option>
-      <option key="height" value="height">
-        Height
-      </option>
-      <option key="dateAdded" value="dateAdded">
-        Date Added
-      </option>
-    </select>
+    <div ref={reference} tabIndex={-1} onBlur={handleBlur}>
+      <select
+        className="criteria-input"
+        ref={ref}
+        aria-labelledby={labelledby}
+        onChange={handleChange}
+        onMouseDown={handleCloseExtraSelector} // used instead of onclick because this nneds to be executed before calling onChange
+        value={actualValue}
+      >
+        {keyValue === 'extraProperties' && extraProperty && (
+          <option value="" hidden>
+            <Observer>{() => <>EP: {extraProperty.name}</>}</Observer>
+          </option>
+        )}
+        <option key="tags" value="tags">
+          Tags
+        </option>
+        <option key="name" value="name">
+          File Name
+        </option>
+        <option key="absolutePath" value="absolutePath">
+          File Path
+        </option>
+        <option key="extension" value="extension">
+          File Extension
+        </option>
+        <option key="size" value="size">
+          File Size (MB)
+        </option>
+        <option key="width" value="width">
+          Width
+        </option>
+        <option key="height" value="height">
+          Height
+        </option>
+        <option key="dateAdded" value="dateAdded">
+          Date Added
+        </option>
+        <option key="extraProperties" value="extraProperties">
+          Extra Property
+        </option>
+      </select>
+
+      {showExtraSelector && (
+        <div ref={floating} data-popover data-open={showExtraSelector} style={style}>
+          <ExtraPropertySelector counter={counter} onSelect={handleExtraPropertySelect} />
+        </div>
+      )}
+    </div>
   );
 });
 
@@ -79,6 +174,7 @@ export const OperatorSelector = ({
   keyValue,
   value,
   dispatch,
+  extraProperty,
 }: FieldInput<Operator>) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const operator = e.target.value as Operator;
@@ -95,12 +191,18 @@ export const OperatorSelector = ({
       onChange={handleChange}
       value={value}
     >
-      {getOperatorOptions(keyValue)}
+      {getOperatorOptions(keyValue, extraProperty?.type)}
     </select>
   );
 };
 
-export const ValueInput = ({ labelledby, keyValue, value, dispatch }: FieldInput<Value>) => {
+export const ValueInput = ({
+  labelledby,
+  keyValue,
+  value,
+  dispatch,
+  extraProperty,
+}: FieldInput<Value>) => {
   if (keyValue === 'name' || keyValue === 'absolutePath') {
     return <PathInput labelledby={labelledby} value={value as string} dispatch={dispatch} />;
   } else if (keyValue === 'tags') {
@@ -111,6 +213,12 @@ export const ValueInput = ({ labelledby, keyValue, value, dispatch }: FieldInput
     return <NumberInput labelledby={labelledby} value={value as number} dispatch={dispatch} />;
   } else if (keyValue === 'dateAdded') {
     return <DateAddedInput labelledby={labelledby} value={value as Date} dispatch={dispatch} />;
+  } else if (keyValue === 'extraProperties' && extraProperty !== undefined) {
+    if (extraProperty.type === ExtraPropertyType.number) {
+      return <NumberInput labelledby={labelledby} value={value as number} dispatch={dispatch} />;
+    } else if (extraProperty.type === ExtraPropertyType.text) {
+      return <PathInput labelledby={labelledby} value={value as string} dispatch={dispatch} />;
+    }
   }
   return <p>This should never happen.</p>;
 };
@@ -292,7 +400,7 @@ const DateAddedInput = ({ value, labelledby, dispatch }: ValueInput<Date>) => {
   );
 };
 
-function getOperatorOptions(key: Key) {
+function getOperatorOptions(key: Key, extraPropertyType?: ExtraPropertyType) {
   if (['dateAdded', 'size', 'width', 'height'].includes(key)) {
     return NumberOperators.map((op) => toOperatorOption(op, NumberOperatorSymbols));
   } else if (key === 'extension') {
@@ -301,6 +409,12 @@ function getOperatorOptions(key: Key) {
     return StringOperators.map((op) => toOperatorOption(op, StringOperatorLabels));
   } else if (key === 'tags') {
     return TagOperators.map((op) => toOperatorOption(op));
+  } else if (key == 'extraProperties' && extraPropertyType !== undefined) {
+    if (extraPropertyType === ExtraPropertyType.number) {
+      return NumberOperators.map((op) => toOperatorOption(op, NumberOperatorSymbols));
+    } else if (extraPropertyType === ExtraPropertyType.text) {
+      return StringOperators.map((op) => toOperatorOption(op, StringOperatorLabels));
+    }
   }
   return [];
 }

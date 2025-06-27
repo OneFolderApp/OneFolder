@@ -1,4 +1,5 @@
 import { ID } from './id';
+import { ExtraProperties } from './extraProperty';
 
 export type FileDTO = {
   id: ID;
@@ -9,7 +10,9 @@ export type FileDTO = {
   relativePath: string;
   absolutePath: string;
   tags: ID[];
-  scores: Map<ID, number>;
+  /** used only for index on dexie */
+  extraPropertyIDs: ID[];
+  extraProperties: ExtraProperties;
   /** When the file was imported into Allusion */
   dateAdded: Date;
   /** When the file was modified in Allusion, not related to OS modified date */

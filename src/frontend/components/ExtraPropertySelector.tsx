@@ -7,31 +7,35 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ClientScore } from '../entities/Score';
+import { ClientExtraProperty } from '../entities/ExtraProperty';
 import { Grid, GridCell, Row, RowSeparator, useGridFocus } from 'widgets/combobox/Grid';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '../contexts/StoreContext';
-import { computed, IComputedValue, runInAction } from 'mobx';
+import { computed, runInAction } from 'mobx';
 import { IconSet } from 'widgets/icons';
 import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
+import { ExtraPropertiesCounter } from './FileExtraPropertiesEditor';
+import { ExtraPropertyType } from 'src/api/extraProperty';
 
-interface IScoreSelectorProps {
-  counter?: IComputedValue<Map<ClientScore, [number, number | undefined]>>;
-  onSelect: (item: ClientScore) => void;
+interface IExtraPropertySelectorProps {
+  counter?: ExtraPropertiesCounter;
+  onSelect: (item: ClientExtraProperty) => void;
+  onChange?: () => void;
   disabled?: boolean;
-  onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, extraProperty: ClientExtraProperty) => void;
 }
 
-export const ScoreSelector = (props: IScoreSelectorProps) => {
+export const ExtraPropertySelector = (props: IExtraPropertySelectorProps) => {
   const gridId = useId();
   const tagSelectorID = useId();
-  const { counter, onSelect, onContextMenu } = props;
+  const { counter, onSelect, onContextMenu, onChange } = props;
   const [inputText, setInputText] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInput = useRef((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.();
     setInputText(e.target.value);
   }).current;
 
@@ -71,13 +75,13 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
 
   // Remember the height when panel is resized
   const panelRef = useRef<HTMLDivElement>(null);
-  const [storedHeight] = useState(localStorage.getItem('score-selector-height'));
+  const [storedHeight] = useState(localStorage.getItem('extra-property-selector-height'));
   useEffect(() => {
     if (!panelRef.current) {
       return;
     }
     const storeHeight = debounce((val: string) =>
-      localStorage.setItem('score-selector-height', val),
+      localStorage.setItem('extra-property-selector-height', val),
     );
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -99,7 +103,7 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
       ref={panelRef}
       id={tagSelectorID}
       role="combobox"
-      className="score-selector-pane"
+      className="extra-property-selector-pane"
       aria-expanded="true"
       aria-haspopup="grid"
       aria-owns={gridId}
@@ -121,7 +125,7 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
         aria-activedescendant={activeDescendant}
         ref={inputRef}
       />
-      <ScoreList
+      <ExtraPropertyList
         counter={counter}
         ref={gridRef}
         id={gridId}
@@ -134,46 +138,49 @@ export const ScoreSelector = (props: IScoreSelectorProps) => {
   );
 };
 
-interface ScoreListProps {
+interface ExtraPropertyListProps {
   id: string;
-  counter?: IComputedValue<Map<ClientScore, [number, number | undefined]>>;
+  counter?: ExtraPropertiesCounter;
   inputText: string;
   resetTextBox: () => void;
-  onSelect: (score: ClientScore) => void;
-  onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
+  onSelect: (extraProperty: ClientExtraProperty) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, ExtraProperty: ClientExtraProperty) => void;
 }
 
-const ScoreList = observer(
+const ExtraPropertyList = observer(
   React.forwardRef(function MatchingTagsList(
-    { id, counter, inputText, resetTextBox, onSelect, onContextMenu }: ScoreListProps,
+    { id, counter, inputText, resetTextBox, onSelect, onContextMenu }: ExtraPropertyListProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
-    const { scoreStore } = useStore();
+    const { extraPropertyStore } = useStore();
 
     const matches = useMemo(
       () =>
         computed(() => {
           if (inputText.length === 0) {
-            return scoreStore.scoreList;
+            return extraPropertyStore.extraPropertiesList;
           } else {
             const textLower = inputText.toLowerCase();
-            return scoreStore.scoreList.filter((t) => t.name.toLowerCase().includes(textLower));
+            return extraPropertyStore.extraPropertiesList.filter((t) =>
+              t.name.toLowerCase().includes(textLower),
+            );
           }
         }),
-      [inputText, scoreStore],
+      [inputText, extraPropertyStore],
     ).get();
 
     return (
       <Grid ref={ref} id={id} multiselectable>
-        {matches.map((score) => {
-          const selected = counter !== undefined ? (counter.get().get(score)?.[0] ?? 0) > 0 : false;
-          const scoreCount = counter?.get()?.get(score)?.[0] ?? 0;
-          const hint = scoreCount > 1 ? scoreCount.toString() : '';
+        {matches.map((extraProperty) => {
+          const selected =
+            counter !== undefined ? (counter.get().get(extraProperty)?.[0] ?? 0) > 0 : false;
+          const extraPropCount = counter?.get()?.get(extraProperty)?.[0] ?? 0;
+          const hint = extraPropCount > 1 ? extraPropCount.toString() : '';
           return (
-            <ScoreOption
-              key={score.id}
-              id={`${id}-${score.id}`}
-              score={score}
+            <ExtraPropertyOption
+              key={extraProperty.id}
+              id={`${id}-${extraProperty.id}`}
+              extraProperty={extraProperty}
               hint={hint}
               selected={selected}
               onSelect={onSelect}
@@ -182,7 +189,7 @@ const ScoreList = observer(
             />
           );
         })}
-        <CreateOption
+        <CreateOptions
           inputText={inputText}
           hasMatches={matches.length > 0}
           resetTextBox={resetTextBox}
@@ -192,37 +199,50 @@ const ScoreList = observer(
   }),
 );
 
-interface ScoreOptionProps {
+interface ExtraPropertyOptionProps {
   id?: string;
-  score: ClientScore;
+  extraProperty: ClientExtraProperty;
   hint?: string;
   selected?: boolean;
-  onSelect: (score: ClientScore) => void;
+  onSelect: (extraProperty: ClientExtraProperty) => void;
   resetTextBox?: () => void;
-  onContextMenu?: (e: React.MouseEvent<HTMLElement>, score: ClientScore) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>, extraProperty: ClientExtraProperty) => void;
 }
 
-export const ScoreOption = observer(
-  ({ id, score, hint, selected, onSelect, resetTextBox, onContextMenu }: ScoreOptionProps) => {
+export const ExtraPropertyOption = observer(
+  ({
+    id,
+    extraProperty,
+    hint,
+    selected,
+    onSelect,
+    resetTextBox,
+    onContextMenu,
+  }: ExtraPropertyOptionProps) => {
     const onclick = useCallback(() => {
-      onSelect(score);
+      onSelect(extraProperty);
       resetTextBox?.();
-    }, [onSelect, resetTextBox, score]);
+    }, [onSelect, resetTextBox, extraProperty]);
     return (
       <Row
         id={id}
-        value={score.name}
+        value={extraProperty.name}
         selected={selected}
         icon={<span>{IconSet.SMALL_ARROW_RIGHT}</span>}
         onClick={onclick}
-        tooltip={score.name}
-        onContextMenu={onContextMenu !== undefined ? (e) => onContextMenu(e, score) : undefined}
+        tooltip={extraProperty.name}
+        onContextMenu={
+          onContextMenu !== undefined ? (e) => onContextMenu(e, extraProperty) : undefined
+        }
         valueIsHtml
       >
         {hint !== undefined && hint.length > 0 ? (
-          <GridCell className="tag-option-hint" __html={hint}></GridCell>
+          <GridCell
+            className="tag-option-hint"
+            __html={`${extraProperty.type} (${hint})`}
+          ></GridCell>
         ) : (
-          <GridCell />
+          <GridCell className="tag-option-hint" __html={`${extraProperty.type}`} />
         )}
       </Row>
     );
@@ -235,30 +255,38 @@ interface CreateOptionProps {
   resetTextBox: () => void;
 }
 
-const CreateOption = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps) => {
-  const { scoreStore, uiStore } = useStore();
+const CreateOptions = ({ inputText, hasMatches, resetTextBox }: CreateOptionProps) => {
+  const { extraPropertyStore, uiStore } = useStore();
 
-  const createScore = useCallback(async () => {
-    const newScore = await scoreStore.createScore(inputText);
-    runInAction(() => uiStore.fileSelection.forEach((f) => f.setScore(newScore)));
-    resetTextBox();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputText, resetTextBox]);
+  const createExtraProperty = useCallback(
+    async (type: ExtraPropertyType) => {
+      const newExtraProperty = await extraPropertyStore.createExtraProperty(inputText, type);
+      runInAction(() => uiStore.fileSelection.forEach((f) => f.setExtraProperty(newExtraProperty)));
+      resetTextBox();
+    },
+    [extraPropertyStore, inputText, resetTextBox, uiStore],
+  );
 
-  if (inputText.length === 0) {
+  //Dont render if inputext is empty or already exists an extra property with the same name
+  if (inputText.length === 0 || extraPropertyStore.exists(inputText)) {
     return null;
   }
 
   return (
     <>
       {hasMatches && <RowSeparator />}
-      <Row
-        id="score-create-option"
-        selected={false}
-        value={`Create Score "${inputText}"`}
-        onClick={createScore}
-        icon={IconSet.PLUS}
-      />
+      {Object.values(ExtraPropertyType).map((type) => (
+        <Row
+          key={type}
+          id={`extra-property-create-option-${type}`}
+          selected={false}
+          value={`Create Property "${inputText}"`}
+          onClick={() => createExtraProperty(type)}
+          icon={IconSet.PLUS}
+        >
+          <GridCell className="tag-option-hint" __html={type} />
+        </Row>
+      ))}
     </>
   );
 };

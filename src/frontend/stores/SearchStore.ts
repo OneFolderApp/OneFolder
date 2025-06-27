@@ -96,7 +96,7 @@ class SearchStore {
     }
   }
 
-  save(search: ClientFileSearchItem): void {
+  @action.bound save(search: ClientFileSearchItem): void {
     this.backend.saveSearch(search.serialize(this.rootStore));
   }
 }

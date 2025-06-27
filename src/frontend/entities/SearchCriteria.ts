@@ -5,6 +5,7 @@ import {
   ArrayConditionDTO,
   ConditionDTO,
   DateConditionDTO,
+  IndexSignatureConditionDTO,
   NumberConditionDTO,
   NumberOperatorType,
   StringConditionDTO,
@@ -15,6 +16,7 @@ import { ID } from '../../api/id';
 import {
   IBaseSearchCriteria,
   IDateSearchCriteria,
+  IExtraProperySearchCriteria,
   INumberSearchCriteria,
   IStringSearchCriteria,
   ITagSearchCriteria,
@@ -23,7 +25,7 @@ import {
   TagOperatorType,
 } from '../../api/search-criteria';
 import RootStore from '../stores/RootStore';
-import { ROOT_TAG_ID } from '../../api/tag';
+import { ExtraPropertyType as epType, ExtraPropertyValue } from 'src/api/extraProperty';
 
 // A dictionary of labels for (some of) the keys of the type we search for
 export type SearchKeyDict = Partial<Record<keyof FileDTO, string>>;
@@ -55,14 +57,14 @@ export const StringOperatorLabels: Record<StringOperatorType, string> = {
 
 export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
   @observable public key: keyof FileDTO;
-  @observable public valueType: 'number' | 'date' | 'string' | 'array';
+  @observable public valueType: 'number' | 'date' | 'string' | 'array' | 'indexSignature';
   @observable public operator: OperatorType;
 
   private disposers: Lambda[] = [];
 
   constructor(
     key: keyof FileDTO,
-    valueType: 'number' | 'date' | 'string' | 'array',
+    valueType: 'number' | 'date' | 'string' | 'array' | 'indexSignature',
     operator: OperatorType,
   ) {
     this.key = key;
@@ -71,6 +73,7 @@ export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
     makeObservable(this);
   }
 
+  // The component who call this metod must be observer.
   abstract getLabel(dict: SearchKeyDict, rootStore: RootStore): string;
   abstract serialize(rootStore: RootStore): SearchCriteria;
   abstract toCondition(rootStore: RootStore): ConditionDTO<FileDTO>;
@@ -101,6 +104,9 @@ export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
             : arr.operator;
         const value = arr.value[0];
         return new ClientTagSearchCriteria(arr.key, value, op);
+      case 'indexSignature':
+        const map = criteria as IExtraProperySearchCriteria;
+        return new ClientExtraPropertySearchCriteria(map.key, map.value, map.operator);
       default:
         throw new Error(`Unknown value type ${valueType}`);
     }
@@ -130,10 +136,9 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
     return !this.value && !this.operator.toLowerCase().includes('not');
   };
 
-  @action.bound getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (
-    dict,
-    rootStore,
-  ) => {
+  // don't use action on this because ClientTag.name can change and action is not reactive.
+  // The component who call this metod must be observer.
+  getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (dict, rootStore) => {
     if (!this.value && !this.operator.toLowerCase().includes('not')) {
       return 'Untagged images';
     }
@@ -175,6 +180,58 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
 
   @action.bound setValue(value: ID): void {
     this.value = value;
+  }
+}
+
+export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria {
+  @observable public value: [string, ExtraPropertyValue];
+
+  constructor(
+    key: keyof FileDTO,
+    value: [string, ExtraPropertyValue] = ['', 0],
+    operator: OperatorType = 'equals',
+  ) {
+    super(key, 'indexSignature', operator);
+    this.value = value;
+    makeObservable(this);
+  }
+
+  // don't use action on this because ClientExtraProperty.name can change and action is not reactive.
+  // The component who call this metod must be observer.
+  getLabel: (dict: SearchKeyDict, rootStore: RootStore) => string = (_, rootStore) => {
+    const ep = rootStore.extraPropertyStore.get(this.value[0]);
+    let operatorString = undefined;
+    if (ep !== undefined) {
+      if (ep.type === epType.text) {
+        operatorString = StringOperatorLabels[this.operator as StringOperatorType];
+      } else if (ep.type === epType.number) {
+        operatorString = NumberOperatorSymbols[this.operator as NumberOperatorType];
+      }
+    }
+    return `EP: "${ep?.name || 'Invalid Property'}" ${
+      operatorString || camelCaseToSpaced(this.operator)
+    } "${this.value[1]}"`;
+  };
+
+  serialize = (): IExtraProperySearchCriteria => {
+    return {
+      key: this.key,
+      valueType: this.valueType,
+      operator: this.operator as StringOperatorType | NumberOperatorType,
+      value: Array.from(this.value) as [string, ExtraPropertyValue],
+    };
+  };
+
+  toCondition = (): IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue> => {
+    return this.serialize() as IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>;
+  };
+
+  @action.bound setOperator(op: StringOperatorType | NumberOperatorType): void {
+    this.operator = op;
+  }
+
+  @action.bound setValue(tuple: [string, ExtraPropertyValue]): void {
+    this.value = tuple;
   }
 }
 

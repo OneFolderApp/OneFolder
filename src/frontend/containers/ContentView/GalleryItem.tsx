@@ -111,8 +111,9 @@ export const MasonryCell = observer(
           />
         )}
 
-        {/* Show tags when the option is enabled, or when the file is selected */}
-        {(uiStore.isThumbnailTagOverlayEnabled || uiStore.fileSelection.has(file)) &&
+        {/* Show tags depending of thumbnailTagOverlayMode */}
+        {(uiStore.thumbnailTagOverlayMode === 'all' ||
+          (uiStore.thumbnailTagOverlayMode === 'selected' && uiStore.fileSelection.has(file))) &&
           (!mounted ? (
             <span className="thumbnail-tags" />
           ) : (
@@ -333,7 +334,7 @@ export const ThumbnailTags = observer(
         onDrop={eventManager.drop}
         onDragEnd={eventManager.dragEnd}
       >
-        {Array.from(file.inheritedTags, (tag) => (
+        {file.inheritedTags.map((tag) => (
           <TagWithHint key={tag.id} tag={tag} onContextMenu={eventManager.showTagContextMenu} />
         ))}
       </span>

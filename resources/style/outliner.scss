@@ -18,6 +18,14 @@
   &:hover header [role='toolbar'] {
     opacity: 1;
   }
+
+  &:hover #file-editors-panel-header .toolbar-button  {
+    opacity: 1;
+  }
+}
+
+#outliner-content .floating-switch-side-button {
+  opacity: unset;
 }
 
 .section {
@@ -71,7 +79,9 @@
 
   h2 {
     cursor: pointer;
-    flex-grow: 1;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   [role='toolbar'] {

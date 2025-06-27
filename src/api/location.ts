@@ -5,6 +5,7 @@ export type LocationDTO = {
   path: string;
   dateAdded: Date;
   subLocations: SubLocationDTO[];
+  tags: ID[];
   index: number;
 };
 
@@ -12,4 +13,5 @@ export type SubLocationDTO = {
   name: string;
   isExcluded: boolean;
   subLocations: SubLocationDTO[];
+  tags: ID[];
 };

@@ -3,10 +3,12 @@
   flex-direction: column;
   // changed from min-width since large tag names expand the dialog width which looks bad
   width: min(85ch, 80vw);
+  margin-inline: auto;
 
   .criteria-input,
   [role='combobox'] {
     height: 1.75rem;
+    width: 100%;
   }
 
   .tag-selector {

@@ -182,6 +182,14 @@ class ImageLoader {
         return src;
       // TODO: krita has full image also embedded (mergedimage.png)
       case 'extractEmbeddedThumbnailOnly':
+        if (file.extension === 'kra') {
+          const src =
+            this.srcBufferCache.get(file) ??
+            (await this.extractKritaMergedImageAsBlobURL(file.absolutePath));
+          // Store in cache for a while, so it loads quicker when going back and forth
+          src && this.updateCache(file, src);
+          return src;
+        }
       case 'none':
         return undefined;
       default:
@@ -198,15 +206,17 @@ class ImageLoader {
     // User report: Resolution can't be found for PSD files.
     // Can't reproduce myself, but putting a check in place anyway. Maybe due to old PSD format?
     // Read the actual file using the PSD loader and get the resolution from there.
-    if (
-      absolutePath.toLowerCase().endsWith('psd') &&
-      (dimensions.width === 0 || dimensions.height === 0)
-    ) {
-      try {
-        const psdData = await this.psdLoader.decode(await fse.readFile(absolutePath));
-        dimensions.width = psdData.width;
-        dimensions.height = psdData.height;
-      } catch (e) {}
+    if (dimensions.width === 0 || dimensions.height === 0) {
+      if (absolutePath.toLowerCase().endsWith('psd')) {
+        try {
+          const psdData = await this.psdLoader.decode(await fse.readFile(absolutePath));
+          dimensions.width = psdData.width;
+          dimensions.height = psdData.height;
+        } catch (e) {}
+      }
+      if (absolutePath.toLowerCase().endsWith('.kra')) {
+        return await this.getKraDimensions(absolutePath);
+      }
     }
 
     return dimensions;
@@ -225,6 +235,46 @@ class ImageLoader {
       zip.close().catch(console.warn);
     }
     return success;
+  }
+
+  private async readKraEntry(filePath: string, entryName: string): Promise<Buffer> {
+    const zip = new StreamZip.async({ file: filePath });
+    try {
+      return await zip.entryData(entryName);
+    } finally {
+      await zip.close().catch(console.warn);
+    }
+  }
+
+  private async extractKritaMergedImageAsBlobURL(filePath: string): Promise<string | undefined> {
+    try {
+      const buffer = await this.readKraEntry(filePath, 'mergedimage.png');
+      const blob = new Blob([buffer], { type: 'image/png' });
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      console.error('Could not extract mergedimage.png from', filePath, e);
+      return undefined;
+    }
+  }
+
+  private async getKraDimensions(filePath: string): Promise<{ width: number; height: number }> {
+    const zip = new StreamZip.async({ file: filePath });
+    try {
+      const xmlBuffer = await zip.entryData('maindoc.xml');
+      const xml = xmlBuffer.toString('utf-8');
+      const widthStr = extractAttribute(xml, 'IMAGE', 'width');
+      const heightStr = extractAttribute(xml, 'IMAGE', 'height');
+
+      return {
+        width: widthStr ? parseInt(widthStr, 10) : 0,
+        height: heightStr ? parseInt(heightStr, 10) : 0,
+      };
+    } catch (e) {
+      console.error('Could not extract dimensions from maindoc.xml in', filePath, e);
+      return { width: 0, height: 0 };
+    } finally {
+      await zip.close().catch(console.warn);
+    }
   }
 
   private updateCache(file: ClientFile, src: ObjectURL) {
@@ -247,3 +297,9 @@ export default ImageLoader;
 const updateThumbnailPath = action((file: ClientFile, thumbnailPath: string) => {
   file.setThumbnailPath(thumbnailPath);
 });
+
+function extractAttribute(xml: string, tag: string, attr: string): string | null {
+  const regex = new RegExp(`<${tag}[^>]*\\b${attr}="(\\d+)"`);
+  const match = xml.match(regex);
+  return match ? match[1] : null;
+}

@@ -329,6 +329,10 @@
   position: relative;
 }
 
+[role='rowgroup'] {
+  position: relative;
+}
+
 .thumbnail-square img, .thumbnail-square video {
   background-position: center;
   object-fit: cover;
@@ -580,6 +584,7 @@
   }
 
   .progress-bar-fill {
+    width: 100%;
     height: 100%;
     background-color: var(--accent-color);
     //border-bottom: 0.0625rem solid var(--border-color);

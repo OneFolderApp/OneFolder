@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 
 import { Menu, MenuChildren } from './menus';
 import { usePopover } from '../popovers/usePopover';
-import { Placement } from '@floating-ui/core';
+import { Placement, Strategy } from '@floating-ui/core';
 
 export interface MenuButtonProps {
   id: string;
@@ -14,6 +14,7 @@ export interface MenuButtonProps {
   children: MenuChildren;
   disabled?: boolean;
   placement?: Placement;
+  strategy?: Strategy;
   updateDependency?: any;
 }
 
@@ -27,11 +28,12 @@ export const MenuButton = ({
   menuID,
   children,
   placement = 'bottom',
+  strategy,
   updateDependency = children,
 }: MenuButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const menu = useRef<HTMLUListElement>(null);
-  const { style, reference, floating, update } = usePopover(placement);
+  const { style, reference, floating, update } = usePopover(placement, undefined, strategy);
 
   // Whenever the menu is opened, focus the first focusable menu item!
   useLayoutEffect(() => {

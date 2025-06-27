@@ -6,6 +6,7 @@ import useCustomTheme from 'src/frontend/hooks/useCustomTheme';
 import { RendererMessenger } from 'src/ipc/renderer';
 import { Button, IconSet, Radio, RadioGroup, Toggle } from 'widgets';
 import { useStore } from '../../contexts/StoreContext';
+import { InheritedTagsVisibilityModeType } from 'src/frontend/stores/UiStore';
 
 export const Appearance = observer(() => {
   const { uiStore } = useStore();
@@ -30,6 +31,15 @@ export const Appearance = observer(() => {
           <Radio value="dark">Dark</Radio>
         </RadioGroup>
         <CustomThemePicker />
+        <RadioGroup
+          orientation="horizontal"
+          name="Scrollbar style"
+          value={uiStore.scrollbarsStyle}
+          onChange={uiStore.setScrollbarsStyle}
+        >
+          <Radio value="classic">Classic</Radio>
+          <Radio value="hover">Hover</Radio>
+        </RadioGroup>
       </div>
 
       <h3>Display</h3>
@@ -54,12 +64,6 @@ export const Appearance = observer(() => {
 
       <div className="vstack">
         <Toggle
-          checked={uiStore.isThumbnailTagOverlayEnabled}
-          onChange={uiStore.toggleThumbnailTagOverlay}
-        >
-          Show assigned tags
-        </Toggle>
-        <Toggle
           checked={uiStore.isThumbnailFilenameOverlayEnabled}
           onChange={uiStore.toggleThumbnailFilenameOverlay}
         >
@@ -73,12 +77,44 @@ export const Appearance = observer(() => {
         </Toggle>
         <RadioGroup
           orientation="horizontal"
+          name="Show tags"
+          value={uiStore.thumbnailTagOverlayMode}
+          onChange={uiStore.setThumbnailTagOverlayMode}
+        >
+          <Radio value="all">All</Radio>
+          <Radio value="selected">Selected</Radio>
+          <Radio value="disabled">Disabled</Radio>
+        </RadioGroup>
+        <RadioGroup
+          orientation="horizontal"
           name="Shape"
           value={uiStore.thumbnailShape}
           onChange={uiStore.setThumbnailShape}
         >
           <Radio value="square">Square</Radio>
           <Radio value="letterbox">Letterbox</Radio>
+        </RadioGroup>
+      </div>
+
+      <h3>File Tags</h3>
+
+      <div className="vstack">
+        <RadioGroup
+          orientation="vertical"
+          name="Inherited Tags Visibility"
+          value={uiStore.inheritedTagsVisibilityMode}
+          onChange={uiStore.setInheritedTagsVisibilityMode}
+        >
+          <Radio value={'all' as InheritedTagsVisibilityModeType}>Show All</Radio>
+          <Radio
+            value={'visible-when-inherited' as InheritedTagsVisibilityModeType}
+            tooltip="Configure a tag's visibility when inherited by right-clicking the tag"
+          >
+            Show &quot;Visible When Inherited&quot; tags
+          </Radio>
+          <Radio value={'disabled' as InheritedTagsVisibilityModeType}>
+            Do Not Show Inherited Tags
+          </Radio>
         </RadioGroup>
       </div>
 
@@ -102,11 +138,12 @@ export const Appearance = observer(() => {
 
 const Zoom = () => {
   const [localZoomFactor, setLocalZoomFactor] = useState(RendererMessenger.getZoomFactor);
+  const { uiStore } = useStore();
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(event.target.value);
     setLocalZoomFactor(value);
-    RendererMessenger.setZoomFactor(value);
+    uiStore.setZoomFactor(value);
   };
 
   return (

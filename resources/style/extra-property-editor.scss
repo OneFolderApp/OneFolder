@@ -1,7 +1,11 @@
-.score-editor {
+.extra-property-editor {
+  max-height: calc(100vh - var(--toolbar-height) - 5rem);
+  overflow: auto;
+  resize: vertical;
 
-  .floating-dialog & {
-    margin: 0.6rem;
+  .floating-panel & {
+    padding: 0.6rem;
+    padding-right: 0.3rem;
   }
 
   .btn-content-text {
@@ -15,68 +19,15 @@
   }
 }
 
-.floating-dialog {
-  &.fresh-rendered {
-    transition: unset !important;
-    display: none !important;
-  }
-
-  &.opened {
-    box-shadow: 0 0 15px 5px var(--accent-color) !important;
-  }
-  
-  &:hover .floating-switch-side-button {
-    opacity: 1;
-  }
-
-  header {
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem 0 1rem;
-    background: var(--background-color);
-    outline: 0.0625rem solid var(--border-color);
-
-    h2 {
-      cursor: pointer;
-      flex-grow: 1;
-    }
-
-    [role='toolbar'] {
-      opacity: 0;
-    }
-
-    [role='toolbar']:focus-within {
-      opacity: 1;
-    }
-
-    .toolbar-floating-switch-side-button {
-      min-height: 1.5rem;
-      min-width: 1.5rem;
-
-      &[aria-pressed='true'],
-      &[aria-checked='true'] {
-        color: var(--accent-color);
-      }
-    }
-
-    .floating-switch-side-button {
-      opacity: 0;
-    }
-  }
-
-  
-}
-
 //prevents data-popovers to interfier when overflow is auto
 [data-popover="true"] [data-popover="true"],
-.score-editor [data-popover="true"] {
+.extra-property-editor [data-popover="true"] {
   position: fixed !important;
   overflow: visible;
 }
 
-.score-selector-pane {
-  width: 20rem;
+.extra-property-selector-pane {
+  max-width: 70vw;
   display: flex;
   flex-direction: column;
   overflow: auto;
@@ -103,22 +54,25 @@
       height: 1px;
       margin: 0.5rem 1rem;
     }
+
+    .tag-option-hint {
+      margin-inline-start: 0.5rem;
+    }
   }
 }
 
-[role="menu"]:has(.score-selector-pane) {
+[role="menu"]:has(.extra-property-selector-pane) {
   padding: 0;
 }
 
-.score-list-editor {
+.extra-property-list-editor {
   display: grid;
-  grid-template-columns: repeat(2, auto);
-  align-items: center;
+  grid-template-columns: max-content 1fr;
+  align-items: flex-start;
   gap: 0px;
-  width: fit-content;
   max-width: 100%;
 
-  .score-list-option {
+  .extra-property-list-option {
     display: contents;
     color: var(--text-color-muted);
     &:hover {
@@ -126,11 +80,11 @@
     }
   }
   
-  .score-value {
+  .extra-property-value {
     user-select: text;
   }
   
-  .score-name {
+  .extra-property-name {
     padding: 0;
     padding-left: 0.3rem;
     font-weight: 500;
@@ -141,9 +95,9 @@
     overflow: hidden;
   }
   
-  .score-value {
+  .extra-property-value {
     padding: 0;
-    padding-left: 0.5rem;
+    padding-inline: 0.5rem;
     word-break: break-word;
     line-height: normal;
   }
@@ -154,11 +108,16 @@
     align-items: center;
     width: 100%;
   }
+
+  .count-hint, .extra-property-label { 
+    line-height: 1.5625rem;
+    margin-block: 2px;
+  }
+
   .count-hint {
     padding-left: 0.5rem;
     min-width: fit-content;
     display: inline-block;
-    margin-left: auto;
     vertical-align: middle;
     font-size: smaller;
     overflow: hidden;
@@ -166,7 +125,9 @@
     text-overflow: ellipsis;
     color: var(--accent-color)
   }
-  .score-label {
+
+  .extra-property-label {
+    flex: 1 0 auto;
     display: inline-block;
     overflow: hidden;
     text-overflow: clip;
@@ -174,7 +135,7 @@
     vertical-align: middle;
   }
 
-  input {
+  input, textarea {
     color: var(--text-color);
     margin-top: 2px;
     margin-bottom: 2px;
@@ -183,20 +144,12 @@
     width: 100%;
   }
 
-  .score-value input {
-    width: 5rem;
+  textarea {
+    resize: vertical;
   }
 
   .label-container input {
     box-shadow: 0 0 0 0.125rem var(--accent-color); //only one label will be editable at the time, so this makes it look better when auto focus don't work
-  }
-}
-
-.floating-switch-side-button {
-  margin-left: auto;
-  .custom-icon {
-    width: 0.75rem;
-    height: 0.75rem;
   }
 }
 

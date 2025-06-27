@@ -1,9 +1,14 @@
-import { shift, flip, Placement } from '@floating-ui/core';
+import { shift, flip, Placement, Strategy } from '@floating-ui/core';
 import { useFloating } from '@floating-ui/react-dom';
 
-export function usePopover(placement?: Placement, fallbackPlacements?: Placement[]) {
+export function usePopover(
+  placement?: Placement,
+  fallbackPlacements?: Placement[],
+  strat?: Strategy,
+) {
   const { x, y, reference, floating, strategy, update } = useFloating({
     placement,
+    strategy: strat,
     middleware: [
       flip({ fallbackPlacements }),
       shift({ boundary: document.body, crossAxis: true, padding: 8 }),

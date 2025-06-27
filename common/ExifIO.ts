@@ -162,13 +162,16 @@ class ExifIO {
     );
   }
 
-  async readScores(filepath: string): Promise<string[]> {
-    const metadata = await ep.readMetadata(filepath, ['XMP-xmp:Scores', ...this.extraArgs]);
+  async readExtraProperties(filepath: string): Promise<string | undefined> {
+    const metadata = await ep.readMetadata(filepath, [
+      'XMP-xmp:ExtraProperties',
+      ...this.extraArgs,
+    ]);
     if (metadata.error || !metadata.data?.[0]) {
       throw new Error(metadata.error || 'No metadata entry');
     }
-    const scoresRaw = metadata.data[0].Scores ?? [];
-    return Array.isArray(scoresRaw) ? scoresRaw : [scoresRaw];
+    const extraPropertiesRaw = metadata.data[0].ExtraProperties ?? undefined;
+    return extraPropertiesRaw;
   }
 
   async readExifTags(filepath: string, tags: string[]): Promise<(string | undefined)[]> {
@@ -202,7 +205,7 @@ class ExifIO {
   @action.bound async writeTags(
     filepath: string,
     tagNameHierarchy: string[][],
-    scoreValues: string[],
+    extraPropertiesJson: string,
   ): Promise<void> {
     // TODO: Could also write the meta-metadata, e.g.:
     // History Action                  : saved
@@ -221,7 +224,7 @@ class ExifIO {
     const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
 
     console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
-    console.debug('Writing scores', scoreValues.join(', '), 'to', filepath);
+    console.debug('Writing extra properties', extraPropertiesJson, 'to', filepath);
 
     const res = await ep.writeMetadata(
       filepath,
@@ -232,7 +235,7 @@ class ExifIO {
         Subject: subject,
         Keywords: subject,
         // History: {},
-        'XMP-xmp:Scores': scoreValues,
+        'XMP-xmp:ExtraProperties': extraPropertiesJson,
       },
       [...defaultWriteArgs, ...this.extraArgs],
     );

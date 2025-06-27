@@ -49,7 +49,7 @@ const ResizableCollapse = ({
     if (!ref.current) {
       return;
     }
-    const newHeight = isCollapsed ? '' : `${height ? `${height}px` : ''}`;
+    const newHeight = isCollapsed ? '0px' : `${height ? `${height}px` : ''}`;
     ref.current.style.height = newHeight;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCollapsed]);
@@ -60,7 +60,7 @@ const ResizableCollapse = ({
       return;
     }
     if (height === 0) {
-      ref.current.style.height = '';
+      ref.current.style.height = '0px';
     }
   }, [height]);
 

@@ -93,12 +93,12 @@ export const ImportExport = observer(() => {
 
         <ButtonGroup>
           <Button
-            text="Import tags from file metadata"
+            text="Import tags and properties from file metadata"
             onClick={fileStore.readTagsFromFiles}
             styling="outlined"
           />
           <Button
-            text="Export tags to file metadata"
+            text="Export tags and properties to file metadata"
             onClick={() => setConfirmingMetadataExport(true)}
             styling="outlined"
           />
@@ -153,8 +153,9 @@ export const ImportExport = observer(() => {
           onClick={async (button) => {
             if (isConfirmingFileImport && button === DialogButton.PrimaryButton) {
               AppToaster.show({
-                message: 'Restoring database... Allusion will restart',
-                timeout: 5000,
+                // eslint-disable-next-line prettier/prettier
+                message: 'Restoring database, please do not close any windows... Allusion will restart automatically.',
+                timeout: 0,
               });
               try {
                 await rootStore.restoreDatabaseFromFile(isConfirmingFileImport.path);

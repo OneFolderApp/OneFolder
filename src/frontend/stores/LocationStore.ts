@@ -16,6 +16,7 @@ import { ClientLocation, ClientSubLocation } from '../entities/Location';
 import { ClientStringSearchCriteria } from '../entities/SearchCriteria';
 import ImageLoader from '../image/ImageLoader';
 import RootStore from './RootStore';
+import { ClientTag } from '../entities/Tag';
 
 const PREFERENCES_STORAGE_KEY = 'location-store-preferences';
 type Preferences = { extensions: IMG_EXTENSIONS_TYPE[] };
@@ -79,6 +80,7 @@ class LocationStore {
           dir.path,
           dir.dateAdded,
           dir.subLocations,
+          dir.tags,
           runInAction(() => Array.from(this.enabledFileExtensions)),
           dir.index ?? i,
         ),
@@ -358,6 +360,10 @@ class LocationStore {
     return this.locationList.find((loc) => loc.id === locationId);
   }
 
+  getTags(ids: ID[]): Set<ClientTag> {
+    return this.rootStore.tagStore.getTags(ids);
+  }
+
   @action async changeLocationPath(location: ClientLocation, newPath: string): Promise<void> {
     const index = this.locationList.findIndex((l) => l.id === location.id);
     if (index === -1) {
@@ -377,7 +383,8 @@ class LocationStore {
       location.id,
       newPath,
       location.dateAdded,
-      location.subLocations,
+      location.subLocations.map((sl) => sl.serialize()),
+      Array.from(location.tags, (t) => t.id),
       runInAction(() => Array.from(this.enabledFileExtensions)),
       this.locationList.length,
     );
@@ -401,6 +408,7 @@ class LocationStore {
       generateId(),
       path,
       new Date(),
+      [],
       [],
       runInAction(() => Array.from(this.enabledFileExtensions)),
       this.locationList.length,
@@ -629,7 +637,8 @@ export async function pathToIFile(
     id: generateId(),
     locationId: loc.id,
     tags: [],
-    scores: new Map<ID, number>(),
+    extraPropertyIDs: [],
+    extraProperties: {},
     dateAdded: now,
     dateModified: now,
     OrigDateModified: stats.dateModified,

@@ -1,27 +1,33 @@
 import { action, IReactionDisposer, makeObservable, observable, reaction } from 'mobx';
 
 import { ID } from '../../api/id';
-import ScoreStore from '../stores/ScoreStore';
-import { ScoreDTO } from '../../api/score';
+import ExtraPropertyStore from '../stores/ExtraPropertyStore';
+import { ExtraPropertyDTO, ExtraPropertyType } from '../../api/extraProperty';
 
 /**
- * Represents a Score object in the client-side MobX store.
+ * Represents a ExtraProperty object in the client-side MobX store.
  */
-export class ClientScore {
-  private store: ScoreStore;
+export class ClientExtraProperty {
+  private store: ExtraPropertyStore;
   private saveHandler: IReactionDisposer;
 
   readonly id: ID;
   @observable name: string = '';
-  readonly dateCreated: Date;
-  readonly dateModified: Date;
+  readonly type: ExtraPropertyType;
+  readonly dateAdded: Date;
 
-  constructor(store: ScoreStore, id: ID, name: string, dateCreated: Date, dateModified: Date) {
+  constructor(
+    store: ExtraPropertyStore,
+    id: ID,
+    type: ExtraPropertyType,
+    name: string,
+    dateAdded: Date,
+  ) {
     this.store = store;
     this.id = id;
+    this.type = type;
     this.name = name;
-    this.dateCreated = dateCreated;
-    this.dateModified = dateModified;
+    this.dateAdded = dateAdded;
 
     makeObservable(this);
     // observe all changes to observable fields
@@ -29,8 +35,8 @@ export class ClientScore {
       // We need to explicitly define which values this reaction should react to
       () => this.serialize(),
       // Then update the entity in the database
-      (score) => {
-        this.store.save(score);
+      (extraProperty) => {
+        this.store.save(extraProperty);
       },
       { delay: 500 },
     );
@@ -41,15 +47,15 @@ export class ClientScore {
   }
 
   async delete(): Promise<void> {
-    return this.store.deleteScore(this);
+    return this.store.deleteExtraProperty(this);
   }
 
-  serialize(): ScoreDTO {
+  serialize(): ExtraPropertyDTO {
     return {
       id: this.id,
+      type: this.type,
       name: this.name,
-      dateCreated: this.dateCreated,
-      dateModified: this.dateModified,
+      dateAdded: this.dateAdded,
     };
   }
 

@@ -40,6 +40,7 @@
       // height: 100%;
       width: 100%;
       overflow: auto;
+      transition: height 0.1s ease-out;
 
       // workaround for the collapse transition interfering with the flex-grow transition
       > .collapse {

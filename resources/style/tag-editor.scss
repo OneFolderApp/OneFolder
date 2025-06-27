@@ -1,22 +1,12 @@
-.floating-dialog {
-  --floating-dialog-width: 25rem;
-  position: absolute;
-  display: table;
-  width: var(--floating-dialog-width);
-  top: calc(var(--toolbar-height) + 1rem);
-  left: calc(50% - (var(--floating-dialog-width) / 2));
-  overflow-y: auto;
-  transition: top 0.3s ease, left 0.3s ease, box-shadow 0.3s ease-out, width 0.3s ease, height 0.3s ease;
-}
-
 #tag-editor {
   height: 14rem;
   min-height: 10rem;
   max-height: calc(100vh - var(--toolbar-height) - 5rem);
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   resize: vertical;
+  transition: height 0.1s ease-out;
 
   // Intended layout behavior:
   // - Input element has a static height
@@ -35,7 +25,6 @@
   [role='grid'] {
     flex: 1 1 auto;
     border-top: 0.0625rem solid var(--border-color);
-    border-bottom: 0.0625rem solid var(--border-color);
     max-width: unset;
     max-height: unset;
 
@@ -43,19 +32,39 @@
       background: var(--text-color-muted);
       height: 1px;
       margin: 0.5rem 1rem;
+      width: -webkit-fill-available;
     }
+  }
+
+  .virtualized-grid {
+    flex: 1 1 auto;
+    padding-top: unset;
+    padding-bottom: unset;
   }
 
   // The tags applied to the selected images
   > div:last-child {
     flex: 0 0 auto;
-    margin: 0.5rem;
-    min-height: 1.5rem; // 1 row of tags
-    max-height: calc(1.5rem * 9.5); // 3.5 rows of tags edit: 9
-    overflow: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    overflow: hidden;
+    height: calc(1.5rem * 3.5); // 3.5 rows of tags
+    //Allow resizing and move the resize handle to the top of the div
+    resize: vertical;
+    transition: height 0.1s ease-out;
+    transform: scaleY(-1);
+    //Important to avoid the main resize handler to overlap with this resize handler
+    min-height: 2rem;
+    padding-block: 0.5rem; // Is bottom because the div is inverted, so it will appear on the top
+    border-bottom: 0.0625rem solid var(--border-color); // bottom bc the same
+
+    > * {
+      transform: scaleY(-1);
+      padding: 0 0.5rem 0 0.5rem;
+      height: 100%;
+      overflow: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+    }
   }
 }
 

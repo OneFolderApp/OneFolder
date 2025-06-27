@@ -13,6 +13,8 @@ import { ClientFileSearchCriteria, ClientTagSearchCriteria } from '../entities/S
 import { ClientTag } from '../entities/Tag';
 import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
+import { IExpansionState } from '../containers/types';
+import { ROOT_TAG_ID } from 'src/api/tag';
 
 export const enum ViewMethod {
   List,
@@ -22,6 +24,8 @@ export const enum ViewMethod {
 }
 export type ThumbnailSize = 'small' | 'medium' | 'large' | number;
 type ThumbnailShape = 'square' | 'letterbox';
+type ThumbnailTagOverlayModeType = 'all' | 'selected' | 'disabled';
+export type InheritedTagsVisibilityModeType = 'all' | 'visible-when-inherited' | 'disabled';
 export type UpscaleMode = 'smooth' | 'pixelated';
 export type GalleryVideoPlaybackMode = 'auto' | 'hover' | 'disabled';
 export const PREFERENCES_STORAGE_KEY = 'preferences';
@@ -48,8 +52,8 @@ export interface IHotkeyMap {
   search: string;
   refreshSearch: string;
   advancedSearch: string;
-  openTagEditor: string;
-  toggleScoreEditor: string;
+  openFileTagsEditor: string;
+  toggleExtraPropertiesEditor: string;
 
   // Other
   openPreviewWindow: string;
@@ -60,8 +64,8 @@ export interface IHotkeyMap {
 export const defaultHotkeyMap: IHotkeyMap = {
   toggleOutliner: '1',
   toggleInspector: '2',
-  openTagEditor: '3',
-  toggleScoreEditor: '4',
+  openFileTagsEditor: '3',
+  toggleExtraPropertiesEditor: '4',
   replaceQuery: 'q',
   toggleSettings: 's',
   toggleHelpCenter: 'h',
@@ -100,12 +104,14 @@ export const defaultHotkeyMap: IHotkeyMap = {
 
 /** These fields are stored and recovered when the application opens up */
 type PersistentPreferenceFields =
+  | 'zoomFactor'
   | 'theme'
+  | 'scrollbarsStyle'
   | 'isOutlinerOpen'
   | 'isInspectorOpen'
-  | 'isFloatingPanelToSide'
-  | 'isToolbarTagPopoverOpen'
-  | 'isScorePopoverOpen'
+  | 'areFileEditorsDocked'
+  | 'isFileTagsEditorOpen'
+  | 'isFileExtraPropertiesEditorOpen'
   | 'thumbnailDirectory'
   | 'importDirectory'
   | 'method'
@@ -115,7 +121,8 @@ type PersistentPreferenceFields =
   | 'upscaleMode'
   | 'galleryVideoPlaybackMode'
   | 'hotkeyMap'
-  | 'isThumbnailTagOverlayEnabled'
+  | 'thumbnailTagOverlayMode'
+  | 'inheritedTagsVisibilityMode'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'outlinerWidth'
@@ -137,8 +144,10 @@ class UiStore {
 
   // Theme
   @observable theme: 'light' | 'dark' = 'dark';
+  @observable scrollbarsStyle: 'classic' | 'hover' = 'hover';
 
   // UI
+  @observable zoomFactor: number = 1;
   @observable isOutlinerOpen: boolean = true;
   @observable isInspectorOpen: boolean = true;
   @observable isSettingsOpen: boolean = false;
@@ -152,11 +161,13 @@ class UiStore {
   @observable isSlideMode: boolean = false;
   @observable isFullScreen: boolean = false;
   @observable outlinerWidth: number = UiStore.MIN_OUTLINER_WIDTH;
-  readonly outlinerExpansion = observable<boolean>([true, true, true]);
-  readonly outlinerHeights = observable<number>([0, 0, 0]);
+  readonly outlinerExpansion = observable<boolean>([true, true, true, true]);
+  readonly outlinerHeights = observable<number>([0, 0, 0, 0]);
   @observable inspectorWidth: number = UiStore.MIN_INSPECTOR_WIDTH;
   /** Whether to show the tags on images in the content view */
-  @observable isThumbnailTagOverlayEnabled: boolean = true;
+  @observable thumbnailTagOverlayMode: ThumbnailTagOverlayModeType = 'all';
+  @observable inheritedTagsVisibilityMode: InheritedTagsVisibilityModeType =
+    'visible-when-inherited';
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   /** Whether to restore the last search query on start-up */
@@ -172,10 +183,10 @@ class UiStore {
   @observable galleryVideoPlaybackMode: GalleryVideoPlaybackMode = 'hover';
   @observable isRefreshing: boolean = false;
 
-  @observable isFloatingPanelToSide: boolean = false;
-  @observable isToolbarTagPopoverOpen: boolean = false;
+  @observable areFileEditorsDocked: boolean = false;
+  @observable isFileTagsEditorOpen: boolean = false;
   @observable focusTagEditor: boolean = false;
-  @observable isScorePopoverOpen: boolean = false;
+  @observable isFileExtraPropertiesEditorOpen: boolean = false;
   /** Dialog for removing unlinked files from Allusion's database */
   @observable isToolbarFileRemoverOpen: boolean = false;
   /** Dialog for moving files to the system's trash bin, and removing from Allusion's database */
@@ -205,19 +216,19 @@ class UiStore {
   /////////////////// UI Reactions /////////////////
   initReactions(): void {
     reaction(
-      () => this.isToolbarTagPopoverOpen,
+      () => this.isFileTagsEditorOpen,
       (isOpen) => {
         if (isOpen) {
-          this.isScorePopoverOpen = false;
+          this.isFileExtraPropertiesEditorOpen = false;
         }
       },
     );
 
     reaction(
-      () => this.isScorePopoverOpen,
+      () => this.isFileExtraPropertiesEditorOpen,
       (isOpen) => {
         if (isOpen) {
-          this.isToolbarTagPopoverOpen = false;
+          this.isFileTagsEditorOpen = false;
         }
       },
     );
@@ -344,16 +355,18 @@ class UiStore {
     this.isFullScreen = val;
   }
 
-  @action.bound enableThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = true;
+  /** This does not actually set the window zoomFactor, just for bookkeeping and restore the preference on load! Use RendererMessenger instead */
+  @action.bound setZoomFactor(val: number): void {
+    this.zoomFactor = val;
+    RendererMessenger.setZoomFactor(this.zoomFactor);
   }
 
-  @action.bound disableThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = false;
+  @action.bound setThumbnailTagOverlayMode(val: ThumbnailTagOverlayModeType): void {
+    this.thumbnailTagOverlayMode = val;
   }
 
-  @action.bound toggleThumbnailTagOverlay(): void {
-    this.isThumbnailTagOverlayEnabled = !this.isThumbnailTagOverlayEnabled;
+  @action.bound setInheritedTagsVisibilityMode(val: InheritedTagsVisibilityModeType): void {
+    this.inheritedTagsVisibilityMode = val;
   }
 
   @action.bound toggleThumbnailFilenameOverlay(): void {
@@ -506,44 +519,44 @@ class UiStore {
     this.isManyExternalFilesOpen = false;
   }
 
-  @action.bound toggleFloatingPanelToSide(): void {
-    this.isFloatingPanelToSide = !this.isFloatingPanelToSide;
+  @action.bound toggleFileEditorsDocked(): void {
+    this.areFileEditorsDocked = !this.areFileEditorsDocked;
   }
 
-  @action.bound setFloatingPanelToSide(val: boolean): void {
-    this.isFloatingPanelToSide = val;
+  @action.bound setFileEditorsDocked(val: boolean): void {
+    this.areFileEditorsDocked = val;
   }
 
-  @action.bound toggleToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = !this.isToolbarTagPopoverOpen;
+  @action.bound toggleFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = !this.isFileTagsEditorOpen;
     this.focusTagEditor = true;
   }
 
-  @action.bound openToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = true;
+  @action.bound openFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = true;
     this.focusTagEditor = true;
   }
 
-  @action.bound closeToolbarTagPopover(): void {
-    this.isToolbarTagPopoverOpen = false;
+  @action.bound closeFileTagsEditor(): void {
+    this.isFileTagsEditorOpen = false;
   }
 
   @action.bound setFocusTagEditor(value: boolean): void {
     this.focusTagEditor = value;
   }
 
-  @action.bound toggleScorePopover(): void {
-    this.isScorePopoverOpen = !this.isScorePopoverOpen;
+  @action.bound toggleFileExtraPropertiesEditor(): void {
+    this.isFileExtraPropertiesEditorOpen = !this.isFileExtraPropertiesEditorOpen;
   }
 
-  @action.bound openScorePopover(): void {
+  @action.bound openFileExtraPropertiesEditor(): void {
     if (this.fileSelection.size > 0) {
-      this.isScorePopoverOpen = true;
+      this.isFileExtraPropertiesEditorOpen = true;
     }
   }
 
-  @action.bound closeScorePopover(): void {
-    this.isScorePopoverOpen = false;
+  @action.bound closeFileExtraPropertiesEditor(): void {
+    this.isFileExtraPropertiesEditorOpen = false;
   }
 
   @action.bound openLocationRecovery(locationId: ID): void {
@@ -569,6 +582,10 @@ class UiStore {
   @action.bound setTheme(theme: 'light' | 'dark' = 'dark'): void {
     this.theme = theme;
     RendererMessenger.setTheme({ theme });
+  }
+
+  @action.bound setScrollbarsStyle(style: 'classic' | 'hover' = 'hover'): void {
+    this.scrollbarsStyle = style;
   }
 
   @action.bound toggleAdvancedSearch(): void {
@@ -650,14 +667,39 @@ class UiStore {
   }
 
   /** Selects a range of tags, where indices correspond to the flattened tag list. */
-  @action.bound selectTagRange(start: number, end: number, additive?: boolean): void {
+  @action.bound selectTagRange(
+    start: number,
+    end: number,
+    additive?: boolean,
+    // If expansions is undefined behave as deep/sub-tree selection.
+    expansions?: IExpansionState,
+  ): void {
+    const excluded = new Set<ClientTag>();
     const tagTreeList = this.rootStore.tagStore.tagList;
+    const slice = tagTreeList.slice(start, end + 1);
+    const tagsToSelect =
+      // If expansions is avalible filter out items that are not visible because of the colapse
+      expansions !== undefined
+        ? slice.filter((tag) => {
+            if (excluded.has(tag)) {
+              return false;
+            }
+            const parentId = tag.parent.id;
+            const isValid = parentId === ROOT_TAG_ID || expansions[parentId];
+            if (!isValid) {
+              for (const st of tag.getSubTree()) {
+                excluded.add(st);
+              }
+            }
+            return isValid;
+          })
+        : slice;
     if (!additive) {
-      this.tagSelection.replace(tagTreeList.slice(start, end + 1));
+      this.tagSelection.replace(tagsToSelect);
       return;
     }
-    for (let i = start; i <= end; i++) {
-      this.tagSelection.add(tagTreeList[i]);
+    for (const tag of tagsToSelect) {
+      this.tagSelection.add(tag);
     }
   }
 
@@ -678,9 +720,18 @@ class UiStore {
     const ctx = this.getTagContextItems(activeElementId);
     const colorCollection = (tag: ClientTag) => {
       tag.setColor(color);
-      tag.subTags.forEach((tag) => tag.setColor(color));
+      // Perhaps the color should be applied only to selected tags to give the user more control.
+      //tag.subTags.forEach((tag) => tag.setColor(color));
     };
     ctx.forEach(colorCollection);
+  }
+
+  @action.bound VisibleInheritSelectedTagsAndCollections(activeElementId: ID, val: boolean): void {
+    const ctx = this.getTagContextItems(activeElementId);
+    const setVisibility = (tag: ClientTag) => {
+      tag.setVisibleInherited(val);
+    };
+    ctx.forEach(setVisibility);
   }
 
   /**
@@ -867,10 +918,10 @@ class UiStore {
       this.toggleOutliner();
     } else if (matches(hotkeyMap.toggleInspector)) {
       this.toggleInspector();
-    } else if (matches(hotkeyMap.openTagEditor)) {
-      this.openToolbarTagPopover();
-    } else if (matches(hotkeyMap.toggleScoreEditor)) {
-      this.toggleScorePopover();
+    } else if (matches(hotkeyMap.openFileTagsEditor)) {
+      this.openFileTagsEditor();
+    } else if (matches(hotkeyMap.toggleExtraPropertiesEditor)) {
+      this.toggleFileExtraPropertiesEditor();
     } else if (matches(hotkeyMap.refreshSearch)) {
       this.refresh();
     } else if (matches(hotkeyMap.toggleSettings)) {
@@ -950,8 +1001,14 @@ class UiStore {
     if (prefsString) {
       try {
         const prefs = JSON.parse(prefsString);
+        if (prefs.zoomFactor) {
+          this.setZoomFactor(prefs.zoomFactor);
+        }
         if (prefs.theme) {
           this.setTheme(prefs.theme);
+        }
+        if (prefs.scrollbarsStyle) {
+          this.setScrollbarsStyle(prefs.scrollbarsStyle);
         }
         this.setIsOutlinerOpen(prefs.isOutlinerOpen);
         this.isInspectorOpen = Boolean(prefs.isInspectorOpen);
@@ -983,12 +1040,19 @@ class UiStore {
         if (prefs.outlinerHeights) {
           this.setOutlinerHeights(prefs.outlinerHeights);
         }
-        this.isThumbnailTagOverlayEnabled = Boolean(prefs.isThumbnailTagOverlayEnabled ?? true);
+        if (prefs.thumbnailTagOverlayMode) {
+          this.setThumbnailTagOverlayMode(prefs.thumbnailTagOverlayMode);
+        }
+        if (prefs.inheritedTagsVisibilityMode) {
+          this.setInheritedTagsVisibilityMode(prefs.inheritedTagsVisibilityMode);
+        }
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
-        this.isFloatingPanelToSide = Boolean(prefs.isFloatingPanelToSide ?? false);
-        this.isToolbarTagPopoverOpen = Boolean(prefs.isToolbarTagPopoverOpen ?? false);
-        this.isScorePopoverOpen = Boolean(prefs.isScorePopoverOpen ?? false);
+        this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
+        this.isFileTagsEditorOpen = Boolean(prefs.isFileTagsEditorOpen ?? false);
+        this.isFileExtraPropertiesEditorOpen = Boolean(
+          prefs.isFileExtraPropertiesEditorOpen ?? false,
+        );
         this.outlinerWidth = Math.max(Number(prefs.outlinerWidth), UiStore.MIN_OUTLINER_WIDTH);
         this.inspectorWidth = Math.max(Number(prefs.inspectorWidth), UiStore.MIN_INSPECTOR_WIDTH);
         Object.entries<string>(prefs.hotkeyMap).forEach(
@@ -1032,12 +1096,14 @@ class UiStore {
 
   getPersistentPreferences(): Partial<Record<keyof UiStore, unknown>> {
     const preferences: Record<PersistentPreferenceFields, unknown> = {
+      zoomFactor: this.zoomFactor,
       theme: this.theme,
+      scrollbarsStyle: this.scrollbarsStyle,
       isOutlinerOpen: this.isOutlinerOpen,
       isInspectorOpen: this.isInspectorOpen,
-      isFloatingPanelToSide: this.isFloatingPanelToSide,
-      isToolbarTagPopoverOpen: this.isToolbarTagPopoverOpen,
-      isScorePopoverOpen: this.isScorePopoverOpen,
+      areFileEditorsDocked: this.areFileEditorsDocked,
+      isFileTagsEditorOpen: this.isFileTagsEditorOpen,
+      isFileExtraPropertiesEditorOpen: this.isFileExtraPropertiesEditorOpen,
       thumbnailDirectory: this.thumbnailDirectory,
       importDirectory: this.importDirectory,
       method: this.method,
@@ -1048,7 +1114,8 @@ class UiStore {
       galleryVideoPlaybackMode: this.galleryVideoPlaybackMode,
       hotkeyMap: { ...this.hotkeyMap },
       isThumbnailFilenameOverlayEnabled: this.isThumbnailFilenameOverlayEnabled,
-      isThumbnailTagOverlayEnabled: this.isThumbnailTagOverlayEnabled,
+      thumbnailTagOverlayMode: this.thumbnailTagOverlayMode,
+      inheritedTagsVisibilityMode: this.inheritedTagsVisibilityMode,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerExpansion: this.outlinerExpansion.slice(),
       outlinerHeights: this.outlinerHeights.slice(),

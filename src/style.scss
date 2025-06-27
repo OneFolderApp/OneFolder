@@ -21,6 +21,7 @@
 @import '~resources/style/controls/tag.scss';
 @import '~resources/style/controls/toolbar.scss';
 @import '~resources/style/controls/tree.scss';
+@import '~resources/style/controls/floating-panel.scss';
 
 // Panels
 @import '~resources/style/content.scss'; // The main content area (Gallery, etc.)
@@ -37,5 +38,5 @@
 @import '~resources/style/app-toolbar.scss';
 @import '~resources/style/outliner.scss';
 @import '~resources/style/tag-editor.scss';
-@import '~resources/style/score-editor.scss';
+@import '~resources/style/extra-property-editor.scss';
 @import '~resources/style/advanced-search.scss';

@@ -50,6 +50,17 @@ class TagStore {
     return this.tagGraph.get(tag);
   }
 
+  @action getTags(ids: ID[]): Set<ClientTag> {
+    const tags = new Set<ClientTag>();
+    for (const id of ids) {
+      const tag = this.rootStore.tagStore.get(id);
+      if (tag !== undefined) {
+        tags.add(tag);
+      }
+    }
+    return tags;
+  }
+
   @computed get root(): ClientTag {
     const root = this.tagGraph.get(ROOT_TAG_ID);
     if (!root) {
@@ -64,7 +75,10 @@ class TagStore {
         yield* tag.getSubTree();
       }
     }
-    return Array.from(list(this.root.subTags));
+    return Array.from(list(this.root.subTags), (tag, index) => {
+      tag.flatIndex = index;
+      return tag;
+    });
   }
 
   @computed get count(): number {
@@ -92,7 +106,7 @@ class TagStore {
 
   @action.bound async create(parent: ClientTag, tagName: string): Promise<ClientTag> {
     const id = generateId();
-    const tag = new ClientTag(this, id, tagName, new Date(), undefined, false);
+    const tag = new ClientTag(this, id, tagName, new Date(), undefined, false, true);
     this.tagGraph.set(tag.id, tag);
     tag.setParent(parent);
     parent.subTags.push(tag);
@@ -102,6 +116,24 @@ class TagStore {
 
   @action findByName(name: string): ClientTag | undefined {
     return this.tagList.find((t) => t.name === name);
+  }
+
+  /**
+   * Computes a reusable and concise callback function used by all tags
+   * to determine if they should be visible on inheritance, based on the
+   * inheritedTagsVisibilityMode from UiStore.
+   *
+   * This avoids having each tag perform all the condition checks on every reaction.
+   */
+  @computed get shouldShowWhenInherited(): (tag: ClientTag) => boolean {
+    switch (this.rootStore.uiStore.inheritedTagsVisibilityMode) {
+      case 'all':
+        return () => true;
+      case 'visible-when-inherited':
+        return (tag: ClientTag) => tag.isVisibleInherited;
+      default:
+        return () => false;
+    }
   }
 
   @action.bound async delete(tag: ClientTag): Promise<void> {
@@ -177,10 +209,10 @@ class TagStore {
 
   @action private createTagGraph(backendTags: TagDTO[]) {
     // Create tags
-    for (const { id, name, dateAdded, color, isHidden } of backendTags) {
+    for (const { id, name, dateAdded, color, isHidden, isVisibleInherited } of backendTags) {
       // Create entity and set properties
       // We have to do this because JavaScript does not allow multiple constructor.
-      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden);
+      const tag = new ClientTag(this, id, name, dateAdded, color, isHidden, isVisibleInherited);
       // Add to index
       this.tagGraph.set(tag.id, tag);
     }

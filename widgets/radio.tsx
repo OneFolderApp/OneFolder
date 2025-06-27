@@ -3,14 +3,15 @@ import React, { ReactNode, useContext, useMemo } from 'react';
 type RadioProps = {
   value: string;
   children: ReactNode;
+  tooltip?: string;
 };
 
-const Radio = ({ value, children }: RadioProps) => {
+const Radio = ({ value, children, tooltip }: RadioProps) => {
   const { name, handleChange } = useContext(PropsContext);
   const checked = useContext(StateContext);
 
   return (
-    <label>
+    <label data-tooltip={tooltip}>
       <input
         type="radio"
         name={name}

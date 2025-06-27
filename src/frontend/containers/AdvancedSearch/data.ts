@@ -5,12 +5,14 @@ import { ID } from '../../../api/id';
 import { BinaryOperatorType, OperatorType, TagOperatorType } from '../../../api/search-criteria';
 import {
   ClientDateSearchCriteria,
+  ClientExtraPropertySearchCriteria,
   ClientFileSearchCriteria,
   ClientNumberSearchCriteria,
   ClientStringSearchCriteria,
   ClientTagSearchCriteria,
 } from '../../entities/SearchCriteria';
 import TagStore from '../../stores/TagStore';
+import { ExtraPropertyType, ExtraPropertyValue } from 'src/api/extraProperty';
 
 export function generateCriteriaId() {
   return generateWidgetId('__criteria');
@@ -22,7 +24,9 @@ export type Criteria =
   | Field<'extension', BinaryOperatorType, string>
   | Field<'size', NumberOperatorType, number>
   | Field<'width' | 'height', NumberOperatorType, number>
-  | Field<'dateAdded', NumberOperatorType, Date>;
+  | Field<'dateAdded', NumberOperatorType, Date>
+  | ExtraPropertyField<ExtraPropertyID, NumberOperatorType, number>
+  | ExtraPropertyField<ExtraPropertyID, StringOperatorType, string>;
 
 interface Field<K extends Key, O extends Operator, V extends Value> {
   key: K;
@@ -30,15 +34,32 @@ interface Field<K extends Key, O extends Operator, V extends Value> {
   value: V;
 }
 
+interface ExtraPropertyField<
+  EP extends ExtraPropertyID,
+  O extends Operator = StringOperatorType | NumberOperatorType,
+  V extends Value = ExtraPropertyValue,
+> extends Field<'extraProperties', O, V> {
+  extraProperty: EP;
+}
+
 export type Key = keyof Pick<
   FileDTO,
-  'name' | 'absolutePath' | 'tags' | 'extension' | 'size' | 'width' | 'height' | 'dateAdded'
+  | 'name'
+  | 'absolutePath'
+  | 'tags'
+  | 'extension'
+  | 'size'
+  | 'width'
+  | 'height'
+  | 'dateAdded'
+  | 'extraProperties'
 >;
 export type Operator = OperatorType;
-export type Value = string | number | Date | TagValue;
+export type Value = string | number | Date | TagValue | ExtraPropertyValue;
 export type TagValue = ID | undefined;
+export type ExtraPropertyID = ID | undefined;
 
-export function defaultQuery(key: Key): Criteria {
+export function defaultQuery(key: Key, extraPropertyType?: ExtraPropertyType): Criteria {
   if (key === 'name' || key === 'absolutePath') {
     return { key, operator: 'contains', value: '' };
   } else if (key === 'tags') {
@@ -55,8 +76,32 @@ export function defaultQuery(key: Key): Criteria {
       operator: 'equals',
       value: new Date(),
     };
+  } else if (key === 'extraProperties') {
+    if (extraPropertyType !== undefined) {
+      if (extraPropertyType === ExtraPropertyType.number) {
+        return {
+          extraProperty: undefined,
+          key: 'extraProperties',
+          value: 0,
+          operator: 'equals',
+        };
+      } else if (extraPropertyType === ExtraPropertyType.text) {
+        return {
+          extraProperty: undefined,
+          key: 'extraProperties',
+          value: '',
+          operator: 'contains',
+        };
+      }
+    }
+    return {
+      extraProperty: undefined,
+      key: 'extraProperties',
+      value: 0,
+      operator: 'equals',
+    };
   } else {
-    return { key, operator: 'greaterThanOrEquals', value: 0 };
+    return { key: key, operator: 'greaterThanOrEquals', value: 0 };
   }
 }
 
@@ -82,6 +127,18 @@ export function fromCriteria(criteria: ClientFileSearchCriteria): [ID, Criteria]
     (criteria.key === 'width' || criteria.key === 'height')
   ) {
     query.value = criteria.value;
+  } else if (
+    criteria instanceof ClientExtraPropertySearchCriteria &&
+    criteria.key === 'extraProperties'
+  ) {
+    (
+      query as ExtraPropertyField<
+        ExtraPropertyID,
+        StringOperatorType | NumberOperatorType,
+        ExtraPropertyValue
+      >
+    ).extraProperty = criteria.value[0];
+    query.value = criteria.value[1];
   } else {
     return [generateCriteriaId(), query];
   }
@@ -102,6 +159,12 @@ export function intoCriteria(query: Criteria, tagStore: TagStore): ClientFileSea
   } else if (query.key === 'tags') {
     const tag = query.value !== undefined ? tagStore.get(query.value) : undefined;
     return new ClientTagSearchCriteria('tags', tag?.id, query.operator);
+  } else if (query.key === 'extraProperties') {
+    return new ClientExtraPropertySearchCriteria(
+      query.key,
+      [query.extraProperty ?? '', query.value],
+      query.operator,
+    );
   } else {
     return new ClientTagSearchCriteria('tags');
   }

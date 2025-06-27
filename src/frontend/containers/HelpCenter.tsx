@@ -27,7 +27,7 @@ const HelpCenter = observer(() => {
       <Documentation
         id="help-center"
         overviewId="help-center-overview"
-        className={uiStore.theme}
+        className={`${uiStore.theme} scrollbar-classic`}
         initPages={PAGE_DATA}
       />
     </PopupWindow>

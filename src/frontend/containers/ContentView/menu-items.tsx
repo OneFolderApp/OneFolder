@@ -17,7 +17,7 @@ import {
 import { ClientTag } from '../../entities/Tag';
 import { LocationTreeItemRevealer } from '../Outliner/LocationsPanel';
 import { TagsTreeItemRevealer } from '../Outliner/TagsPanel/TagsTree';
-import { ClientScore } from 'src/frontend/entities/Score';
+import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
 
 export const MissingFileMenuItems = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -68,11 +68,7 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
         text="Open In Preview Window"
         icon={IconSet.PREVIEW}
       />
-      <MenuItem
-        onClick={uiStore.openToolbarTagPopover}
-        text="Open Tag Selector"
-        icon={IconSet.TAG}
-      />
+      <MenuItem onClick={uiStore.openFileTagsEditor} text="Open Tag Selector" icon={IconSet.TAG} />
       <MenuSubItem text="Search Similar Images..." icon={IconSet.MORE}>
         <MenuItem
           onClick={(e) =>
@@ -268,17 +264,17 @@ export const EditorTagSummaryItems = ({
   );
 };
 
-export const FileScoreMenuItems = observer(
+export const FileExtraPropertyMenuItems = observer(
   ({
-    score,
+    extraProperty,
     onDelete,
     onRemove,
     onRename,
   }: {
-    score: ClientScore;
-    onDelete: (score: ClientScore) => void;
-    onRemove: (score: ClientScore) => void;
-    onRename: (score: ClientScore) => void;
+    extraProperty: ClientExtraProperty;
+    onDelete: (extraProperty: ClientExtraProperty) => void;
+    onRemove: (extraProperty: ClientExtraProperty) => void;
+    onRename: (extraProperty: ClientExtraProperty) => void;
   }) => {
     const { uiStore } = useStore();
 
@@ -286,14 +282,14 @@ export const FileScoreMenuItems = observer(
     return (
       <>
         <MenuItem
-          onClick={() => onRemove(score)}
-          text={`Remove score from ${isMultiple ? 'files' : 'file'}`}
+          onClick={() => onRemove(extraProperty)}
+          text={`Remove extra property from ${isMultiple ? 'files' : 'file'}`}
           icon={IconSet.META_INFO}
         />
-        <MenuItem onClick={() => onRename(score)} text="Rename" icon={IconSet.EDIT} />
+        <MenuItem onClick={() => onRename(extraProperty)} text="Rename" icon={IconSet.EDIT} />
         <MenuItem
-          onClick={() => onDelete(score)}
-          text="Delete score and remove it from all files"
+          onClick={() => onDelete(extraProperty)}
+          text="Delete extra property and remove it from all files"
           icon={IconSet.DELETE}
         />
       </>

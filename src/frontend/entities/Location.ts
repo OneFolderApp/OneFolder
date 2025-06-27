@@ -1,6 +1,13 @@
 import { Remote, wrap } from 'comlink';
 import fse from 'fs-extra';
-import { IObservableArray, action, makeObservable, observable, runInAction } from 'mobx';
+import {
+  IObservableArray,
+  ObservableSet,
+  action,
+  makeObservable,
+  observable,
+  runInAction,
+} from 'mobx';
 import SysPath from 'path';
 
 import { retainArray } from 'common/core';
@@ -11,9 +18,10 @@ import { RendererMessenger } from '../../ipc/renderer';
 import { AppToaster } from '../components/Toaster';
 import LocationStore, { FileStats } from '../stores/LocationStore';
 import { FolderWatcherWorker } from '../workers/folderWatcher.worker';
+import { ClientTag } from './Tag';
 
 /** Sorts alphanumerically, "natural" sort */
-const sort = (a: SubLocationDTO, b: SubLocationDTO) =>
+const sort = (a: SubLocationDTO | ClientSubLocation, b: SubLocationDTO | ClientSubLocation) =>
   a.name.localeCompare(b.name, undefined, { numeric: true });
 
 export class ClientSubLocation {
@@ -22,13 +30,16 @@ export class ClientSubLocation {
   @observable
   isExcluded: boolean;
   readonly subLocations: IObservableArray<ClientSubLocation>;
+  readonly tags: ObservableSet<ClientTag>;
 
   constructor(
+    store: LocationStore,
     public location: ClientLocation,
     public path: string,
     name: string,
     excluded: boolean,
     subLocations: SubLocationDTO[],
+    tags: ID[],
   ) {
     this.name = name;
     this.isExcluded = excluded;
@@ -38,14 +49,17 @@ export class ClientSubLocation {
         .map(
           (subLoc) =>
             new ClientSubLocation(
+              store,
               this.location,
               SysPath.join(path, subLoc.name),
               subLoc.name,
               subLoc.isExcluded,
               subLoc.subLocations,
+              subLoc.tags,
             ),
         ),
     );
+    this.tags = observable(store.getTags(tags));
 
     makeObservable(this);
   }
@@ -62,6 +76,7 @@ export class ClientSubLocation {
       name: this.name.toString(),
       isExcluded: Boolean(this.isExcluded),
       subLocations: this.subLocations.map((subLoc) => subLoc.serialize()),
+      tags: Array.from(this.tags, (t) => t.id),
     };
   }
 }
@@ -86,6 +101,7 @@ export class ClientLocation {
   extensions: IMG_EXTENSIONS_TYPE[];
 
   readonly subLocations: IObservableArray<ClientSubLocation>;
+  readonly tags: ObservableSet<ClientTag>;
   /** A cached list of all sublocations that are excluded (isExcluded === true) */
   protected readonly excludedPaths: ClientSubLocation[] = [];
 
@@ -99,6 +115,7 @@ export class ClientLocation {
     path: string,
     dateAdded: Date,
     subLocations: SubLocationDTO[],
+    tags: ID[],
     extensions: IMG_EXTENSIONS_TYPE[],
     index: number,
   ) {
@@ -115,14 +132,17 @@ export class ClientLocation {
         .map(
           (subLoc) =>
             new ClientSubLocation(
+              this.store,
               this,
               SysPath.join(this.path, subLoc.name),
               subLoc.name,
               subLoc.isExcluded,
               subLoc.subLocations,
+              subLoc.tags,
             ),
         ),
     );
+    this.tags = observable(this.store.getTags(tags));
 
     makeObservable(this);
   }
@@ -218,6 +238,7 @@ export class ClientLocation {
       path: this.path,
       dateAdded: this.dateAdded,
       subLocations: this.subLocations.map((sl) => sl.serialize()),
+      tags: Array.from(this.tags, (t) => t.id),
       index: this.index,
     };
   }
@@ -246,7 +267,15 @@ export class ClientLocation {
         for (const item of dir.children) {
           const subLoc =
             loc.subLocations.find((subLoc) => subLoc.name === item.name) ??
-            new ClientSubLocation(this, item.fullPath, item.name, item.name.startsWith('.'), []);
+            new ClientSubLocation(
+              this.store,
+              this,
+              item.fullPath,
+              item.name,
+              item.name.startsWith('.'),
+              [],
+              [],
+            );
           newSublocations.push(subLoc);
           if (item.children.length > 0) {
             updateSubLocations(subLoc, item);

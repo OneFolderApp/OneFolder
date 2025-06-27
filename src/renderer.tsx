@@ -129,6 +129,8 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
 
   RendererMessenger.onFullScreenChanged((val) => rootStore.uiStore.setFullScreen(val));
 
+  RendererMessenger.onSetZoomFactor((val) => rootStore.uiStore.setZoomFactor(val));
+
   /**
    * Adds tags to a file, given its name and the names of the tags
    * @param filePath The path of the file

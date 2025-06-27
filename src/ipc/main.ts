@@ -111,6 +111,8 @@ export class MainMessenger {
   static onSetZoomFactor = (cb: (level: number) => void) =>
     ipcMain.handle(SET_ZOOM_FACTOR, (_, level) => cb(level));
 
+  static setZoomFactor = (wc: WebContents, val: number) => wc.send(SET_ZOOM_FACTOR, val);
+
   static onGetZoomFactor = (cb: () => number) =>
     ipcMain.on(GET_ZOOM_FACTOR, (e) => (e.returnValue = cb()));
 

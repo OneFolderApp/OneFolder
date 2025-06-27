@@ -1,6 +1,6 @@
 import { action, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { formatTagCountText } from 'common/fmt';
 import { IconSet, Tree } from 'widgets';
@@ -81,11 +81,14 @@ const Label = (props: ILabelProps) =>
       onFocus={(e) => e.target.select()}
       // Stop propagation so that the parent Tag element doesn't toggle selection status
       onClick={(e) => e.stopPropagation()}
-    // TODO: Visualizing errors...
-    // Only show red outline when input field is in focus and text is invalid
+      // TODO: Visualizing errors...
+      // Only show red outline when input field is in focus and text is invalid
     />
   ) : (
-    <div className={`label-text ${props.isHeader ? 'label-header' : ''}`} data-tooltip={props.tooltip}>
+    <div
+      className={`label-text ${props.isHeader ? 'label-header' : ''}`}
+      data-tooltip={props.tooltip}
+    >
       {props.text}
     </div>
   );
@@ -95,9 +98,9 @@ interface ITagItemProps {
   dispatch: React.Dispatch<Action>;
   isEditing: boolean;
   submit: (target: EventTarget & HTMLInputElement) => void;
-  select: (event: React.MouseEvent, nodeData: ClientTag) => void;
+  select: (event: React.MouseEvent, nodeData: ClientTag, expansion: IExpansionState) => void;
   pos: number;
-  expansion: IExpansionState;
+  expansion: React.MutableRefObject<IExpansionState>;
 }
 
 /**
@@ -200,7 +203,7 @@ const TagItem = observer((props: ITagItemProps) => {
             clearTimeout(expandTimeoutRef.current);
             expandTimeoutRef.current = undefined;
           }
-        } else if (!expansion[nodeData.id] && !expandTimeoutRef.current) {
+        } else if (!expansion.current[nodeData.id] && !expandTimeoutRef.current) {
           expandDelayed(nodeData.id);
         }
       });
@@ -228,7 +231,7 @@ const TagItem = observer((props: ITagItemProps) => {
         const relativeMovePos = DnDHelper.onDrop(event);
 
         // Expand the tag if it's not already expanded
-        if (!expansion[nodeData.id] && relativeMovePos === 'middle') {
+        if (!expansion.current[nodeData.id] && relativeMovePos === 'middle') {
           dispatch(Factory.setExpansion((val) => ({ ...val, [nodeData.id]: true })));
         }
 
@@ -259,9 +262,9 @@ const TagItem = observer((props: ITagItemProps) => {
   const handleSelect = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
-      select(event, nodeData);
+      select(event, nodeData, expansion.current);
     },
-    [nodeData, select],
+    [expansion, nodeData, select],
   );
 
   const handleQuickQuery = useCallback(
@@ -327,7 +330,9 @@ const TagItem = observer((props: ITagItemProps) => {
         setText={nodeData.rename}
         isEditing={isEditing}
         onSubmit={submit}
-        tooltip={`${nodeData.path.map((v) => v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v).join(' › ')} (${nodeData.fileCount})`}
+        tooltip={`${nodeData.path
+          .map((v) => (v.startsWith('#') ? '&nbsp;<b>' + v.slice(1) + '</b>&nbsp;' : v))
+          .join(' › ')} (${nodeData.fileCount})`}
       />
       {!isEditing && <SearchButton onClick={handleQuickQuery} isSearched={nodeData.isSearched} />}
     </div>
@@ -338,7 +343,7 @@ interface ITreeData {
   state: State;
   dispatch: React.Dispatch<Action>;
   submit: (target: EventTarget & HTMLInputElement) => void;
-  select: (event: React.MouseEvent, nodeData: ClientTag) => void;
+  select: (event: React.MouseEvent, nodeData: ClientTag, expansion: IExpansionState) => void;
 }
 
 const TagItemLabel: TreeLabel = ({
@@ -349,17 +354,26 @@ const TagItemLabel: TreeLabel = ({
   nodeData: ClientTag;
   treeData: ITreeData;
   pos: number;
-}) => (
-  <TagItem
-    nodeData={nodeData}
-    dispatch={treeData.dispatch}
-    expansion={treeData.state.expansion}
-    isEditing={treeData.state.editableNode === nodeData.id}
-    submit={treeData.submit}
-    pos={pos}
-    select={treeData.select}
-  />
-);
+}) => {
+  // Store expansion state in a Ref to prevent re-rendering all tree label components
+  // when expanding or collapsing a single item.
+  const expansionRef = useRef(treeData.state.expansion);
+  useEffect(() => {
+    expansionRef.current = treeData.state.expansion;
+  }, [treeData.state.expansion]);
+
+  return (
+    <TagItem
+      nodeData={nodeData}
+      dispatch={treeData.dispatch}
+      expansion={expansionRef}
+      isEditing={treeData.state.editableNode === nodeData.id}
+      submit={treeData.submit}
+      pos={pos}
+      select={treeData.select}
+    />
+  );
+};
 
 const isSelected = (nodeData: ClientTag): boolean => nodeData.isSelected;
 
@@ -431,7 +445,9 @@ const mapTag = (tag: ClientTag): ITreeItem => ({
   nodeData: tag,
   isExpanded,
   isSelected,
-  className: `${tag.isSearched ? 'searched' : undefined} ${tag.name.startsWith('#') ? 'tag-header' : ''}`,
+  className: `${tag.isSearched ? 'searched' : undefined} ${
+    tag.name.startsWith('#') ? 'tag-header' : ''
+  }`,
 });
 
 const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
@@ -465,10 +481,12 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
   /** The last item that is selected in a multi-selection */
   const lastSelectionIndex = useRef<number>();
   // Handles selection via click event
-  const select = useAction((e: React.MouseEvent, selectedTag: ClientTag) => {
+  const select = useAction((e: React.MouseEvent, selectedTag: ClientTag, exp: IExpansionState) => {
     // Note: selection logic is copied from Gallery.tsx
+    // update: Added shallow/only-expanded and deep/sub-tree selection behavior
     const rangeSelection = e.shiftKey;
     const expandSelection = e.ctrlKey || e.metaKey;
+    const deepSelection = e.altKey;
 
     /** The index of the active (newly selected) item */
     const i = tagStore.findFlatTagListIndex(selectedTag);
@@ -489,19 +507,51 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
         return;
       }
       if (i < initialSelectionIndex.current) {
-        uiStore.selectTagRange(i, initialSelectionIndex.current, expandSelection);
+        uiStore.selectTagRange(
+          i,
+          initialSelectionIndex.current,
+          expandSelection,
+          deepSelection ? undefined : exp,
+        );
       } else {
-        uiStore.selectTagRange(initialSelectionIndex.current, i, expandSelection);
+        uiStore.selectTagRange(
+          initialSelectionIndex.current,
+          i,
+          expandSelection,
+          deepSelection ? undefined : exp,
+        );
       }
     } else if (expandSelection) {
-      uiStore.toggleTagSelection(selectedTag);
+      if (deepSelection) {
+        const select = !selectedTag.isSelected;
+        const subtags = selectedTag.getSubTree();
+        if (select) {
+          for (const subtag of subtags) {
+            uiStore.selectTag(subtag);
+          }
+        } else {
+          for (const subtag of subtags) {
+            uiStore.deselectTag(subtag);
+          }
+        }
+      } else {
+        uiStore.toggleTagSelection(selectedTag);
+      }
       initialSelectionIndex.current = i;
     } else {
       if (selectedTag.isSelected && uiStore.tagSelection.size === 1) {
         uiStore.clearTagSelection();
         (document.activeElement as HTMLElement | null)?.blur();
       } else {
-        uiStore.selectTag(selectedTag, true);
+        if (deepSelection) {
+          uiStore.clearTagSelection();
+          const subtags = selectedTag.getSubTree();
+          for (const subtag of subtags) {
+            uiStore.selectTag(subtag);
+          }
+        } else {
+          uiStore.selectTag(selectedTag, true);
+        }
       }
       initialSelectionIndex.current = i;
     }
@@ -638,7 +688,10 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       )}
 
       {state.impliedTags && (
-        <TagImply tag={state.impliedTags} onClose={() => dispatch(Factory.disableModifyImpliedTags())} />
+        <TagImply
+          tag={state.impliedTags}
+          onClose={() => dispatch(Factory.disableModifyImpliedTags())}
+        />
       )}
     </MultiSplitPane>
   );

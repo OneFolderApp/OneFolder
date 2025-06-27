@@ -1,4 +1,4 @@
-import React, { RefObject, memo, useState } from 'react';
+import React, { RefObject, memo, useMemo, useState } from 'react';
 
 import { IconButton } from 'widgets/button';
 import { IconSet } from 'widgets/icons';
@@ -6,6 +6,7 @@ import { InfoButton } from 'widgets/notifications';
 import { KeySelector, OperatorSelector, ValueInput } from './Inputs';
 import { QueryDispatch } from './QueryEditor';
 import { defaultQuery, generateCriteriaId } from './data';
+import { useStore } from 'src/frontend/contexts/StoreContext';
 
 export interface QueryBuilderProps {
   keySelector: RefObject<HTMLSelectElement>;
@@ -14,6 +15,12 @@ export interface QueryBuilderProps {
 
 const CriteriaBuilder = memo(function QueryBuilder({ keySelector, dispatch }: QueryBuilderProps) {
   const [criteria, setCriteria] = useState(defaultQuery('tags'));
+  const { extraPropertyStore } = useStore();
+  const epID = 'extraProperty' in criteria ? criteria.extraProperty : undefined;
+  const extraProperty = useMemo(
+    () => (epID !== undefined ? extraPropertyStore.get(epID) : undefined),
+    [epID, extraPropertyStore],
+  );
 
   const add = () => {
     dispatch((query) => new Map(query.set(generateCriteriaId(), criteria)));
@@ -60,18 +67,21 @@ const CriteriaBuilder = memo(function QueryBuilder({ keySelector, dispatch }: Qu
           ref={keySelector}
           keyValue={criteria.key}
           dispatch={setCriteria}
+          extraProperty={extraProperty}
         />
         <OperatorSelector
           labelledby="builder-operator"
           keyValue={criteria.key}
           value={criteria.operator}
           dispatch={setCriteria}
+          extraProperty={extraProperty}
         />
         <ValueInput
           labelledby="builder-value"
           keyValue={criteria.key}
           value={criteria.value}
           dispatch={setCriteria}
+          extraProperty={extraProperty}
         />
         <IconButton text="Add Criteria" icon={IconSet.ADD} onClick={add} />
       </div>

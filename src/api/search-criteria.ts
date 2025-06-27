@@ -1,9 +1,10 @@
 import { ID } from './id';
 import { FileDTO } from './file';
 import { NumberOperatorType, StringOperatorType } from './data-storage-search';
+import { ExtraPropertyValue } from './extraProperty';
 
 export const BinaryOperators = ['equals', 'notEqual'] as const;
-export type BinaryOperatorType = typeof BinaryOperators[number];
+export type BinaryOperatorType = (typeof BinaryOperators)[number];
 
 export const TagOperators = [
   'contains',
@@ -11,7 +12,7 @@ export const TagOperators = [
   'containsRecursively',
   'containsNotRecursively',
 ] as const;
-export type TagOperatorType = typeof TagOperators[number];
+export type TagOperatorType = (typeof TagOperators)[number];
 
 export type OperatorType =
   | TagOperatorType
@@ -22,7 +23,7 @@ export type OperatorType =
 // FFR: Boolean keys are not supported in IndexedDB/Dexie - must store booleans as 0/1
 export interface IBaseSearchCriteria {
   key: keyof FileDTO;
-  valueType: 'number' | 'date' | 'string' | 'array';
+  valueType: 'number' | 'date' | 'string' | 'array' | 'indexSignature';
   readonly operator: OperatorType;
 }
 
@@ -47,8 +48,15 @@ export interface IDateSearchCriteria extends IBaseSearchCriteria {
   operator: NumberOperatorType;
 }
 
+export interface IExtraProperySearchCriteria extends IBaseSearchCriteria {
+  //key, value pair
+  value: [string, ExtraPropertyValue];
+  operator: OperatorType;
+}
+
 export type SearchCriteria =
   | ITagSearchCriteria
   | IStringSearchCriteria
   | INumberSearchCriteria
-  | IDateSearchCriteria;
+  | IDateSearchCriteria
+  | IExtraProperySearchCriteria;

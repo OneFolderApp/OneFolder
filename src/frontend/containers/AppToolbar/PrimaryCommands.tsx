@@ -4,11 +4,10 @@ import React from 'react';
 import { IconSet } from 'widgets';
 import { ToolbarButton } from 'widgets/toolbar';
 import { FileRemoval } from '../../components/RemovalAlert';
-import FileTagEditor from '../../containers/AppToolbar/FileTagEditor';
 import { useStore } from '../../contexts/StoreContext';
 import { SortCommand, ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
-import { FloatingScoreEditor } from 'src/frontend/components/ScoreEditor';
+import { FileExtraPropertiesEditorButton, FileTagEditorButton } from './ToolbarButtons';
 
 const OutlinerToggle = observer(() => {
   const { uiStore } = useStore();
@@ -43,8 +42,8 @@ const PrimaryCommands = observer(() => {
       ) : (
         // Only show when not viewing missing files (so it is replaced by the Delete button)
         <>
-          <FileTagEditor />
-          <FloatingScoreEditor />
+          <FileTagEditorButton />
+          <FileExtraPropertiesEditorButton />
         </>
       )}
 
@@ -71,8 +70,8 @@ export const SlideModeCommand = observer(() => {
 
       <div className="spacer" />
 
-      <FileTagEditor />
-      <FloatingScoreEditor />
+      <FileTagEditorButton />
+      <FileExtraPropertiesEditorButton />
 
       <ToolbarButton
         icon={IconSet.INFO}
@@ -102,7 +101,7 @@ const FileSelectionCommand = observer(() => {
       icon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
       onClick={handleToggleSelect}
       pressed={allFilesSelected}
-      text={fileCount == 0 ? "0" : selectionCount +" / "+ fileCount}
+      text={fileCount == 0 ? '0' : selectionCount + ' / ' + fileCount}
       tooltip="Selects or deselects all images"
       disabled={fileCount === 0}
     />

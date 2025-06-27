@@ -23,7 +23,7 @@ const ProgressBar = memo(
     const [visible, setVisible] = useState(false);
     const [simulatedCurrent, setSimulatedCurrent] = useState(0);
     const [reseting, setReseting] = useState(false);
-    const [transitionTime, setTransTime] = useState<number | undefined>(DEFAULT_MS);
+    const [transitionTime, setTransTime] = useState(DEFAULT_MS);
     const simulatedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const totalUnits = total + simulatedTotal;
     const realProgress = total > 0 ? (current / total) * 100 : 0;
@@ -90,8 +90,9 @@ const ProgressBar = memo(
     }, [simulatedTotal, resultProgress, total, transitionTime]);
 
     const style: CSSProperties = {
-      width: `${reseting ? 0 : resultProgress}%`,
-      transition: `width ${reseting ? 0 : transitionTime}ms linear`,
+      transform: `scaleX(${reseting ? 0 : resultProgress / 100})`,
+      transformOrigin: 'left',
+      transition: `transform ${reseting ? 0 : transitionTime}ms linear`,
     };
 
     return (

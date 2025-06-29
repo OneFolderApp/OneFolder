@@ -140,6 +140,7 @@
     "electron-google-analytics4": "^1.1.1",
     "electron-updater": "^6.1.7",
     "fs-extra": "^11.1.0",
+    "fs-xattr": "^0.4.0",
     "geo-coordinates-parser": "^1.6.3",
     "libheif-js": "^1.17.1",
     "mapbox-gl": "^3.0.1",

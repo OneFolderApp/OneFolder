@@ -4403,6 +4403,11 @@ fs-minipass@^2.0.0:
   dependencies:
     minipass "^3.0.0"
 
+fs-xattr@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/fs-xattr/-/fs-xattr-0.4.0.tgz#30797399631287b740994a0bfab7822295e5f482"
+  integrity sha512-Lw90zx483YTGiHfR67IPtrbrZ+yBr1/W98v/iyTeSkUbixg/wrHfX5x9oMUOnirC5P7SZ5HlrpnIRMMqt8Ej0A==
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"

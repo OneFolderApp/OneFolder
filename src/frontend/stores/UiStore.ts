@@ -130,6 +130,8 @@ type PersistentPreferenceFields =
   | 'outlinerHeights'
   | 'inspectorWidth'
   | 'isRememberSearchEnabled'
+  | 'recentlyUsedTagsMaxLength'
+  | 'recentlyUsedTags'
   // the following are only restored when isRememberSearchEnabled is enabled
   | 'isSlideMode'
   | 'firstItem'
@@ -139,6 +141,7 @@ type PersistentPreferenceFields =
 class UiStore {
   static MIN_OUTLINER_WIDTH = 192; // default of 12 rem
   static MIN_INSPECTOR_WIDTH = 288; // default of 18 rem
+  static MAX_RECENTLY_USED_TAGS = 40;
 
   private readonly rootStore: RootStore;
 
@@ -201,6 +204,10 @@ class UiStore {
   readonly tagSelection = observable(new Set<ClientTag>());
 
   readonly searchCriteriaList = observable<ClientFileSearchCriteria>([]);
+
+  //recently used tags feature
+  @observable recentlyUsedTagsMaxLength: number = 10;
+  readonly recentlyUsedTags = observable<ClientTag>([]);
 
   @observable thumbnailDirectory: string = '';
   @observable importDirectory: string = ''; // for browser extension. Must be a (sub-folder of a) Location
@@ -598,6 +605,23 @@ class UiStore {
 
   @action.bound toggleSearchMatchAny(): void {
     this.searchMatchAny = !this.searchMatchAny;
+  }
+
+  /////////////////// Recently used Tags //////////////////
+
+  @action.bound setRecentlyUsedTagsMaxLength(val: number): void {
+    this.recentlyUsedTagsMaxLength = Math.max(0, Math.min(UiStore.MAX_RECENTLY_USED_TAGS, val));
+  }
+
+  /**  Adds a tag as recently used tags, keeping the max length constraint. */
+  @action.bound addRecentlyUsedTag(tag?: ClientTag): void {
+    if (tag) {
+      this.recentlyUsedTags.remove(tag);
+      this.recentlyUsedTags.unshift(tag);
+    }
+    while (this.recentlyUsedTags.length > this.recentlyUsedTagsMaxLength) {
+      this.recentlyUsedTags.pop();
+    }
   }
 
   /////////////////// Selection actions ///////////////////
@@ -1046,6 +1070,14 @@ class UiStore {
         if (prefs.inheritedTagsVisibilityMode) {
           this.setInheritedTagsVisibilityMode(prefs.inheritedTagsVisibilityMode);
         }
+        if (prefs.recentlyUsedTagsMaxLength) {
+          this.setRecentlyUsedTagsMaxLength(prefs.recentlyUsedTagsMaxLength);
+        }
+        if (prefs.recentlyUsedTags) {
+          this.recentlyUsedTags.replace(
+            Array.from(this.rootStore.tagStore.getTags(prefs.recentlyUsedTags)),
+          );
+        }
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
@@ -1126,6 +1158,8 @@ class UiStore {
       firstItem: this.firstItem,
       searchMatchAny: this.searchMatchAny,
       searchCriteriaList: this.searchCriteriaList.map((c) => c.serialize(this.rootStore)),
+      recentlyUsedTags: Array.from(this.recentlyUsedTags, (t) => t.id),
+      recentlyUsedTagsMaxLength: this.recentlyUsedTagsMaxLength,
     };
     return preferences;
   }

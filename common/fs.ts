@@ -4,6 +4,7 @@ const path = require('path');
 import fse from 'fs-extra';
 import { thumbnailFormat } from '../common/config';
 import { IS_DEV } from './process';
+import { IMG_EXTENSIONS_TYPE } from 'src/api/file';
 
 export function getThumbnailPath(filePath: string, thumbnailDirectory: string): string {
   const baseFilename = path.basename(filePath, path.extname(filePath));
@@ -43,8 +44,21 @@ export async function isDirEmpty(dir: string) {
   return dirContents.length === 0 || (dirContents.length === 1 && dirContents[0] === '.DS_Store');
 }
 
-export function isFileExtensionVideo(fileExtension: string) {
-  return (fileExtension === 'webm' || fileExtension === 'mp4' || fileExtension === 'ogg');
+const videoExtensions = new Set<IMG_EXTENSIONS_TYPE>(['webm', 'mp4', 'ogg']);
+
+export function isFileExtensionVideo(fileExtension: IMG_EXTENSIONS_TYPE) {
+  return videoExtensions.has(fileExtension);
+}
+
+const nativeImageCompatibleExtensions = new Set<IMG_EXTENSIONS_TYPE>([
+  'png',
+  'jpg',
+  'jpeg',
+  'jfif',
+]);
+
+export function isNativeImageCompatible(fileExtension: IMG_EXTENSIONS_TYPE): boolean {
+  return nativeImageCompatibleExtensions.has(fileExtension);
 }
 
 function hashString(s: string) {

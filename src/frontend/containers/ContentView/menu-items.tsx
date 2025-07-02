@@ -18,6 +18,7 @@ import { ClientTag } from '../../entities/Tag';
 import { LocationTreeItemRevealer } from '../Outliner/LocationsPanel';
 import { TagsTreeItemRevealer } from '../Outliner/TagsPanel/TagsTree';
 import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
+import { isFileExtensionVideo } from 'common/fs';
 
 export const MissingFileMenuItems = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -60,9 +61,20 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
     }
   };
 
+  const handleCopyToClipboard = () => {
+    uiStore.selectFile(file, true);
+    uiStore.copyToClipboard();
+  };
+
   return (
     <>
       <MenuItem onClick={handleViewFullSize} text="View at Full Size" icon={IconSet.SEARCH} />
+      <MenuItem
+        onClick={handleCopyToClipboard}
+        text="Copy image to clipboard"
+        icon={IconSet.COPY}
+        disabled={isFileExtensionVideo(file.extension)}
+      />
       <MenuItem
         onClick={handlePreviewWindow}
         text="Open In Preview Window"
@@ -177,6 +189,7 @@ export const SlideFileViewerMenuItems = observer(({ file }: { file: ClientFile }
         onClick={handleCopyToClipboard}
         text="Copy image to clipboard"
         icon={IconSet.COPY}
+        disabled={isFileExtensionVideo(file.extension)}
       />
       <MenuItem
         onClick={handlePreviewWindow}

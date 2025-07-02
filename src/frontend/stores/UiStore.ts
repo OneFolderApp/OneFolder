@@ -4,7 +4,7 @@ import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { maxNumberOfExternalFilesBeforeWarning } from 'common/config';
 import { clamp, notEmpty } from 'common/core';
-import { encodeFilePath } from 'common/fs';
+import { encodeFilePath, isNativeImageCompatible } from 'common/fs';
 import { ID } from '../../api/id';
 import { SearchCriteria } from '../../api/search-criteria';
 import { RendererMessenger } from '../../ipc/renderer';
@@ -428,7 +428,6 @@ class UiStore {
     if (this.fileSelection.size === 0) {
       return;
     }
-
     const file = Array.from(this.fileSelection)[0];
     if (file.isBroken) {
       return;
@@ -440,25 +439,49 @@ class UiStore {
       const src = await this.rootStore.imageLoader.getImageSrc(file);
       if (src !== undefined) {
         let buffer: Buffer;
-        if (src.startsWith('blob:')) {
+        if (isNativeImageCompatible(file.extension)) {
+          // read image from file system
+          buffer = await fse.readFile(src);
+        } else if (src.startsWith('blob:')) {
           // use blob data
           const blob = await fetch(src).then((r) => r.blob());
           buffer = Buffer.from(await blob.arrayBuffer());
         } else {
-          // read image from file system
-          buffer = await fse.readFile(src);
+          // try to convert into compatible type using canvas.
+          const image = new Image();
+          image.src = encodeFilePath(src);
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error('Failed to load image for canvas.'));
+          });
+          const canvas = new OffscreenCanvas(image.width, image.height);
+          const ctx2D = canvas.getContext('2d');
+          if (!ctx2D) {
+            throw new Error('Context2D not available!');
+          }
+          ctx2D.drawImage(image, 0, 0);
+          const blob = await canvas.convertToBlob({ type: 'image/png' });
+          buffer = Buffer.from(await blob.arrayBuffer());
         }
-        const image = nativeImage.createFromBuffer(buffer);
-        if (image.isEmpty()) {
-          throw new Error('No se pudo cargar la imagen en nativeImage');
+        const natImage = nativeImage.createFromBuffer(buffer);
+        if (natImage.isEmpty()) {
+          throw new Error('Could not load nativeImage');
         }
-        clipboard.writeImage(image);
+        clipboard.writeImage(natImage);
         AppToaster.show(
           { type: 'success', message: 'Image copied to clipboard.', timeout: 2000 },
           copyToastKey,
         );
       } else {
-        throw new Error('Failed to get image data.');
+        AppToaster.show(
+          {
+            type: 'error',
+            message: 'Failed to copy image to clipboard. (Extension is not supported.)',
+            timeout: 4000,
+          },
+          copyToastKey,
+        );
+        throw new Error('Failed to get image data. (Extension is not supported.)');
       }
     } catch (e) {
       AppToaster.show(

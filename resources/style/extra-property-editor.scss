@@ -53,9 +53,18 @@
     max-height: unset;
 
     [role='separator'] {
-      background: var(--text-color-muted);
-      height: 1px;
-      margin: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      text-align: center;
+      padding: 0.5rem 1rem;
+      width: -webkit-fill-available;
+
+      &::before,
+      &::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--text-color-muted);
+      }
     }
 
     .tag-option-hint {

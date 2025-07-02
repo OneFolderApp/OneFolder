@@ -695,6 +695,10 @@ class FileStore {
     return this.rootStore.tagStore.getTags(ids);
   }
 
+  addRecentlyUsedTag(tag: ClientTag): void {
+    this.rootStore.uiStore.addRecentlyUsedTag(tag);
+  }
+
   getExtraProperties(
     dtoExtraProperties: ExtraProperties,
   ): Map<ClientExtraProperty, ExtraPropertyValue> {

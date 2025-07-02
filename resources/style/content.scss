@@ -576,7 +576,7 @@
   background-color: transparent;
   overflow: hidden;
   transition: opacity 0.3s ease;
-  z-index: 10;
+  z-index: 1;
 
   &.hidden {
     opacity: 0;

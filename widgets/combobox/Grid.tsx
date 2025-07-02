@@ -290,27 +290,51 @@ export function useVirtualizedGridFocus(
   gridRef: React.RefObject<VirtualizedGridHandle>,
 ): [focus: string | undefined, handleKey: (e: React.KeyboardEvent) => void] {
   const [activeId, setActiveIndex] = useState<string | undefined>();
+  const isUpdatingFocus = useRef(false);
 
   const updateFocus = useRef(
-    (direction: 1 | -1, vGrid: VirtualizedGridHandle, outer: HTMLDivElement) => {
-      const prevIndex = vGrid.focusedIndex.current;
-      const newIndex = (vGrid.focusedIndex.current + direction + vGrid.itemCount) % vGrid.itemCount;
-      const prevEl = outer.querySelector(
-        `div[role="row"][data-index="${prevIndex}"]`,
-      ) as HTMLDivElement | null;
-      const nextEl = outer.querySelector(
-        `div[role="row"][data-index="${newIndex}"]`,
-      ) as HTMLDivElement | null;
-      if (prevEl) {
-        prevEl.dataset.focused = 'false';
+    async (direction: 1 | -1, vGrid: VirtualizedGridHandle, outer: HTMLDivElement) => {
+      if (isUpdatingFocus.current) {
+        return;
       }
-      if (nextEl) {
-        nextEl.dataset.focused = 'true';
-        setActiveIndex(nextEl.id);
-      } else {
+      isUpdatingFocus.current = true;
+      try {
+        const total = vGrid.itemCount;
+        const prevIndex = vGrid.focusedIndex.current;
+        // if direction is negative when having -1 as index, set to 0 to avoid scroll bugs.
+        let newIndex = direction === -1 && prevIndex === -1 ? 0 : prevIndex;
+        let attempts = 0;
+        // try to find the next selectable item
+        while (attempts < total) {
+          newIndex = (newIndex + direction + total) % total;
+          const delta = newIndex - prevIndex;
+          const jumpedAcross = direction === 1 ? delta < 0 : delta > 0;
+          if (jumpedAcross) {
+            vGrid.scrollToItem(newIndex);
+            await new Promise(requestAnimationFrame);
+          }
+          const nextEl = outer.querySelector(
+            `div[role="row"][data-index="${newIndex}"]`,
+          ) as HTMLDivElement | null;
+          if (nextEl) {
+            const prevEl = outer.querySelector(
+              `div[role="row"][data-index="${prevIndex}"]`,
+            ) as HTMLDivElement | null;
+            if (prevEl) {
+              prevEl.dataset.focused = 'false';
+            }
+            nextEl.dataset.focused = 'true';
+            setActiveIndex(nextEl.id);
+            vGrid.scrollToItem(newIndex);
+            return;
+          }
+          attempts++;
+        }
+        // If nothing found
         setActiveIndex(undefined);
+      } finally {
+        isUpdatingFocus.current = false;
       }
-      vGrid.scrollToItem(newIndex);
     },
   ).current;
 
@@ -412,9 +436,18 @@ export const Row = ({
   </div>
 );
 
-export const RowSeparator = ({ style }: { style?: React.CSSProperties }) => (
-  <div style={style} role="separator"></div>
-);
+interface RowSeparatorProps {
+  label?: string;
+  style?: React.CSSProperties;
+}
+
+export const RowSeparator = ({ label, style }: RowSeparatorProps) => {
+  return (
+    <div style={{ ...style }} role="separator" className="separator-container">
+      {label ? <div className="separator-label">{label}</div> : null}
+    </div>
+  );
+};
 
 interface GridCellProps {
   id?: string;

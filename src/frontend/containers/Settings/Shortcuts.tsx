@@ -8,7 +8,7 @@ import { defaultHotkeyMap, IHotkeyMap } from '../../stores/UiStore';
 import { camelCaseToSpaced } from 'common/fmt';
 import { Button, IconSet, keyComboToString } from 'widgets';
 
-export const Shortcuts = observer(() => {
+export const Shortcuts = () => {
   return (
     <>
       <p>
@@ -18,7 +18,7 @@ export const Shortcuts = observer(() => {
       <HotkeyMapper />
     </>
   );
-});
+};
 
 export const HotkeyMapper = observer(() => {
   const { uiStore } = useStore();

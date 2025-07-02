@@ -130,6 +130,8 @@ type PersistentPreferenceFields =
   | 'outlinerHeights'
   | 'inspectorWidth'
   | 'isRememberSearchEnabled'
+  | 'recentlyUsedTagsMaxLength'
+  | 'recentlyUsedTags'
   // the following are only restored when isRememberSearchEnabled is enabled
   | 'isSlideMode'
   | 'firstItem'
@@ -139,6 +141,7 @@ type PersistentPreferenceFields =
 class UiStore {
   static MIN_OUTLINER_WIDTH = 192; // default of 12 rem
   static MIN_INSPECTOR_WIDTH = 288; // default of 18 rem
+  static MAX_RECENTLY_USED_TAGS = 40;
 
   private readonly rootStore: RootStore;
 
@@ -201,6 +204,10 @@ class UiStore {
   readonly tagSelection = observable(new Set<ClientTag>());
 
   readonly searchCriteriaList = observable<ClientFileSearchCriteria>([]);
+
+  //recently used tags feature
+  @observable recentlyUsedTagsMaxLength: number = 10;
+  readonly recentlyUsedTags = observable<ClientTag>([]);
 
   @observable thumbnailDirectory: string = '';
   @observable importDirectory: string = ''; // for browser extension. Must be a (sub-folder of a) Location
@@ -600,6 +607,46 @@ class UiStore {
     this.searchMatchAny = !this.searchMatchAny;
   }
 
+  /////////////////// Recently used Tags //////////////////
+
+  @action.bound setRecentlyUsedTagsMaxLength(val: number): void {
+    this.recentlyUsedTagsMaxLength = Math.max(0, Math.min(UiStore.MAX_RECENTLY_USED_TAGS, val));
+  }
+
+  private _debounceTagsSet = new Set<ClientTag>();
+  private _debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Custom debounced method that adds a tag to the recently used tags list,
+   * ensuring uniqueness and enforcing the maximum length constraint.
+   * Designed for efficiency during batch tag assignments to files.
+   */
+  @action.bound addRecentlyUsedTag(tag?: ClientTag): void {
+    if (this.recentlyUsedTagsMaxLength > 0 && tag) {
+      this._debounceTagsSet.add(tag);
+    }
+    if (this._debounceTimeout) {
+      clearTimeout(this._debounceTimeout);
+    }
+
+    this._debounceTimeout = setTimeout(
+      action(() => {
+        for (const t of this._debounceTagsSet) {
+          this.recentlyUsedTags.remove(t);
+          this.recentlyUsedTags.unshift(t);
+        }
+        // Apply max length constraint
+        while (this.recentlyUsedTags.length > this.recentlyUsedTagsMaxLength) {
+          this.recentlyUsedTags.pop();
+        }
+        // reset debounce
+        this._debounceTagsSet.clear();
+        this._debounceTimeout = null;
+      }),
+      // High debounce time for better UX, prevents list updates while the user is interacting
+      2000,
+    );
+  }
+
   /////////////////// Selection actions ///////////////////
   @action.bound selectFile(file?: ClientFile, clear?: boolean): void {
     if (clear === true) {
@@ -798,11 +845,20 @@ class UiStore {
 
   @action.bound addSearchCriteria(query: Exclude<ClientFileSearchCriteria, 'key'>): void {
     this.searchCriteriaList.push(query);
+    // if is a TagSearchCriteria add its tag to recent used tags
+    if (query instanceof ClientTagSearchCriteria) {
+      this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+    }
     this.viewQueryContent();
   }
 
   @action.bound addSearchCriterias(queries: Exclude<ClientFileSearchCriteria[], 'key'>): void {
     this.searchCriteriaList.push(...queries);
+    for (const query of queries) {
+      if (query instanceof ClientTagSearchCriteria) {
+        this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+      }
+    }
     this.viewQueryContent();
   }
 
@@ -845,6 +901,9 @@ class UiStore {
 
   @action.bound replaceSearchCriteria(query: Exclude<ClientFileSearchCriteria, 'key'>): void {
     this.replaceSearchCriterias([query]);
+    if (query instanceof ClientTagSearchCriteria) {
+      this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+    }
   }
 
   @action.bound replaceSearchCriterias(queries: Exclude<ClientFileSearchCriteria[], 'key'>): void {
@@ -877,6 +936,9 @@ class UiStore {
       (tag) => new ClientTagSearchCriteria('tags', tag.id),
     );
     this.addSearchCriterias(newCrits);
+    for (const tag of this.tagSelection) {
+      this.addRecentlyUsedTag(tag);
+    }
     this.clearTagSelection();
   }
 
@@ -884,6 +946,9 @@ class UiStore {
     this.replaceSearchCriterias(
       Array.from(this.tagSelection, (tag) => new ClientTagSearchCriteria('tags', tag.id)),
     );
+    for (const tag of this.tagSelection) {
+      this.addRecentlyUsedTag(tag);
+    }
     this.clearTagSelection();
   }
 
@@ -1046,6 +1111,14 @@ class UiStore {
         if (prefs.inheritedTagsVisibilityMode) {
           this.setInheritedTagsVisibilityMode(prefs.inheritedTagsVisibilityMode);
         }
+        if (prefs.recentlyUsedTagsMaxLength) {
+          this.setRecentlyUsedTagsMaxLength(prefs.recentlyUsedTagsMaxLength);
+        }
+        if (prefs.recentlyUsedTags) {
+          this.recentlyUsedTags.replace(
+            Array.from(this.rootStore.tagStore.getTags(prefs.recentlyUsedTags)),
+          );
+        }
         this.isThumbnailFilenameOverlayEnabled = Boolean(prefs.isThumbnailFilenameOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.isThumbnailResolutionOverlayEnabled = Boolean(prefs.isThumbnailResolutionOverlayEnabled ?? false); // eslint-disable-line prettier/prettier
         this.areFileEditorsDocked = Boolean(prefs.areFileEditorsDocked ?? false);
@@ -1126,6 +1199,8 @@ class UiStore {
       firstItem: this.firstItem,
       searchMatchAny: this.searchMatchAny,
       searchCriteriaList: this.searchCriteriaList.map((c) => c.serialize(this.rootStore)),
+      recentlyUsedTags: Array.from(this.recentlyUsedTags, (t) => t.id),
+      recentlyUsedTagsMaxLength: this.recentlyUsedTagsMaxLength,
     };
     return preferences;
   }

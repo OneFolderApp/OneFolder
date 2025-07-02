@@ -10,6 +10,7 @@ import { ImageFormatPicker } from './ImageFormatPicker';
 import { ImportExport } from './ImportExport';
 import { Shortcuts } from './Shortcuts';
 import { StartupBehavior } from './StartupBehavior';
+import { UsagePreferences } from './UsagePreferences';
 
 const Settings = () => {
   const { uiStore } = useStore();
@@ -44,6 +45,10 @@ const Tabs = () => {
     {
       label: 'Appearance',
       content: Appearance,
+    },
+    {
+      label: 'Usage Preferences',
+      content: UsagePreferences,
     },
     {
       label: 'Keyboard Shortcuts',

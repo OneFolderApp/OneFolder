@@ -13,6 +13,7 @@ import React, {
 import { GridCell, IconButton, IconSet, Row, Tag } from 'widgets';
 import {
   RowProps,
+  RowSeparator,
   useVirtualizedGridFocus,
   VirtualizedGrid,
   VirtualizedGridHandle,
@@ -25,6 +26,8 @@ import { useComputed } from '../hooks/mobx';
 import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 import { Placement } from '@floating-ui/core';
+import { CREATE_OPTION } from './FileTagsEditor';
+import { computed } from 'mobx';
 
 export interface TagSelectorProps {
   selection: ClientTag[] | [ClientTag, boolean][];
@@ -282,98 +285,126 @@ const SuggestedTagsList = observer(
       renderCreateOption,
       suggestionsUpdateDependency,
     } = props;
-    const { tagStore } = useStore();
+    const { tagStore, uiStore } = useStore();
 
     const { suggestions, widestItem } = useMemo(
-      () => {
-        if (query.length === 0) {
-          let widest = undefined;
-          const matches: ClientTag[] = [];
-          for (const tag of selectionMap.keys()) {
-            matches.push(tag);
-            widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
+      () =>
+        computed(() => {
+          if (query.length === 0) {
+            let widest = undefined;
+            const matches: (ClientTag | ReactElement<RowProps> | string)[] = [];
+            // Add recently used tags.
+            if (uiStore.recentlyUsedTags.length > 0) {
+              matches.push('Recently used tags');
+              for (const tag of uiStore.recentlyUsedTags) {
+                matches.push(tag);
+                widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
+              }
+              if (selectionMap.size > 0) {
+                matches.push('Assigned tags');
+              }
+            }
+            for (const tag of selectionMap.keys()) {
+              matches.push(tag);
+              widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
+            }
+            if (selectionMap.size === 0 && uiStore.recentlyUsedTags.length === 0) {
+              matches.push(
+                <Row key="empty-message" value="Type to search tags...&nbsp;&nbsp;"></Row>,
+              );
+            }
+            return { suggestions: matches, widestItem: widest };
+          } else {
+            let widest = undefined;
+            const textLower = query.toLowerCase();
+            const exactMatches: ClientTag[] = [];
+            const otherMatches: ClientTag[] = [];
+            for (const tag of tagStore.tagList) {
+              let validFlag = false;
+              if (!filter(tag)) {
+                continue;
+              }
+              const nameLower = tag.name.toLowerCase();
+              if (nameLower === textLower) {
+                exactMatches.push(tag);
+                validFlag = true;
+              } else if (nameLower.includes(textLower)) {
+                otherMatches.push(tag);
+                validFlag = true;
+              }
+              if (validFlag) {
+                widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
+              }
+            }
+            // Add create option
+            const createOptionItems = (function () {
+              if (exactMatches.length === 0 && otherMatches.length === 0) {
+                const createOption = renderCreateOption?.(query, resetTextBox);
+                return Array.isArray(createOption)
+                  ? createOption
+                  : createOption
+                  ? [createOption]
+                  : [];
+              }
+              return [];
+            })();
+            // Bring exact matches to the top of the suggestions. This helps find tags with short names
+            // that would otherwise get buried under partial matches if they appeared lower in the list.
+            return {
+              suggestions: [...exactMatches, ...otherMatches, ...createOptionItems],
+              widestItem: widest,
+            };
           }
-          return { suggestions: matches, widestItem: widest };
-        } else {
-          let widest = undefined;
-          const textLower = query.toLowerCase();
-          const exactMatches: ClientTag[] = [];
-          const otherMatches: ClientTag[] = [];
-          for (const tag of tagStore.tagList) {
-            let validFlag = false;
-            if (!filter(tag)) {
-              continue;
-            }
-            const nameLower = tag.name.toLowerCase();
-            if (nameLower === textLower) {
-              exactMatches.push(tag);
-              validFlag = true;
-            } else if (nameLower.includes(textLower)) {
-              otherMatches.push(tag);
-              validFlag = true;
-            }
-            if (validFlag) {
-              widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
-            }
-          }
-          // Bring exact matches to the top of the suggestions. This helps find tags with short names
-          // that would otherwise get buried under partial matches if they appeared lower in the list.
-          return {
-            suggestions: [...exactMatches, ...otherMatches],
-            widestItem: widest,
-          };
-        }
-      },
+        }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [query, tagStore.tagList, filter, suggestionsUpdateDependency],
-    );
+      [
+        query,
+        tagStore.tagList,
+        uiStore.recentlyUsedTags,
+        renderCreateOption,
+        filter,
+        suggestionsUpdateDependency,
+      ],
+    ).get();
 
     const isSelected = useCallback(
       (tag: ClientTag) => selectionMap.get(tag) ?? false,
       [selectionMap],
     );
-    const row = useMemo(
-      () => createRowRenderer({ isSelected, toggleSelection, id }),
+    const TagRow = useMemo(
+      () => createTagRowRenderer({ isSelected, toggleSelection, id }),
       [isSelected, toggleSelection, id],
     );
 
-    let specialItems: React.ReactElement<RowProps>[] = [];
-    if (suggestions.length === 0) {
-      if (query.length > 0) {
-        const result = renderCreateOption?.(query, resetTextBox);
-        specialItems = Array.isArray(result) ? result : result ? [result] : [];
-      } else {
-        specialItems = [<Row key="empty-message" value="Type to select tags&nbsp;&nbsp;"></Row>];
-      }
-    }
+    const row = useMemo(() => {
+      const row = (
+        rowProps: VirtualizedGridRowProps<ClientTag | ReactElement<RowProps> | string>,
+      ) => {
+        const item = rowProps.data[rowProps.index];
+        if (React.isValidElement(item)) {
+          const { style, index } = rowProps;
+          return React.cloneElement(item, { style, index });
+        } else if (typeof item === 'string') {
+          const { position, top, height } = rowProps.style ?? {};
+          return <RowSeparator label={item} style={{ position, top, height }} />;
+        } else {
+          return <TagRow {...(rowProps as VirtualizedGridRowProps<ClientTag>)} />;
+        }
+      };
+      return row;
+    }, [TagRow]);
 
     return (
       <>
-        {suggestions.length > 0 ? (
-          <VirtualizedGrid
-            ref={ref}
-            id={id}
-            itemData={suggestions}
-            sampleItem={widestItem}
-            multiselectable
-            itemsInView={10}
-            children={row}
-          />
-        ) : (
-          <VirtualizedGrid
-            ref={ref}
-            id={id}
-            itemData={specialItems}
-            sampleItem={specialItems[0]}
-            multiselectable
-            itemsInView={10}
-          >
-            {({ index, data }) => {
-              const item = data[index];
-              return item;
-            }}
-          </VirtualizedGrid>
-        )}
+        <VirtualizedGrid
+          ref={ref}
+          id={id}
+          itemData={suggestions}
+          sampleItem={widestItem}
+          multiselectable
+          itemsInView={10}
+          children={row}
+        />
       </>
     );
   }),
@@ -386,7 +417,7 @@ interface VirtualizableTagOption {
   onContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
 }
 
-export function createRowRenderer({
+export function createTagRowRenderer({
   isSelected,
   toggleSelection,
   id,

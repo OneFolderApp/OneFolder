@@ -152,6 +152,7 @@ export class ClientFile {
     const hasTag = this.tags.has(tag);
     if (!hasTag) {
       this.tags.add(tag);
+      this.store.addRecentlyUsedTag(tag);
       tag.incrementFileCount();
 
       if (this.tags.size === 1) {

@@ -173,7 +173,11 @@ export const SlideFileViewerMenuItems = observer(({ file }: { file: ClientFile }
 
   return (
     <>
-      <MenuItem onClick={handleCopyToClipboard} text="Copy" icon={IconSet.COPY} />
+      <MenuItem
+        onClick={handleCopyToClipboard}
+        text="Copy image to clipboard"
+        icon={IconSet.COPY}
+      />
       <MenuItem
         onClick={handlePreviewWindow}
         text="Open In Preview Window"

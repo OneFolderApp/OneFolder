@@ -1,4 +1,4 @@
-import { shell } from 'electron';
+import { clipboard, nativeImage, shell } from 'electron';
 import fse from 'fs-extra';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
@@ -15,6 +15,7 @@ import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
 import { IExpansionState } from '../containers/types';
 import { ROOT_TAG_ID } from 'src/api/tag';
+import { AppToaster } from '../components/Toaster';
 
 export const enum ViewMethod {
   List,
@@ -432,26 +433,38 @@ class UiStore {
     if (file.isBroken) {
       return;
     }
+    const copyToastKey = 'copy-toast';
 
     try {
+      AppToaster.show({ message: 'Copying image to clipboard...', timeout: 60000 }, copyToastKey);
       const src = await this.rootStore.imageLoader.getImageSrc(file);
       if (src !== undefined) {
-        const image = new Image();
-        image.src = encodeFilePath(src);
-        const canvas = new OffscreenCanvas(image.width, image.height);
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const ctx2D = canvas.getContext('2d');
-        if (!ctx2D) {
-          throw new Error('Context2D not available!');
+        let buffer: Buffer;
+        if (src.startsWith('blob:')) {
+          // use blob data
+          const blob = await fetch(src).then((r) => r.blob());
+          buffer = Buffer.from(await blob.arrayBuffer());
+        } else {
+          // read image from file system
+          buffer = await fse.readFile(src);
         }
-        ctx2D.drawImage(image, 0, 0);
-        const blob = await canvas.convertToBlob({ type: 'image/png' });
-        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        const image = nativeImage.createFromBuffer(buffer);
+        if (image.isEmpty()) {
+          throw new Error('No se pudo cargar la imagen en nativeImage');
+        }
+        clipboard.writeImage(image);
+        AppToaster.show(
+          { type: 'success', message: 'Image copied to clipboard.', timeout: 2000 },
+          copyToastKey,
+        );
       } else {
         throw new Error('Failed to get image data.');
       }
     } catch (e) {
+      AppToaster.show(
+        { type: 'error', message: 'Failed to copy image to clipboard.', timeout: 4000 },
+        copyToastKey,
+      );
       console.error('Could not copy image to clipboard', e);
     }
   }

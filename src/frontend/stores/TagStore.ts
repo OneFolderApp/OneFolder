@@ -61,6 +61,10 @@ class TagStore {
     return tags;
   }
 
+  addRecentlyUsedTag(tag: ClientTag): void {
+    this.rootStore.uiStore.addRecentlyUsedTag(tag);
+  }
+
   @computed get root(): ClientTag {
     const root = this.tagGraph.get(ROOT_TAG_ID);
     if (!root) {

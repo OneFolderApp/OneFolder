@@ -13,7 +13,7 @@ import {
   VirtualizedGridRowProps,
 } from 'widgets/combobox/Grid';
 import { IconSet } from 'widgets/icons';
-import { createRowRenderer } from './TagSelector';
+import { createTagRowRenderer } from './TagSelector';
 import { useStore } from '../contexts/StoreContext';
 import { ClientFile } from '../entities/File';
 import { ClientTag } from '../entities/Tag';
@@ -221,7 +221,7 @@ export const FileTagsEditor = observer(() => {
   );
 });
 
-const CREATE_OPTION = Symbol('placeholder');
+export const CREATE_OPTION = Symbol('tag_create_option');
 
 interface MatchingTagsListProps {
   inputText: string;
@@ -242,10 +242,22 @@ const MatchingTagsList = observer(
         computed(() => {
           if (inputText.length === 0) {
             let widest = undefined;
-            const matches: (symbol | ClientTag)[] = [];
+            // string matches creates separators
+            const matches: (symbol | ClientTag | string)[] = [];
+            // Add recently used tags.
+            if (uiStore.recentlyUsedTags.length > 0) {
+              matches.push('Recently used tags');
+              for (const tag of uiStore.recentlyUsedTags) {
+                matches.push(tag);
+                widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
+              }
+              if (counter.get().size > 0) {
+                matches.push('Assigned tags');
+              }
+            }
             for (const tag of counter.get().keys()) {
               matches.push(tag);
-              widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
+              widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
             }
             // Always append CREATE_OPTION to render the create option component.
             matches.push(CREATE_OPTION);
@@ -266,19 +278,23 @@ const MatchingTagsList = observer(
                 validFlag = true;
               }
               if (validFlag) {
-                widest = widest ? (tag.path.length > widest.path.length ? tag : widest) : tag;
+                widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
               }
             }
             // Bring exact matches to the top of the suggestions. This helps find tags with short names
             // that would otherwise get buried under partial matches if they appeared lower in the list.
             // Always append CREATE_OPTION to render the create option component.
+            const createOptionMatches =
+              exactMatches.length > 0 || otherMatches.length > 0
+                ? ['', CREATE_OPTION]
+                : [CREATE_OPTION];
             return {
-              matches: [...exactMatches, ...otherMatches, CREATE_OPTION],
+              matches: [...exactMatches, ...otherMatches, ...createOptionMatches],
               widestItem: widest,
             };
           }
         }),
-      [counter, inputText, tagStore.tagList],
+      [counter, inputText, tagStore.tagList, uiStore.recentlyUsedTags],
     ).get();
 
     const toggleSelection = useRef(
@@ -298,7 +314,7 @@ const MatchingTagsList = observer(
     const VirtualizableTagOption = useMemo(
       () =>
         observer(
-          createRowRenderer({
+          createTagRowRenderer({
             id: POPUP_ID,
             isSelected: isSelected,
             toggleSelection: toggleSelection,
@@ -325,12 +341,17 @@ const MatchingTagsList = observer(
     }, [inputText, matches.length, resetTextBox]);
 
     const row = useMemo(() => {
-      const row = (rowProps: VirtualizedGridRowProps<ClientTag | symbol>) =>
-        rowProps.data[rowProps.index] !== CREATE_OPTION ? (
-          <VirtualizableTagOption {...(rowProps as VirtualizedGridRowProps<ClientTag>)} />
-        ) : (
-          <VirtualizableCreateOption {...(rowProps as VirtualizedGridRowProps<symbol>)} />
-        );
+      const row = (rowProps: VirtualizedGridRowProps<ClientTag | symbol | string>) => {
+        const item = rowProps.data[rowProps.index];
+        if (item === CREATE_OPTION) {
+          return <VirtualizableCreateOption {...(rowProps as VirtualizedGridRowProps<symbol>)} />;
+        } else if (typeof item === 'string') {
+          const { position, top, height } = rowProps.style ?? {};
+          return <RowSeparator label={item} style={{ position, top, height }} />;
+        } else {
+          return <VirtualizableTagOption {...(rowProps as VirtualizedGridRowProps<ClientTag>)} />;
+        }
+      };
       return row;
     }, [VirtualizableCreateOption, VirtualizableTagOption]);
 
@@ -370,21 +391,14 @@ const CreateOption = ({ inputText, hasMatches, resetTextBox, style, index }: Cre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputText, resetTextBox]);
 
-  const separatorTop = style
-    ? typeof style.top === 'number'
-      ? `calc(${style.top}px + 1rem)`
-      : `calc(${style.top} + 1rem)`
-    : undefined;
-
   return (
     <>
       {inputText.length > 0 ? (
         <>
-          {hasMatches && <RowSeparator style={{ position: style?.position, top: style?.top }} />}
           <Row
             id="tag-editor-create-option"
             index={index}
-            style={{ ...style, top: hasMatches ? separatorTop : style?.top }}
+            style={style}
             selected={false}
             value={`Create Tag "${inputText}"`}
             onClick={createTag}

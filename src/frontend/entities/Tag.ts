@@ -221,6 +221,14 @@ export class ClientTag {
     return Array.from(this.getAncestors(), (t) => t.name).reverse();
   }
 
+  @computed get pathCharLength(): number {
+    let total = 0;
+    for (let i = 0; i < this.path.length; i++) {
+      total += this.path[i].length;
+    }
+    return total;
+  }
+
   get isSelected(): boolean {
     return this.store.isSelected(this);
   }
@@ -344,6 +352,7 @@ export class ClientTag {
     for (const tag of newTags) {
       if (!this.impliedTags.includes(tag)) {
         this.addImpliedTag(tag);
+        this.store.addRecentlyUsedTag(tag);
       }
     }
   }
@@ -361,6 +370,7 @@ export class ClientTag {
     for (const tag of newTags) {
       if (!this._impliedByTags.includes(tag)) {
         tag.addImpliedTag(this);
+        this.store.addRecentlyUsedTag(tag);
       }
     }
   }

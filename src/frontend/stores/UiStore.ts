@@ -613,15 +613,38 @@ class UiStore {
     this.recentlyUsedTagsMaxLength = Math.max(0, Math.min(UiStore.MAX_RECENTLY_USED_TAGS, val));
   }
 
-  /**  Adds a tag as recently used tags, keeping the max length constraint. */
+  private _debounceTagsSet = new Set<ClientTag>();
+  private _debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Custom debounced method that adds a tag to the recently used tags list,
+   * ensuring uniqueness and enforcing the maximum length constraint.
+   * Designed for efficiency during batch tag assignments to files.
+   */
   @action.bound addRecentlyUsedTag(tag?: ClientTag): void {
-    if (tag) {
-      this.recentlyUsedTags.remove(tag);
-      this.recentlyUsedTags.unshift(tag);
+    if (this.recentlyUsedTagsMaxLength > 0 && tag) {
+      this._debounceTagsSet.add(tag);
     }
-    while (this.recentlyUsedTags.length > this.recentlyUsedTagsMaxLength) {
-      this.recentlyUsedTags.pop();
+    if (this._debounceTimeout) {
+      clearTimeout(this._debounceTimeout);
     }
+
+    this._debounceTimeout = setTimeout(
+      action(() => {
+        for (const t of this._debounceTagsSet) {
+          this.recentlyUsedTags.remove(t);
+          this.recentlyUsedTags.unshift(t);
+        }
+        // Apply max length constraint
+        while (this.recentlyUsedTags.length > this.recentlyUsedTagsMaxLength) {
+          this.recentlyUsedTags.pop();
+        }
+        // reset debounce
+        this._debounceTagsSet.clear();
+        this._debounceTimeout = null;
+      }),
+      // High debounce time for better UX, prevents list updates while the user is interacting
+      2000,
+    );
   }
 
   /////////////////// Selection actions ///////////////////
@@ -822,11 +845,20 @@ class UiStore {
 
   @action.bound addSearchCriteria(query: Exclude<ClientFileSearchCriteria, 'key'>): void {
     this.searchCriteriaList.push(query);
+    // if is a TagSearchCriteria add its tag to recent used tags
+    if (query instanceof ClientTagSearchCriteria) {
+      this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+    }
     this.viewQueryContent();
   }
 
   @action.bound addSearchCriterias(queries: Exclude<ClientFileSearchCriteria[], 'key'>): void {
     this.searchCriteriaList.push(...queries);
+    for (const query of queries) {
+      if (query instanceof ClientTagSearchCriteria) {
+        this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+      }
+    }
     this.viewQueryContent();
   }
 
@@ -869,6 +901,9 @@ class UiStore {
 
   @action.bound replaceSearchCriteria(query: Exclude<ClientFileSearchCriteria, 'key'>): void {
     this.replaceSearchCriterias([query]);
+    if (query instanceof ClientTagSearchCriteria) {
+      this.addRecentlyUsedTag(this.rootStore.tagStore.get(query.value ?? ''));
+    }
   }
 
   @action.bound replaceSearchCriterias(queries: Exclude<ClientFileSearchCriteria[], 'key'>): void {
@@ -901,6 +936,9 @@ class UiStore {
       (tag) => new ClientTagSearchCriteria('tags', tag.id),
     );
     this.addSearchCriterias(newCrits);
+    for (const tag of this.tagSelection) {
+      this.addRecentlyUsedTag(tag);
+    }
     this.clearTagSelection();
   }
 
@@ -908,6 +946,9 @@ class UiStore {
     this.replaceSearchCriterias(
       Array.from(this.tagSelection, (tag) => new ClientTagSearchCriteria('tags', tag.id)),
     );
+    for (const tag of this.tagSelection) {
+      this.addRecentlyUsedTag(tag);
+    }
     this.clearTagSelection();
   }
 

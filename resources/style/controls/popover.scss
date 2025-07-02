@@ -115,7 +115,7 @@ dialog[role='alertdialog'] {
 // DIALOG UNTIL HERE
 
 [data-popover] {
-  z-index: 1;
+  z-index: 10;
 
   color: var(--text-color);
   background: var(--background-color-alt);

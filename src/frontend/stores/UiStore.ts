@@ -210,6 +210,10 @@ class UiStore {
   @observable recentlyUsedTagsMaxLength: number = 10;
   readonly recentlyUsedTags = observable<ClientTag>([]);
 
+  //// tag clipboard feature ////
+  // No need to be observable because it's only used internally
+  private tagClipboard: ClientTag[][] = [];
+
   @observable thumbnailDirectory: string = '';
   @observable importDirectory: string = ''; // for browser extension. Must be a (sub-folder of a) Location
 
@@ -424,7 +428,7 @@ class UiStore {
     }
   }
 
-  @action.bound async copyToClipboard(): Promise<void> {
+  @action.bound async copyImageToClipboard(): Promise<void> {
     if (this.fileSelection.size === 0) {
       return;
     }
@@ -681,6 +685,54 @@ class UiStore {
       // High debounce time for better UX, prevents list updates while the user is interacting
       2000,
     );
+  }
+
+  /////////////////// Tag Clipboard actions ///////////////
+
+  // Since contextual menus are recreated each time, this does not need to be a computed value.
+  // If in the future this method is used within observers or other reactive contexts,
+  // consider making `this.tagClipboard` and the methods in this section observable/actions as well.
+  isTagClipboardEmpty(): boolean {
+    return this.tagClipboard.every((subArray) => subArray.length === 0);
+  }
+
+  clearTagClipboard(): void {
+    this.tagClipboard = [];
+  }
+
+  @action.bound copyTagsToClipboard(): void {
+    this.tagClipboard = Array.from(this.fileSelection).map((file) => [...file.tags]);
+    const allTagNames = this.tagClipboard
+      .flatMap((tags) => tags)
+      .map((tag) => tag.name)
+      .join(', ');
+    clipboard.writeText(allTagNames);
+    AppToaster.show({
+      message: `Copied tags from ${this.tagClipboard.length} files.`,
+      timeout: 3000,
+    });
+  }
+
+  @action.bound pasteTags(): void {
+    const clipboard = this.tagClipboard.slice();
+    // If the file selection has the same size as the amount of tag groups copied,
+    // Copy each tag group into their parallel file.
+    if (this.fileSelection.size === clipboard.length) {
+      let index = 0;
+      this.fileSelection.forEach((file) => {
+        file.addTags(clipboard[index]);
+        index++;
+      });
+    } else {
+      // Otherwise, assign the sum of all tag groups to each file.
+      const allTags = new Set<ClientTag>();
+      for (let i = 0; i < clipboard.length; i++) {
+        for (let j = 0; j < clipboard[i].length; j++) {
+          allTags.add(clipboard[i][j]);
+        }
+      }
+      this.fileSelection.forEach((file) => file.addTags(allTags));
+    }
   }
 
   /////////////////// Selection actions ///////////////////

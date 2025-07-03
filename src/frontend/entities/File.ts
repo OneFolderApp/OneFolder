@@ -161,6 +161,22 @@ export class ClientFile {
     }
   }
 
+  @action.bound addTags(tagsToAdd: ClientTag[] | Set<ClientTag>): void {
+    const wasEmpty = this.tags.size === 0;
+
+    tagsToAdd.forEach((tag) => {
+      if (!this.tags.has(tag)) {
+        this.tags.add(tag);
+        this.store.addRecentlyUsedTag(tag);
+        tag.incrementFileCount();
+      }
+    });
+
+    if (wasEmpty && this.tags.size > 0) {
+      this.store.decrementNumUntaggedFiles();
+    }
+  }
+
   @action.bound setExtraProperty(
     extraProperty: ClientExtraProperty,
     value?: ExtraPropertyValue,

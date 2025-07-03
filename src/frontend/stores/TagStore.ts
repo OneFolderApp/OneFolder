@@ -160,6 +160,7 @@ class TagStore {
       ids.push(t.id);
     }
     await this.backend.removeTags(ids);
+    uiStore.clearTagClipboard();
     fileStore.refetch();
   }
 
@@ -188,6 +189,7 @@ class TagStore {
     for (const tag of tags) {
       await this.backend.removeTags(remove(tag));
     }
+    uiStore.clearTagClipboard();
     fileStore.refetch();
   }
 

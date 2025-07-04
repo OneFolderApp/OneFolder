@@ -334,7 +334,7 @@ export const ThumbnailTags = observer(
         onDrop={eventManager.drop}
         onDragEnd={eventManager.dragEnd}
       >
-        {file.inheritedTags.map((tag) => (
+        {file.sortedInheritedTags.map((tag) => (
           <TagWithHint key={tag.id} tag={tag} onContextMenu={eventManager.showTagContextMenu} />
         ))}
       </span>

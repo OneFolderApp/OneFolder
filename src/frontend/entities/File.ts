@@ -125,23 +125,42 @@ export class ClientFile {
    * Gets his tags and all inherithed tags from parent and implied tags from his tags.
    */
   @computed get inheritedTags(): ClientTag[] {
-    const inheritedTagSet = new Set<ClientTag>();
+    const inheritedTags: ClientTag[] = [];
     const visited = new Set<ClientTag>();
     for (const tag of this.tags) {
       // If the tag is already on the set all it's ancestors are too so skip it.
-      if (!inheritedTagSet.has(tag)) {
-        for (const inheritedTag of tag.getImpliedAncestors(visited)) {
-          // If the tag should be shown add it to the set.
-          if (inheritedTag.shouldShowWhenInherited) {
-            inheritedTagSet.add(inheritedTag);
-          }
+      if (visited.has(tag)) {
+        continue;
+      }
+      const ancestors = tag.impliedAncestors;
+      for (let i = 0; i < ancestors.length; i++) {
+        const inheritedTag = ancestors[i];
+        // if a inheritedTag is already visited, skip his whole impliedAncestors.
+        if (visited.has(inheritedTag)) {
+          i += inheritedTag.impliedAncestors.length - 1;
+          continue;
+        }
+        // If the tag should be shown add it to the set.
+        if (inheritedTag.shouldShowWhenInherited) {
+          visited.add(inheritedTag);
+          inheritedTags.push(inheritedTag);
         }
       }
       // Ensure to add the explicit assigned tags,
       // it might have been excluded by not passing inheritedTag.shouldShowWhenInherited
-      inheritedTagSet.add(tag);
+      if (!visited.has(tag)) {
+        visited.add(tag);
+        inheritedTags.push(tag);
+      }
     }
-    return Array.from(inheritedTagSet).sort((a, b) => a.flatIndex - b.flatIndex);
+    return inheritedTags;
+  }
+
+  /**
+   * computed property to centralize sorting.
+   */
+  @computed get sortedInheritedTags(): ClientTag[] {
+    return this.inheritedTags.slice(0).sort((a, b) => a.flatIndex - b.flatIndex);
   }
 
   @action.bound setThumbnailPath(thumbnailPath: string): void {

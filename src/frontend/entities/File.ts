@@ -174,7 +174,7 @@ export class ClientFile {
       this.store.addRecentlyUsedTag(tag);
       tag.incrementFileCount();
 
-      if (this.tags.size === 1) {
+      if (this.tags.size === 1 && !this.isBroken) {
         this.store.decrementNumUntaggedFiles();
       }
     }
@@ -191,7 +191,7 @@ export class ClientFile {
       }
     });
 
-    if (wasEmpty && this.tags.size > 0) {
+    if (wasEmpty && this.tags.size > 0 && !this.isBroken) {
       this.store.decrementNumUntaggedFiles();
     }
   }

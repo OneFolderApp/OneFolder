@@ -69,6 +69,7 @@ class FileStore {
   private readonly index = new Map<ID, number>();
 
   private filesToSave: Map<ID, FileDTO> = new Map();
+  @observable isSaving: boolean = false;
 
   /** The origin of the current files that are shown */
   @observable private content: Content = Content.All;
@@ -722,6 +723,10 @@ class FileStore {
     return loc;
   }
 
+  @action.bound setIsSaving(val: boolean): void {
+    this.isSaving = val;
+  }
+
   save(file: FileDTO): void {
     file.dateModified = new Date();
 
@@ -730,11 +735,13 @@ class FileStore {
     // these can be batched by collecting the changes and debouncing the save operation
     this.filesToSave.set(file.id, file);
     this.debouncedSaveFilesToSave();
+    this.setIsSaving(true);
   }
 
   private async saveFilesToSave() {
     await this.backend.saveFiles(Array.from(this.filesToSave.values()));
     this.filesToSave.clear();
+    this.setIsSaving(false);
   }
 
   @action recoverPersistentPreferences(): void {

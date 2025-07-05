@@ -125,6 +125,10 @@ export class ClientFile {
    * Gets his tags and all inherithed tags from parent and implied tags from his tags.
    */
   @computed get inheritedTags(): ClientTag[] {
+    if (this.store.InheritedTagsVisibilityMode === 'disabled') {
+      return Array.from(this.tags);
+    }
+
     const inheritedTags: ClientTag[] = [];
     const visited = new Set<ClientTag>();
     for (const tag of this.tags) {

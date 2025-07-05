@@ -25,6 +25,7 @@ import {
   ExtraProperties,
   ExtraPropertyValue,
 } from 'src/api/extraProperty';
+import { InheritedTagsVisibilityModeType } from './UiStore';
 
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
@@ -254,6 +255,10 @@ class FileStore {
         toastKey,
       );
     }
+  }
+
+  get InheritedTagsVisibilityMode(): InheritedTagsVisibilityModeType {
+    return this.rootStore.uiStore.inheritedTagsVisibilityMode;
   }
 
   @action private setContent(content: Content): void {

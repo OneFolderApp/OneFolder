@@ -69,6 +69,7 @@ class FileStore {
   private readonly index = new Map<ID, number>();
 
   private filesToSave: Map<ID, FileDTO> = new Map();
+  private pendingSaves: number = 0;
   @observable isSaving: boolean = false;
 
   /** The origin of the current files that are shown */
@@ -723,6 +724,17 @@ class FileStore {
     return loc;
   }
 
+  incrementPendingSaves(): void {
+    this.pendingSaves++;
+  }
+
+  decrementPendingSaves(): void {
+    if (this.pendingSaves === 0) {
+      throw new Error('Invalid Database State: Cannot have less than 0 pending saves.');
+    }
+    this.pendingSaves--;
+  }
+
   @action.bound setIsSaving(val: boolean): void {
     this.isSaving = val;
   }
@@ -739,9 +751,14 @@ class FileStore {
   }
 
   private async saveFilesToSave() {
-    await this.backend.saveFiles(Array.from(this.filesToSave.values()));
+    this.incrementPendingSaves();
+    const files = Array.from(this.filesToSave.values());
     this.filesToSave.clear();
-    this.setIsSaving(false);
+    await this.backend.saveFiles(files);
+    this.decrementPendingSaves();
+    if (this.pendingSaves === 0) {
+      this.setIsSaving(false);
+    }
   }
 
   @action recoverPersistentPreferences(): void {

@@ -174,6 +174,7 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
     if (!asyncOperationDone) {
       event.preventDefault();
       event.returnValue = false;
+      // TODO: Show a warning to prevent closing if rootStore.fileStore.isSaving is true.
       await rootStore.close();
       asyncOperationDone = true;
       console.log('async operation done, closing');

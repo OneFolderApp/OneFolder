@@ -6,6 +6,7 @@ import { Button } from 'widgets/button';
 import { Toast } from 'widgets/notifications';
 import { generateWidgetId } from 'widgets/utility';
 import { ID } from '../../api/id';
+import { useStore } from '../contexts/StoreContext';
 
 class ToastManager {
   readonly toastList = observable(new Array<IdentifiableToast>());
@@ -81,5 +82,13 @@ export const Toaster = observer(() => (
         type={type}
       />
     ))}
+    <SavingIndicator />
   </div>
 ));
+
+const SavingIndicator = observer(() => {
+  const {
+    fileStore: { isSaving },
+  } = useStore();
+  return <>{isSaving && <div className="saving-indicator"></div>}</>;
+});

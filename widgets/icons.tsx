@@ -97,7 +97,7 @@ import SORT_ALT from 'resources/icons/sort-alt.svg';
 import TAG_ADD from 'resources/icons/tag-add.svg';
 // import TAG_ADD_COLLECTION from 'resources/icons/tag-add-collection.svg';
 import TAG_BLANCO from 'resources/icons/tag-blanco.svg';
-// import TAG_GROUP_OPEN from 'resources/icons/tag-group-open.svg';
+import TAG_GROUP_OPEN from 'resources/icons/tag-group-open.svg';
 import TAG_GROUP from 'resources/icons/tag-group.svg';
 import TAG from 'resources/icons/tag.svg';
 import TAG_LINE from 'resources/icons/tag-line.svg';
@@ -203,7 +203,7 @@ const IconSet = {
   TAG_ADD: toSvg(TAG_ADD),
   // TAG_ADD_COLLECTION: toSvg(TAG_ADD_COLLECTION),
   TAG_BLANCO: toSvg(TAG_BLANCO),
-  // TAG_GROUP_OPEN: toSvg(TAG_GROUP_OPEN),
+  TAG_GROUP_OPEN: toSvg(TAG_GROUP_OPEN),
   TAG_GROUP: toSvg(TAG_GROUP),
   TAG: toSvg(TAG),
   TAG_LINE: toSvg(TAG_LINE),

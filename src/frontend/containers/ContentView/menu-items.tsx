@@ -18,6 +18,7 @@ import { ClientTag } from '../../entities/Tag';
 import { LocationTreeItemRevealer } from '../Outliner/LocationsPanel';
 import { TagsTreeItemRevealer } from '../Outliner/TagsPanel/TagsTree';
 import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
+import { isFileExtensionVideo } from 'common/fs';
 
 export const MissingFileMenuItems = observer(() => {
   const { uiStore, fileStore } = useStore();
@@ -60,15 +61,33 @@ export const FileViewerMenuItems = ({ file }: { file: ClientFile }) => {
     }
   };
 
+  const handleCopyImageToClipboard = () => {
+    uiStore.selectFile(file, true);
+    uiStore.copyImageToClipboard();
+  };
+
   return (
     <>
       <MenuItem onClick={handleViewFullSize} text="View at Full Size" icon={IconSet.SEARCH} />
+      <MenuItem
+        onClick={handleCopyImageToClipboard}
+        text="Copy Image to Clipboard"
+        icon={IconSet.COPY}
+        disabled={isFileExtensionVideo(file.extension)}
+      />
       <MenuItem
         onClick={handlePreviewWindow}
         text="Open In Preview Window"
         icon={IconSet.PREVIEW}
       />
       <MenuItem onClick={uiStore.openFileTagsEditor} text="Open Tag Selector" icon={IconSet.TAG} />
+      <MenuItem onClick={uiStore.copyTagsToClipboard} text="Copy Tags" icon={IconSet.TAG_GROUP} />
+      <MenuItem
+        onClick={uiStore.pasteTags}
+        text="Paste Tags"
+        icon={IconSet.TAG_GROUP_OPEN}
+        disabled={uiStore.isTagClipboardEmpty()}
+      />
       <MenuSubItem text="Search Similar Images..." icon={IconSet.MORE}>
         <MenuItem
           onClick={(e) =>
@@ -166,14 +185,36 @@ export const SlideFileViewerMenuItems = observer(({ file }: { file: ClientFile }
     uiStore.openPreviewWindow();
   };
 
-  const handleCopyToClipboard = () => {
+  const handleCopyImageToClipboard = () => {
     uiStore.selectFile(file, true);
-    uiStore.copyToClipboard();
+    uiStore.copyImageToClipboard();
+  };
+
+  const handleCopyTagsToClipboard = () => {
+    uiStore.selectFile(file, true);
+    uiStore.copyTagsToClipboard();
+  };
+
+  const handlePasteTags = () => {
+    uiStore.selectFile(file, true);
+    uiStore.pasteTags();
   };
 
   return (
     <>
-      <MenuItem onClick={handleCopyToClipboard} text="Copy" icon={IconSet.COPY} />
+      <MenuItem
+        onClick={handleCopyImageToClipboard}
+        text="Copy Image to Clipboard"
+        icon={IconSet.COPY}
+        disabled={isFileExtensionVideo(file.extension)}
+      />
+      <MenuItem onClick={handleCopyTagsToClipboard} text="Copy Tags" icon={IconSet.TAG_GROUP} />
+      <MenuItem
+        onClick={handlePasteTags}
+        text="Paste Tags"
+        icon={IconSet.TAG_GROUP_OPEN}
+        disabled={uiStore.isTagClipboardEmpty()}
+      />
       <MenuItem
         onClick={handlePreviewWindow}
         text="Open In Preview Window"

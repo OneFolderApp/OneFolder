@@ -56,7 +56,7 @@ const FileTags = observer(({ file }: IFileTagProp) => {
     return <></>;
   }
 
-  const isExplicitEntries = file.inheritedTags.map(
+  const isExplicitEntries = file.sortedInheritedTags.map(
     (t) => [t, file.tags.has(t)] as [ClientTag, boolean],
   );
 

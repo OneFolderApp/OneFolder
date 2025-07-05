@@ -65,3 +65,35 @@
     }
   }
 }
+
+.saving-indicator {
+  position: static;
+  z-index: 2;
+  margin-right: calc(var(--scrollbar-width));
+  margin-bottom: 1.1rem;
+  float: right;
+  width: 2rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: calc(0.25rem + 1px) solid transparent;
+  border-top-color: var(--background-color-selected);
+  border-right-color: var(--background-color-selected);
+  animation: 0.7s spin infinite linear;
+  pointer-events: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: calc(-0.25rem);
+    border-radius: 50%;
+    border: calc(0.25rem - 1px) solid transparent;
+    border-top-color: var(--accent-color);
+    border-right-color: var(--accent-color);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

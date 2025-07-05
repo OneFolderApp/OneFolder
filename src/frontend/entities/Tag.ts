@@ -216,6 +216,14 @@ export class ClientTag {
     return ancestors(this, 0, visited);
   }
 
+  @computed get impliedAncestors(): ClientTag[] {
+    const arr = [];
+    for (const val of this.getImpliedAncestors()) {
+      arr.push(val);
+    }
+    return arr;
+  }
+
   /** Returns the tags up the hierarchy from this tag, excluding the root tag */
   @computed get path(): string[] {
     return Array.from(this.getAncestors(), (t) => t.name).reverse();

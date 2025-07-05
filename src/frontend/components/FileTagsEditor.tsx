@@ -43,20 +43,31 @@ export const FileTagsEditor = observer(() => {
   }, [debounceSetDebQuery, inputText]);
 
   const counter = useComputed(() => {
-    // Count how often tags are used // Aded las bool value indicating if is an inherited tag -> should not show delete button;
+    const fileSelection = uiStore.fileSelection;
+    // Count how often tags are used // Aded last bool value indicating if is an explicit tag -> should show delete button;
     const counter = new Map<ClientTag, [number, boolean]>();
-    uiStore.fileSelection.forEach((file) => {
-      for (let j = 0; j < file.inheritedTags.length; j++) {
-        const tag = file.inheritedTags[j];
-        const counterTag = counter.get(tag);
-        const count = counterTag?.[0];
-        const isAlreadyExplicit = counterTag?.[1];
-        const isExplicit = file.tags.has(tag);
-        counter.set(tag, [count !== undefined ? count + 1 : 1, isAlreadyExplicit || isExplicit]);
+    for (const file of fileSelection) {
+      const explicitTags = file.tags;
+      const inheritedTags = file.inheritedTags;
+      for (let j = 0; j < inheritedTags.length; j++) {
+        const tag = inheritedTags[j];
+        const counterEntry = counter.get(tag);
+        if (counterEntry) {
+          counterEntry[0]++;
+          counterEntry[1] ||= explicitTags.has(tag);
+        } else {
+          counter.set(tag, [1, explicitTags.has(tag)]);
+        }
       }
-    });
-    return counter;
+    }
+    const sortedEntries = Array.from(counter.entries()).sort(
+      ([tagA], [tagB]) => tagA.flatIndex - tagB.flatIndex,
+    );
+    const sortedCounter = new Map(sortedEntries);
+    return sortedCounter;
   });
+  //read counter once to avoid losing it's cache if it is not used in any child
+  counter.get();
 
   const inputRef = useRef<HTMLInputElement>(null);
   // Autofocus

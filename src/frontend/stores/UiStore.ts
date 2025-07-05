@@ -1,10 +1,10 @@
-import { shell } from 'electron';
+import { clipboard, nativeImage, shell } from 'electron';
 import fse from 'fs-extra';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { maxNumberOfExternalFilesBeforeWarning } from 'common/config';
 import { clamp, notEmpty } from 'common/core';
-import { encodeFilePath } from 'common/fs';
+import { encodeFilePath, isNativeImageCompatible } from 'common/fs';
 import { ID } from '../../api/id';
 import { SearchCriteria } from '../../api/search-criteria';
 import { RendererMessenger } from '../../ipc/renderer';
@@ -15,6 +15,7 @@ import { comboMatches, getKeyCombo, parseKeyCombo } from '../hotkeyParser';
 import RootStore from './RootStore';
 import { IExpansionState } from '../containers/types';
 import { ROOT_TAG_ID } from 'src/api/tag';
+import { AppToaster } from '../components/Toaster';
 
 export const enum ViewMethod {
   List,
@@ -208,6 +209,10 @@ class UiStore {
   //recently used tags feature
   @observable recentlyUsedTagsMaxLength: number = 10;
   readonly recentlyUsedTags = observable<ClientTag>([]);
+
+  //// tag clipboard feature ////
+  // No need to be observable because it's only used internally
+  private tagClipboard: ClientTag[][] = [];
 
   @observable thumbnailDirectory: string = '';
   @observable importDirectory: string = ''; // for browser extension. Must be a (sub-folder of a) Location
@@ -423,35 +428,70 @@ class UiStore {
     }
   }
 
-  @action.bound async copyToClipboard(): Promise<void> {
+  @action.bound async copyImageToClipboard(): Promise<void> {
     if (this.fileSelection.size === 0) {
       return;
     }
-
     const file = Array.from(this.fileSelection)[0];
     if (file.isBroken) {
       return;
     }
+    const copyToastKey = 'copy-toast';
 
     try {
+      AppToaster.show({ message: 'Copying image to clipboard...', timeout: 60000 }, copyToastKey);
       const src = await this.rootStore.imageLoader.getImageSrc(file);
       if (src !== undefined) {
-        const image = new Image();
-        image.src = encodeFilePath(src);
-        const canvas = new OffscreenCanvas(image.width, image.height);
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const ctx2D = canvas.getContext('2d');
-        if (!ctx2D) {
-          throw new Error('Context2D not available!');
+        let buffer: Buffer;
+        if (isNativeImageCompatible(file.extension)) {
+          // read image from file system
+          buffer = await fse.readFile(src);
+        } else if (src.startsWith('blob:')) {
+          // use blob data
+          const blob = await fetch(src).then((r) => r.blob());
+          buffer = Buffer.from(await blob.arrayBuffer());
+        } else {
+          // try to convert into compatible type using canvas.
+          const image = new Image();
+          image.src = encodeFilePath(src);
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error('Failed to load image for canvas.'));
+          });
+          const canvas = new OffscreenCanvas(image.width, image.height);
+          const ctx2D = canvas.getContext('2d');
+          if (!ctx2D) {
+            throw new Error('Context2D not available!');
+          }
+          ctx2D.drawImage(image, 0, 0);
+          const blob = await canvas.convertToBlob({ type: 'image/png' });
+          buffer = Buffer.from(await blob.arrayBuffer());
         }
-        ctx2D.drawImage(image, 0, 0);
-        const blob = await canvas.convertToBlob({ type: 'image/png' });
-        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        const natImage = nativeImage.createFromBuffer(buffer);
+        if (natImage.isEmpty()) {
+          throw new Error('Could not load nativeImage');
+        }
+        clipboard.writeImage(natImage);
+        AppToaster.show(
+          { type: 'success', message: 'Image copied to clipboard.', timeout: 2000 },
+          copyToastKey,
+        );
       } else {
-        throw new Error('Failed to get image data.');
+        AppToaster.show(
+          {
+            type: 'error',
+            message: 'Failed to copy image to clipboard. (Extension is not supported.)',
+            timeout: 4000,
+          },
+          copyToastKey,
+        );
+        throw new Error('Failed to get image data. (Extension is not supported.)');
       }
     } catch (e) {
+      AppToaster.show(
+        { type: 'error', message: 'Failed to copy image to clipboard.', timeout: 4000 },
+        copyToastKey,
+      );
       console.error('Could not copy image to clipboard', e);
     }
   }
@@ -645,6 +685,54 @@ class UiStore {
       // High debounce time for better UX, prevents list updates while the user is interacting
       2000,
     );
+  }
+
+  /////////////////// Tag Clipboard actions ///////////////
+
+  // Since contextual menus are recreated each time, this does not need to be a computed value.
+  // If in the future this method is used within observers or other reactive contexts,
+  // consider making `this.tagClipboard` and the methods in this section observable/actions as well.
+  isTagClipboardEmpty(): boolean {
+    return this.tagClipboard.every((subArray) => subArray.length === 0);
+  }
+
+  clearTagClipboard(): void {
+    this.tagClipboard = [];
+  }
+
+  @action.bound copyTagsToClipboard(): void {
+    this.tagClipboard = Array.from(this.fileSelection).map((file) => [...file.tags]);
+    const allTagNames = this.tagClipboard
+      .flatMap((tags) => tags)
+      .map((tag) => tag.name)
+      .join(', ');
+    clipboard.writeText(allTagNames);
+    AppToaster.show({
+      message: `Copied tags from ${this.tagClipboard.length} files.`,
+      timeout: 3000,
+    });
+  }
+
+  @action.bound pasteTags(): void {
+    const clipboard = this.tagClipboard.slice();
+    // If the file selection has the same size as the amount of tag groups copied,
+    // Copy each tag group into their parallel file.
+    if (this.fileSelection.size === clipboard.length) {
+      let index = 0;
+      this.fileSelection.forEach((file) => {
+        file.addTags(clipboard[index]);
+        index++;
+      });
+    } else {
+      // Otherwise, assign the sum of all tag groups to each file.
+      const allTags = new Set<ClientTag>();
+      for (let i = 0; i < clipboard.length; i++) {
+        for (let j = 0; j < clipboard[i].length; j++) {
+          allTags.add(clipboard[i][j]);
+        }
+      }
+      this.fileSelection.forEach((file) => file.addTags(allTags));
+    }
   }
 
   /////////////////// Selection actions ///////////////////

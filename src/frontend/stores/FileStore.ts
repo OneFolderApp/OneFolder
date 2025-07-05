@@ -25,6 +25,7 @@ import {
   ExtraProperties,
   ExtraPropertyValue,
 } from 'src/api/extraProperty';
+import { InheritedTagsVisibilityModeType } from './UiStore';
 
 export const FILE_STORAGE_KEY = 'Allusion_File';
 
@@ -69,6 +70,8 @@ class FileStore {
   private readonly index = new Map<ID, number>();
 
   private filesToSave: Map<ID, FileDTO> = new Map();
+  private pendingSaves: number = 0;
+  @observable isSaving: boolean = false;
 
   /** The origin of the current files that are shown */
   @observable private content: Content = Content.All;
@@ -252,6 +255,10 @@ class FileStore {
         toastKey,
       );
     }
+  }
+
+  get InheritedTagsVisibilityMode(): InheritedTagsVisibilityModeType {
+    return this.rootStore.uiStore.inheritedTagsVisibilityMode;
   }
 
   @action private setContent(content: Content): void {
@@ -722,6 +729,21 @@ class FileStore {
     return loc;
   }
 
+  incrementPendingSaves(): void {
+    this.pendingSaves++;
+  }
+
+  decrementPendingSaves(): void {
+    if (this.pendingSaves === 0) {
+      throw new Error('Invalid Database State: Cannot have less than 0 pending saves.');
+    }
+    this.pendingSaves--;
+  }
+
+  @action.bound setIsSaving(val: boolean): void {
+    this.isSaving = val;
+  }
+
   save(file: FileDTO): void {
     file.dateModified = new Date();
 
@@ -730,11 +752,18 @@ class FileStore {
     // these can be batched by collecting the changes and debouncing the save operation
     this.filesToSave.set(file.id, file);
     this.debouncedSaveFilesToSave();
+    this.setIsSaving(true);
   }
 
   private async saveFilesToSave() {
-    await this.backend.saveFiles(Array.from(this.filesToSave.values()));
+    this.incrementPendingSaves();
+    const files = Array.from(this.filesToSave.values());
     this.filesToSave.clear();
+    await this.backend.saveFiles(files);
+    this.decrementPendingSaves();
+    if (this.pendingSaves === 0) {
+      this.setIsSaving(false);
+    }
   }
 
   @action recoverPersistentPreferences(): void {

@@ -125,6 +125,7 @@ export const EditableCriteria = ({ index, id, criteria, dispatch }: EditableCrit
           value={criteria.value}
           dispatch={setCriteria}
           extraProperty={extraProperty}
+          operator={criteria.operator}
         />
       </td>
       <td>

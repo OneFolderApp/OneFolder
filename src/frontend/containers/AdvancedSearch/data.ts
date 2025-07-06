@@ -1,5 +1,9 @@
 import { generateWidgetId } from 'widgets/utility';
-import { NumberOperatorType, StringOperatorType } from '../../../api/data-storage-search';
+import {
+  ExtraPropertyOperatorType,
+  NumberOperatorType,
+  StringOperatorType,
+} from '../../../api/data-storage-search';
 import { FileDTO, IMG_EXTENSIONS } from '../../../api/file';
 import { ID } from '../../../api/id';
 import { BinaryOperatorType, OperatorType, TagOperatorType } from '../../../api/search-criteria';
@@ -25,6 +29,7 @@ export type Criteria =
   | Field<'size', NumberOperatorType, number>
   | Field<'width' | 'height', NumberOperatorType, number>
   | Field<'dateAdded', NumberOperatorType, Date>
+  | ExtraPropertyField<ExtraPropertyID, ExtraPropertyOperatorType, any>
   | ExtraPropertyField<ExtraPropertyID, NumberOperatorType, number>
   | ExtraPropertyField<ExtraPropertyID, StringOperatorType, string>;
 

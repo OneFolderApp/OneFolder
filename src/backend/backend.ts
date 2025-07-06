@@ -12,6 +12,7 @@ import {
   OrderBy,
   OrderDirection,
   StringConditionDTO,
+  isExtraPropertyOperatorType,
   isNumberOperator,
   isStringOperator,
 } from '../api/data-storage-search';
@@ -678,6 +679,17 @@ function filterIndexSignatureLambda<T>(
     value: [keyIS, valueIS],
   } = crit;
 
+  if (isExtraPropertyOperatorType(crit.operator)) {
+    switch (crit.operator) {
+      case 'existsInFile':
+        return (t: any) => t[crit.key][keyIS] !== undefined;
+      case 'notExistsInFile':
+        return (t: any) => t[crit.key][keyIS] === undefined;
+      default:
+        const _exhaustiveCheck: never = crit.operator;
+        return _exhaustiveCheck;
+    }
+  }
   switch (typeof valueIS) {
     case 'number':
       if (isNumberOperator(crit.operator)) {

@@ -52,6 +52,14 @@
     height: unset;
     max-height: 100vh;
   }
+
+  &:disabled {
+    background-color: var(--background-color);
+  }
+
+  &:hover:disabled {
+    background-color: var(--background-color);
+  }
 }
 
 /** We cannot use <input type="file" /> as we want to pick directories. However,

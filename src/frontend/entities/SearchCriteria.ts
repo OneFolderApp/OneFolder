@@ -5,7 +5,9 @@ import {
   ArrayConditionDTO,
   ConditionDTO,
   DateConditionDTO,
+  ExtraPropertyOperatorType,
   IndexSignatureConditionDTO,
+  isExtraPropertyOperatorType,
   NumberConditionDTO,
   NumberOperatorType,
   StringConditionDTO,
@@ -53,6 +55,11 @@ export const StringOperatorLabels: Record<StringOperatorType, string> = {
   notStartsWith: 'Not Starts With',
   contains: 'Contains',
   notContains: 'Not Contains',
+};
+
+export const ExtraPropertyOperatorLabels: Record<ExtraPropertyOperatorType, string> = {
+  existsInFile: 'Exists in File',
+  notExistsInFile: 'Does Not Exist in File',
 };
 
 export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
@@ -202,7 +209,9 @@ export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria 
     const ep = rootStore.extraPropertyStore.get(this.value[0]);
     let operatorString = undefined;
     if (ep !== undefined) {
-      if (ep.type === epType.text) {
+      if (isExtraPropertyOperatorType(this.operator)) {
+        operatorString = ExtraPropertyOperatorLabels[this.operator as ExtraPropertyOperatorType];
+      } else if (ep.type === epType.text) {
         operatorString = StringOperatorLabels[this.operator as StringOperatorType];
       } else if (ep.type === epType.number) {
         operatorString = NumberOperatorSymbols[this.operator as NumberOperatorType];
@@ -210,14 +219,14 @@ export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria 
     }
     return `EP: "${ep?.name || 'Invalid Property'}" ${
       operatorString || camelCaseToSpaced(this.operator)
-    } "${this.value[1]}"`;
+    } ${isExtraPropertyOperatorType(this.operator) ? '' : `"${this.value[1]}"`}`;
   };
 
   serialize = (): IExtraProperySearchCriteria => {
     return {
       key: this.key,
       valueType: this.valueType,
-      operator: this.operator as StringOperatorType | NumberOperatorType,
+      operator: this.operator,
       value: Array.from(this.value) as [string, ExtraPropertyValue],
     };
   };

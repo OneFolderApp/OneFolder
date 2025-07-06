@@ -82,6 +82,7 @@ const CriteriaBuilder = memo(function QueryBuilder({ keySelector, dispatch }: Qu
           value={criteria.value}
           dispatch={setCriteria}
           extraProperty={extraProperty}
+          operator={criteria.operator}
         />
         <IconButton text="Add Criteria" icon={IconSet.ADD} onClick={add} />
       </div>

@@ -1,6 +1,10 @@
 import { ID } from './id';
 import { FileDTO } from './file';
-import { NumberOperatorType, StringOperatorType } from './data-storage-search';
+import {
+  ExtraPropertyOperatorType,
+  NumberOperatorType,
+  StringOperatorType,
+} from './data-storage-search';
 import { ExtraPropertyValue } from './extraProperty';
 
 export const BinaryOperators = ['equals', 'notEqual'] as const;
@@ -15,6 +19,7 @@ export const TagOperators = [
 export type TagOperatorType = (typeof TagOperators)[number];
 
 export type OperatorType =
+  | ExtraPropertyOperatorType
   | TagOperatorType
   | NumberOperatorType
   | StringOperatorType

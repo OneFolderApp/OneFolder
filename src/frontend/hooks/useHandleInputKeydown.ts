@@ -29,11 +29,9 @@ export function useGalleryInputKeydownHandler() {
 
   return useCallback((e: React.KeyboardEvent) => {
     // Allow gallery navigation with Alt + Arrow keys, even when the input is focused.
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
-      if (procesGalleryInputShortcuts(e)) {
-        e.preventDefault();
-        return;
-      }
+    if (procesGalleryInputShortcuts(e)) {
+      e.preventDefault();
+      return;
     }
     if (e.altKey) {
       e.preventDefault();

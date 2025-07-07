@@ -25,16 +25,13 @@ _Your files, your folder, forever._
 2. **One Source of Truth**  
    Every photo you care about sits in a single folder you control. Back it up or sync it anywhere; the structure stays intact.
 
-3. **Built-In Organization**  
-   Dates, duplicates, and other housekeeping are solved _inside_ the files themselves—so even without our app, your collection stays clean.
-
-4. **Open Standards First**  
+3. **Open Standards First**  
    We read and write well-known metadata (EXIF / XMP) instead of inventing new formats. Any modern viewer can understand your photos today—and in 20 years.
 
-5. **Integrity, Not Optimism**  
+4. **No Silent Overwrites**  
    Edits never overwrite originals without your say-so. Your folder remains a reliable archive, not a guessing game.
 
-6. **Future-Proof Freedom**  
+5. **Future-Proof Freedom**  
    Because the rules live in the files, you can switch tools, change clouds, or hand the folder to your grand-kids—and everything still works.
 
 ## Features

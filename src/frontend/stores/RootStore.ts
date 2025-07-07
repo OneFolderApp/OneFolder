@@ -98,10 +98,10 @@ class RootStore {
     const fileStoreInit =
       numCriterias === 0
         ? rootStore.fileStore.fetchAllFiles
-        : () => {
+        : async () => {
             // When searching by criteria, the file counts won't be set (only when fetching all files),
             // so fetch them manually
-            rootStore.fileStore.refetchFileCounts().catch(console.error);
+            await rootStore.fileStore.refetchFileCounts().catch(console.error);
             return rootStore.fileStore.fetchFilesByQuery();
           };
 

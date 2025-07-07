@@ -317,21 +317,15 @@ export default class Backend implements DataStorage {
   async countFiles(): Promise<[fileCount: number, untaggedFileCount: number]> {
     console.info('IndexedDB: Getting number stats of files...');
     return this.#db.transaction('r', this.#files, async () => {
-      const [fileCount, taggedFileCount] = await Promise.all([
-        this.#files.count(),
-        this.#files
-          .where('tags')
-          .between(
-            // UUID NIL
-            '00000000-0000-0000-0000-000000000000',
-            // UUID MAX
-            'ffffffff-ffff-ffff-ffff-ffffffffffff',
-            true,
-            true,
-          )
-          .count(),
-      ]);
-      return [fileCount, fileCount - taggedFileCount];
+      // Aparently converting the whole table into array and check tags in a for loop is a lot faster than using a where tags filter followed by unique().
+      const files = await this.#files.toArray();
+      let unTaggedFileCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].tags.length === 0) {
+          unTaggedFileCount++;
+        }
+      }
+      return [files.length, unTaggedFileCount];
     });
   }
 

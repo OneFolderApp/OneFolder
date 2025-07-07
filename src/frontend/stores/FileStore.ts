@@ -456,6 +456,7 @@ class FileStore {
     this.numLoadedFiles = 0;
     const now = performance.now();
     this.fetchTaskIdPair[0] = now;
+    this.fetchTaskIdPair[1] = 1;
     return now;
   }
 
@@ -816,6 +817,7 @@ class FileStore {
     if (backendFiles.length === 0) {
       this.rootStore.uiStore.clearFileSelection();
       this.fileListLastModified = new Date();
+      this.fetchTaskIdPair[1] = 0;
       return this.clearFileList();
     }
 
@@ -1036,6 +1038,10 @@ class FileStore {
         if (file && !reusedStatus.has(file.id)) {
           file.dispose();
         }
+      }
+      // set task sub id as finished if not aborted
+      if (status.valueOf() !== Status.aborted) {
+        this.fetchTaskIdPair[1] = 0;
       }
     });
     return { newFiles: targetList, newIndex: targeIndex, status: status };

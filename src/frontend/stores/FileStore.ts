@@ -323,7 +323,8 @@ class FileStore {
     const firstCiteria = this.rootStore.uiStore.searchCriteriaList[0] as
       | ClientFileSearchCriteria
       | undefined;
-    const condition = firstCiteria?.toCondition(this.rootStore);
+    const raw = firstCiteria?.toCondition(this.rootStore);
+    const condition = Array.isArray(raw) ? raw[1] ?? raw[0] : raw;
     if (condition !== undefined && this.content === Content.Query) {
       // If the condition type needs 'where' or 'lambda' filters mixed in,
       // the fetch time varies depending on the operator
@@ -621,7 +622,9 @@ class FileStore {
       return this.fetchAllFiles();
     }
 
-    const criterias = uiStore.searchCriteriaList.map((c) => c.toCondition(this.rootStore));
+    const criterias: ConditionDTO<FileDTO>[] = uiStore.searchCriteriaList.flatMap((c) =>
+      c.toCondition(this.rootStore),
+    );
     try {
       this.setContentQuery();
       // Indicate a new fetch process

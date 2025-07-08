@@ -3,6 +3,7 @@ import { action, Lambda, makeObservable, observable } from 'mobx';
 import { camelCaseToSpaced } from '../../../common/fmt';
 import {
   ArrayConditionDTO,
+  ArrayOperatorType,
   ConditionDTO,
   DateConditionDTO,
   ExtraPropertyOperatorType,
@@ -83,7 +84,7 @@ export abstract class ClientFileSearchCriteria implements IBaseSearchCriteria {
   // The component who call this metod must be observer.
   abstract getLabel(dict: SearchKeyDict, rootStore: RootStore): string;
   abstract serialize(rootStore: RootStore): SearchCriteria;
-  abstract toCondition(rootStore: RootStore): ConditionDTO<FileDTO>;
+  abstract toCondition(rootStore: RootStore): ConditionDTO<FileDTO> | ConditionDTO<FileDTO>[];
 
   static deserialize(criteria: SearchCriteria): ClientFileSearchCriteria {
     const { valueType } = criteria;
@@ -190,6 +191,10 @@ export class ClientTagSearchCriteria extends ClientFileSearchCriteria {
   }
 }
 
+type ExtraPropertySerializedCondition =
+  | IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>
+  | [ArrayConditionDTO<FileDTO, ID>, IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>];
+
 export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria {
   @observable public value: [string, ExtraPropertyValue];
 
@@ -231,8 +236,31 @@ export class ClientExtraPropertySearchCriteria extends ClientFileSearchCriteria 
     };
   };
 
-  toCondition = (): IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue> => {
-    return this.serialize() as IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>;
+  toCondition = (rootStore: RootStore): ExtraPropertySerializedCondition => {
+    const firstCiteria = rootStore.uiStore.searchCriteriaList[0] as
+      | ClientFileSearchCriteria
+      | undefined;
+    if (firstCiteria === this) {
+      const serialized = this.serialize();
+      let ArrayOperator: ArrayOperatorType;
+      if (serialized.operator === 'notExistsInFile') {
+        ArrayOperator = 'notContains';
+      } else {
+        ArrayOperator = 'contains';
+      }
+      const whereSerialized: ArrayConditionDTO<FileDTO, ExtraPropertyValue> = {
+        key: 'extraPropertyIDs',
+        valueType: 'array',
+        operator: ArrayOperator,
+        value: [serialized.value[0]],
+      };
+      return [
+        whereSerialized as ArrayConditionDTO<FileDTO, ID>,
+        serialized as IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>,
+      ];
+    } else {
+      return this.serialize() as IndexSignatureConditionDTO<FileDTO, ExtraPropertyValue>;
+    }
   };
 
   @action.bound setOperator(op: StringOperatorType | NumberOperatorType): void {

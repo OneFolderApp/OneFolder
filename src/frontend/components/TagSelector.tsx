@@ -44,6 +44,7 @@ export interface TagSelectorProps {
   multiline?: boolean;
   filter?: (tag: ClientTag) => boolean;
   showTagContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
+  ignoreOnBlur?: (e: React.FocusEvent) => boolean;
   suggestionsUpdateDependency?: number;
 }
 
@@ -54,6 +55,7 @@ const TagSelector = (props: TagSelectorProps) => {
     onDeselect,
     onTagClick,
     showTagContextMenu,
+    ignoreOnBlur,
     onClear,
     disabled,
     extraIconButtons,
@@ -150,7 +152,11 @@ const TagSelector = (props: TagSelectorProps) => {
       e.currentTarget.contains(e.relatedTarget) &&
       (e.relatedTarget.matches('div[role="row"]') ||
         e.relatedTarget.matches('div.virtualized-grid'));
-    if (isFocusingOption || e.relatedTarget === inputRef.current) {
+    if (
+      (ignoreOnBlur ? ignoreOnBlur(e) : false) ||
+      isFocusingOption ||
+      e.relatedTarget === inputRef.current
+    ) {
       return;
     }
     setQuery('');

@@ -1,7 +1,8 @@
 import { observer } from 'mobx-react-lite';
-import React, { useRef } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { useStore } from '../../contexts/StoreContext';
+const SEARCHBAR_ID = 'toolbar-searchbar';
 
 const Searchbar = observer(() => {
   const { uiStore } = useStore();
@@ -20,12 +21,17 @@ const Searchbar = observer(() => {
         (crit as ClientTagSearchCriteria).value,
     );
 
-  return <div className="searchbar">{isQuickSearch ? <QuickSearchList /> : <CriteriaList />}</div>;
+  return (
+    <div id={SEARCHBAR_ID} className="searchbar">
+      {isQuickSearch ? <QuickSearchList /> : <CriteriaList />}
+    </div>
+  );
 });
 
 export default Searchbar;
 
 import {
+  ClientExtraPropertySearchCriteria,
   ClientStringSearchCriteria,
   ClientTagSearchCriteria,
   CustomKeyDict,
@@ -36,6 +42,13 @@ import { IconButton, IconSet, Row, Tag } from 'widgets';
 
 import { TagSelector } from 'src/frontend/components/TagSelector';
 import { useAction, useComputed } from 'src/frontend/hooks/mobx';
+import { ExtraPropertySelector } from 'src/frontend/components/ExtraPropertySelector';
+import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
+import { ExtraPropertyType, getExtraPropertyDefaultValue } from 'src/api/extraProperty';
+import { OperatorType } from 'src/api/search-criteria';
+import { usePopover } from 'widgets/popovers/usePopover';
+import { RowProps } from 'widgets/combobox/Grid';
+import ReactDOM from 'react-dom';
 
 const QuickSearchList = observer(() => {
   const { uiStore, tagStore } = useStore();
@@ -68,9 +81,17 @@ const QuickSearchList = observer(() => {
 
   const renderCreateOption = useRef((query: string, resetTextBox: () => void) => {
     return [
+      <QuickExtraPropertySearchOption
+        key="search-in-extra-property"
+        id="search-in-extra-property-option"
+        index={0}
+        value={`Search for "${query}" in an extra property`}
+        query={query}
+        resetTextBox={resetTextBox}
+      />,
       <Row
         id="search-in-path-option"
-        index={0}
+        index={1}
         key="search-in-path"
         value={`Search in file paths for "${query}"`}
         onClick={() => {
@@ -80,13 +101,21 @@ const QuickSearchList = observer(() => {
       />,
       <Row
         id="advanced-search-option"
-        index={1}
+        index={2}
         key="advanced-search"
         value="Advanced search"
         onClick={uiStore.toggleAdvancedSearch}
         icon={IconSet.SEARCH_EXTENDED}
       />,
     ];
+  }).current;
+
+  const ingnoreOnBlur = useRef((e: React.FocusEvent): boolean => {
+    const searchbar = document.getElementById(SEARCHBAR_ID);
+    if (searchbar) {
+      return searchbar.contains(e.relatedTarget as Node);
+    }
+    return false;
   }).current;
 
   return (
@@ -96,11 +125,110 @@ const QuickSearchList = observer(() => {
       onDeselect={handleDeselect}
       onTagClick={uiStore.toggleAdvancedSearch}
       onClear={uiStore.clearSearchCriteriaList}
+      ignoreOnBlur={ingnoreOnBlur}
       renderCreateOption={renderCreateOption}
       extraIconButtons={<SearchMatchButton disabled={selection.get().length < 2} />}
     />
   );
 });
+
+type QuickEPOption = RowProps & {
+  query: string;
+  resetTextBox: () => void;
+  index: number;
+};
+
+const QuickExtraPropertySearchOption = (props: QuickEPOption) => {
+  const { id, value, index, style, query, resetTextBox } = props;
+  const { uiStore } = useStore();
+  const [showExtraSelector, setShowExtraSelector] = useState(false);
+  const {
+    style: popoverStyle,
+    reference,
+    floating,
+    update,
+  } = usePopover('bottom-start', ['right', 'left', 'bottom', 'top'], 'fixed');
+
+  useLayoutEffect(() => {
+    if (showExtraSelector) {
+      update();
+    }
+  }, [showExtraSelector, update]);
+
+  const handleBlur = useRef((e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setShowExtraSelector(false);
+    }
+  }).current;
+
+  const handleExtraPropertySelect = useCallback(
+    (eventExtraProperty: ClientExtraProperty) => {
+      resetTextBox();
+      // Convert query to a valid value and set operator
+      let value: any;
+      let operator: OperatorType;
+      switch (eventExtraProperty.type) {
+        case ExtraPropertyType.text:
+          value = query;
+          operator = 'contains';
+          break;
+        case ExtraPropertyType.number:
+          const match = query.match(/[-+]?\d*\.?\d+(e[-+]?\d+)?/i);
+          value = match
+            ? parseFloat(match[0])
+            : getExtraPropertyDefaultValue(ExtraPropertyType.number);
+          operator = 'equals';
+          break;
+        default:
+          const _exhaustiveCheck: never = eventExtraProperty.type;
+          return _exhaustiveCheck;
+      }
+
+      uiStore.addSearchCriteria(
+        new ClientExtraPropertySearchCriteria(
+          'extraProperties',
+          [eventExtraProperty.id, value],
+          operator,
+        ),
+      );
+    },
+    [query, resetTextBox, uiStore],
+  );
+
+  const portalRoot = document.getElementById(SEARCHBAR_ID);
+
+  return (
+    <>
+      <Row
+        style={style}
+        id={id}
+        index={index}
+        value={value}
+        onClick={() => {
+          setShowExtraSelector(true);
+        }}
+      />
+      {portalRoot &&
+        ReactDOM.createPortal(
+          <div ref={reference}>
+            {showExtraSelector && (
+              <div
+                ref={floating}
+                tabIndex={-1}
+                onBlur={handleBlur}
+                data-popover
+                data-open={showExtraSelector}
+                style={popoverStyle}
+              >
+                <ExtraPropertySelector onSelect={handleExtraPropertySelect} />
+              </div>
+            )}
+          </div>,
+          portalRoot,
+        )}
+    </>
+  );
+};
 
 const SearchMatchButton = observer(({ disabled }: { disabled: boolean }) => {
   const { fileStore, uiStore } = useStore();

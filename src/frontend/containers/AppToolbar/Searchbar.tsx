@@ -209,6 +209,7 @@ const QuickExtraPropertySearchOption = (props: QuickEPOption) => {
         }}
       />
       {portalRoot &&
+        // Need to use portals since popovers don't work inside containers that have the transform property, which is used in virtualized grid.
         ReactDOM.createPortal(
           <div ref={reference}>
             {showExtraSelector && (

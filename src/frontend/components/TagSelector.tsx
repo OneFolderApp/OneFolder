@@ -26,7 +26,6 @@ import { useComputed } from '../hooks/mobx';
 import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 import { Placement } from '@floating-ui/core';
-import { CREATE_OPTION } from './FileTagsEditor';
 import { computed } from 'mobx';
 
 export interface TagSelectorProps {
@@ -165,7 +164,11 @@ const TagSelector = (props: TagSelectorProps) => {
 
   const handleFocus = useRef(() => setIsOpen(true)).current;
 
-  const handleBackgroundClick = useCallback(() => inputRef.current?.focus(), []);
+  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).tagName !== 'INPUT') {
+      inputRef.current?.focus();
+    }
+  }, []);
 
   const resetTextBox = useRef(() => {
     inputRef.current?.focus();

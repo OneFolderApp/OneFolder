@@ -10,6 +10,7 @@ on:
 jobs:
   release:
     runs-on: ${{ matrix.os }}
+    environment: electron-builder 
 
     strategy:
       matrix:
@@ -25,7 +26,7 @@ jobs:
           node-version: 16
 
       - name: Build/release Electron app
-        uses: samuelmeuli/action-electron-builder@v1
+        uses: Yan-Jobs/action-electron-builder@v1.7.0
         with:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)

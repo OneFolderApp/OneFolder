@@ -323,7 +323,8 @@ class FileStore {
     const firstCiteria = this.rootStore.uiStore.searchCriteriaList[0] as
       | ClientFileSearchCriteria
       | undefined;
-    const condition = firstCiteria?.toCondition(this.rootStore);
+    const raw = firstCiteria?.toCondition(this.rootStore);
+    const condition = Array.isArray(raw) ? raw[1] ?? raw[0] : raw;
     if (condition !== undefined && this.content === Content.Query) {
       // If the condition type needs 'where' or 'lambda' filters mixed in,
       // the fetch time varies depending on the operator
@@ -456,6 +457,7 @@ class FileStore {
     this.numLoadedFiles = 0;
     const now = performance.now();
     this.fetchTaskIdPair[0] = now;
+    this.fetchTaskIdPair[1] = 1;
     return now;
   }
 
@@ -620,7 +622,9 @@ class FileStore {
       return this.fetchAllFiles();
     }
 
-    const criterias = uiStore.searchCriteriaList.map((c) => c.toCondition(this.rootStore));
+    const criterias: ConditionDTO<FileDTO>[] = uiStore.searchCriteriaList.flatMap((c) =>
+      c.toCondition(this.rootStore),
+    );
     try {
       this.setContentQuery();
       // Indicate a new fetch process
@@ -816,6 +820,7 @@ class FileStore {
     if (backendFiles.length === 0) {
       this.rootStore.uiStore.clearFileSelection();
       this.fileListLastModified = new Date();
+      this.fetchTaskIdPair[1] = 0;
       return this.clearFileList();
     }
 
@@ -1036,6 +1041,10 @@ class FileStore {
         if (file && !reusedStatus.has(file.id)) {
           file.dispose();
         }
+      }
+      // set task sub id as finished if not aborted
+      if (status.valueOf() !== Status.aborted) {
+        this.fetchTaskIdPair[1] = 0;
       }
     });
     return { newFiles: targetList, newIndex: targeIndex, status: status };

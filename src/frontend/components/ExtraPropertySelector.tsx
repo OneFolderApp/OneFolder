@@ -113,6 +113,7 @@ export const ExtraPropertySelector = (props: IExtraPropertySelectorProps) => {
     >
       <input
         //disabled={disabled}
+        autoFocus
         role="menuitem"
         type="text"
         className={'input'}

@@ -26,7 +26,6 @@ import { useComputed } from '../hooks/mobx';
 import { debounce } from 'common/timeout';
 import { useGalleryInputKeydownHandler } from '../hooks/useHandleInputKeydown';
 import { Placement } from '@floating-ui/core';
-import { CREATE_OPTION } from './FileTagsEditor';
 import { computed } from 'mobx';
 
 export interface TagSelectorProps {
@@ -44,6 +43,7 @@ export interface TagSelectorProps {
   multiline?: boolean;
   filter?: (tag: ClientTag) => boolean;
   showTagContextMenu?: (e: React.MouseEvent<HTMLElement>, tag: ClientTag) => void;
+  ignoreOnBlur?: (e: React.FocusEvent) => boolean;
   suggestionsUpdateDependency?: number;
 }
 
@@ -54,6 +54,7 @@ const TagSelector = (props: TagSelectorProps) => {
     onDeselect,
     onTagClick,
     showTagContextMenu,
+    ignoreOnBlur,
     onClear,
     disabled,
     extraIconButtons,
@@ -65,6 +66,7 @@ const TagSelector = (props: TagSelectorProps) => {
   const gridId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [forceCreateOption, setForceCreateOption] = useState(false);
   const [query, setQuery] = useState('');
   const [dobuncedQuery, setDebQuery] = useState('');
 
@@ -133,16 +135,27 @@ const TagSelector = (props: TagSelectorProps) => {
         handleGridFocus(e);
       }
     },
-    [handleGridFocus, onDeselect, isInputEmpty, selectionMap, handleGalleryInput],
+    [isInputEmpty, selectionMap, onDeselect, handleGalleryInput, handleGridFocus],
   );
+
+  const handleKeyUp = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Alt') {
+      setForceCreateOption((prev) => !prev);
+    }
+  }, []);
 
   const handleBlur = useRef((e: React.FocusEvent<HTMLDivElement>) => {
     // If anything is blurred, and the new focus is not the input nor the flyout, close the flyout
     const isFocusingOption =
       e.relatedTarget instanceof HTMLElement &&
+      e.currentTarget.contains(e.relatedTarget) &&
       (e.relatedTarget.matches('div[role="row"]') ||
         e.relatedTarget.matches('div.virtualized-grid'));
-    if (isFocusingOption || e.relatedTarget === inputRef.current) {
+    if (
+      (ignoreOnBlur ? ignoreOnBlur(e) : false) ||
+      isFocusingOption ||
+      e.relatedTarget === inputRef.current
+    ) {
       return;
     }
     setQuery('');
@@ -151,7 +164,11 @@ const TagSelector = (props: TagSelectorProps) => {
 
   const handleFocus = useRef(() => setIsOpen(true)).current;
 
-  const handleBackgroundClick = useCallback(() => inputRef.current?.focus(), []);
+  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).tagName !== 'INPUT') {
+      inputRef.current?.focus();
+    }
+  }, []);
 
   const resetTextBox = useRef(() => {
     inputRef.current?.focus();
@@ -207,6 +224,7 @@ const TagSelector = (props: TagSelectorProps) => {
                 aria-autocomplete="list"
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
                 aria-controls={gridId}
                 aria-activedescendant={activeDescendant}
                 ref={inputRef}
@@ -227,6 +245,7 @@ const TagSelector = (props: TagSelectorProps) => {
           toggleSelection={toggleSelection}
           resetTextBox={resetTextBox.current}
           renderCreateOption={renderCreateOption}
+          forceCreateOption={forceCreateOption}
           suggestionsUpdateDependency={suggestionsUpdateDependency}
         />
       </Flyout>
@@ -267,6 +286,7 @@ interface SuggestedTagsListProps {
     inputText: string,
     resetTextBox: () => void,
   ) => ReactElement<RowProps> | ReactElement<RowProps>[];
+  forceCreateOption?: boolean;
   suggestionsUpdateDependency?: number;
 }
 
@@ -283,6 +303,7 @@ const SuggestedTagsList = observer(
       toggleSelection,
       resetTextBox,
       renderCreateOption,
+      forceCreateOption,
       suggestionsUpdateDependency,
     } = props;
     const { tagStore, uiStore } = useStore();
@@ -290,7 +311,7 @@ const SuggestedTagsList = observer(
     const { suggestions, widestItem } = useMemo(
       () =>
         computed(() => {
-          if (query.length === 0) {
+          if (query.length === 0 && !forceCreateOption) {
             let widest = undefined;
             const matches: (ClientTag | ReactElement<RowProps> | string)[] = [];
             // Add recently used tags.
@@ -319,22 +340,31 @@ const SuggestedTagsList = observer(
             const textLower = query.toLowerCase();
             const exactMatches: ClientTag[] = [];
             const otherMatches: ClientTag[] = [];
-            for (const tag of tagStore.tagList) {
-              let validFlag = false;
-              if (!filter(tag)) {
-                continue;
+            if (!forceCreateOption) {
+              for (const tag of tagStore.tagList) {
+                let validFlag = false;
+                if (!filter(tag)) {
+                  continue;
+                }
+                const nameLower = tag.name.toLowerCase();
+                if (nameLower === textLower) {
+                  exactMatches.push(tag);
+                  validFlag = true;
+                } else if (nameLower.includes(textLower)) {
+                  otherMatches.push(tag);
+                  validFlag = true;
+                }
+                if (validFlag) {
+                  widest = widest
+                    ? tag.pathCharLength > widest.pathCharLength
+                      ? tag
+                      : widest
+                    : tag;
+                }
               }
-              const nameLower = tag.name.toLowerCase();
-              if (nameLower === textLower) {
-                exactMatches.push(tag);
-                validFlag = true;
-              } else if (nameLower.includes(textLower)) {
-                otherMatches.push(tag);
-                validFlag = true;
-              }
-              if (validFlag) {
-                widest = widest ? (tag.pathCharLength > widest.pathCharLength ? tag : widest) : tag;
-              }
+            } else {
+              // Access at least one observable to avoid mobx warnings. Derivation 'ComputedValue@' is created/updated without reading any observable value.
+              tagStore.count;
             }
             // Add create option
             const createOptionItems = (function () {
@@ -363,6 +393,7 @@ const SuggestedTagsList = observer(
         uiStore.recentlyUsedTags,
         renderCreateOption,
         filter,
+        forceCreateOption,
         suggestionsUpdateDependency,
       ],
     ).get();

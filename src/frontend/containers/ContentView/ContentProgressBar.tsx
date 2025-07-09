@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import ProgressBar from 'src/frontend/components/ProgressBar';
 import { useStore } from 'src/frontend/contexts/StoreContext';
@@ -14,12 +14,17 @@ const ContentProgressBar = observer(() => {
     showsMissingContent,
     showsAllContent,
     showsUntaggedContent,
+    fetchTaskIdPair,
   } = fileStore;
   let total: number;
 
   //** logic that includes the "FilesFromBackend" progress in the total and progress */
   if (showsQueryContent || showsMissingContent) {
-    if (numLoadedFiles > fileList.length || (numLoadedFiles === 0 && fileList.length > 0)) {
+    if (
+      fetchTaskIdPair[1] !== 0 ||
+      numLoadedFiles > fileList.length ||
+      (numLoadedFiles === 0 && fileList.length > 0)
+    ) {
       total = numTotalFiles;
     } else {
       total = fileList.length;
@@ -52,7 +57,7 @@ const ContentProgressBar = observer(() => {
       total={total}
       simulatedTotal={simulatedTotal}
       simulatedDurationMs={AverageTime}
-      simulatedResetKey={fileStore.fetchTaskIdPair[0]}
+      simulatedResetKey={fetchTaskIdPair[0]}
       height={'3px'}
     />
   );

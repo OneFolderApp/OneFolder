@@ -1,4 +1,4 @@
-import { action, computed, IComputedValue } from 'mobx';
+import { action, IComputedValue } from 'mobx';
 import React, {
   ForwardedRef,
   forwardRef,
@@ -9,15 +9,23 @@ import React, {
 } from 'react';
 
 import { camelCaseToSpaced } from 'common/fmt';
-import { NumberOperators, StringOperators } from '../../../api/data-storage-search';
+import {
+  ExtraPropertyOperators,
+  isExtraPropertyOperatorType,
+  NumberOperators,
+  StringOperators,
+} from '../../../api/data-storage-search';
 import { IMG_EXTENSIONS } from '../../../api/file';
-import { BinaryOperators, TagOperators } from '../../../api/search-criteria';
+import { BinaryOperators, OperatorType, TagOperators } from '../../../api/search-criteria';
 import { TagSelector } from '../../components/TagSelector';
 import { useStore } from '../../contexts/StoreContext';
-import { NumberOperatorSymbols, StringOperatorLabels } from '../../entities/SearchCriteria';
+import {
+  ExtraPropertyOperatorLabels,
+  NumberOperatorSymbols,
+  StringOperatorLabels,
+} from '../../entities/SearchCriteria';
 import { ClientTag } from '../../entities/Tag';
 import { Criteria, Key, Operator, TagValue, Value, defaultQuery } from './data';
-import { MenuSubItem } from 'widgets/menus';
 import { ExtraPropertySelector } from 'src/frontend/components/ExtraPropertySelector';
 import { ClientExtraProperty } from 'src/frontend/entities/ExtraProperty';
 import { usePopover } from 'widgets/popovers/usePopover';
@@ -31,6 +39,7 @@ interface IKeySelector {
   dispatch: SetCriteria;
   keyValue: Key;
   extraProperty?: ClientExtraProperty;
+  operator?: OperatorType;
 }
 
 export const KeySelector = forwardRef(function KeySelector(
@@ -202,6 +211,7 @@ export const ValueInput = ({
   value,
   dispatch,
   extraProperty,
+  operator,
 }: FieldInput<Value>) => {
   if (keyValue === 'name' || keyValue === 'absolutePath') {
     return <PathInput labelledby={labelledby} value={value as string} dispatch={dispatch} />;
@@ -213,8 +223,14 @@ export const ValueInput = ({
     return <NumberInput labelledby={labelledby} value={value as number} dispatch={dispatch} />;
   } else if (keyValue === 'dateAdded') {
     return <DateAddedInput labelledby={labelledby} value={value as Date} dispatch={dispatch} />;
-  } else if (keyValue === 'extraProperties' && extraProperty !== undefined) {
-    if (extraProperty.type === ExtraPropertyType.number) {
+  } else if (
+    keyValue === 'extraProperties' &&
+    extraProperty !== undefined &&
+    operator !== undefined
+  ) {
+    if (isExtraPropertyOperatorType(operator)) {
+      return <input disabled className="input criteria-input" type="text" />;
+    } else if (extraProperty.type === ExtraPropertyType.number) {
       return <NumberInput labelledby={labelledby} value={value as number} dispatch={dispatch} />;
     } else if (extraProperty.type === ExtraPropertyType.text) {
       return <PathInput labelledby={labelledby} value={value as string} dispatch={dispatch} />;
@@ -410,10 +426,19 @@ function getOperatorOptions(key: Key, extraPropertyType?: ExtraPropertyType) {
   } else if (key === 'tags') {
     return TagOperators.map((op) => toOperatorOption(op));
   } else if (key == 'extraProperties' && extraPropertyType !== undefined) {
+    const epOperators = ExtraPropertyOperators.map((op) =>
+      toOperatorOption(op, ExtraPropertyOperatorLabels),
+    );
     if (extraPropertyType === ExtraPropertyType.number) {
-      return NumberOperators.map((op) => toOperatorOption(op, NumberOperatorSymbols));
+      return [
+        ...NumberOperators.map((op) => toOperatorOption(op, NumberOperatorSymbols)),
+        ...epOperators,
+      ];
     } else if (extraPropertyType === ExtraPropertyType.text) {
-      return StringOperators.map((op) => toOperatorOption(op, StringOperatorLabels));
+      return [
+        ...StringOperators.map((op) => toOperatorOption(op, StringOperatorLabels)),
+        ...epOperators,
+      ];
     }
   }
   return [];

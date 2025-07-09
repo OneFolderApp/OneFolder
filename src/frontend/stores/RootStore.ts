@@ -1,4 +1,4 @@
-import { configure, runInAction } from 'mobx';
+import { configure, reaction, runInAction } from 'mobx';
 
 import { DataStorage } from 'src/api/data-storage';
 import { DataBackup } from 'src/api/data-backup';
@@ -98,23 +98,32 @@ class RootStore {
     const fileStoreInit =
       numCriterias === 0
         ? rootStore.fileStore.fetchAllFiles
-        : () => {
+        : async () => {
             // When searching by criteria, the file counts won't be set (only when fetching all files),
             // so fetch them manually
-            rootStore.fileStore.refetchFileCounts().catch(console.error);
+            await rootStore.fileStore.refetchFileCounts().catch(console.error);
             return rootStore.fileStore.fetchFilesByQuery();
           };
 
     // Load the files already in the database so user instantly sees their images
     fileStoreInit().then(() => {
       rootStore.tagStore.initializeFileCounts(rootStore.fileStore.fileList);
-
-      // If slide mode was recovered from previous session, it's disabled by setContentQuery :/
-      // hacky workaround
-      if (isSlideMode) {
-        rootStore.uiStore.enableSlideMode();
-      }
     });
+
+    // If slide mode was recovered from a previous session, it was disabled by setContentQuery.
+    // Watch fileStore.numLoadedFiles until there are files in view to re-enable slide mode.
+    if (isSlideMode) {
+      const disposer = reaction(
+        () => rootStore.fileStore.numLoadedFiles,
+        (numLoadedFiles) => {
+          if (numLoadedFiles > 0) {
+            rootStore.uiStore.enableSlideMode();
+            // Dispose the reaction in the next tick
+            setTimeout(disposer, 0);
+          }
+        },
+      );
+    }
 
     // Then, look for any new or removed images, and refetch if necessary
     rootStore.locationStore.watchLocations().then((foundNewFiles) => {

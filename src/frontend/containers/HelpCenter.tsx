@@ -426,6 +426,20 @@ const PAGE_DATA: () => IPageData[] = () => [
         ),
       },
       {
+        title: 'Recently used Tags',
+        content: (
+          <>
+            <p>
+              When using a tag to tag files or in a quick search, it will be added to the Recently
+              Used Tags list. This list will be shown in all tag selectors as initial suggestions
+              and can store up to 10 tags by default. This number can be changed, or the feature
+              disabled entirely by setting it to 0 in the "Settings &gt; Usage Preferences &gt;
+              Recently Used Tags" section.
+            </p>
+          </>
+        ),
+      },
+      {
         title: 'Navigation',
         content: (
           <>
@@ -505,7 +519,7 @@ const PAGE_DATA: () => IPageData[] = () => [
               In Allusion there are several ways to find specific images. By default, the search bar
               lets you look for images based on their tags. You can press Ctrl-F to focus on the
               searchbar quickly. The advanced search can be accessed from the three dots icon in the
-              upper right corner of Allusion.
+              upper right corner of Allusion. or by pressing Ctrl-Shift-F.
             </p>
             <p>
               The searchbar that is always visible in the toolbar is the quickest way to search.
@@ -517,6 +531,12 @@ const PAGE_DATA: () => IPageData[] = () => [
               images that have any of the two tags assigned instead. Finally keep in mind that
               Allusion will search for child tags recursivly by default. You can use the advanced
               search to exclude child tags from the result.
+            </p>
+            <p>
+              If you press Alt while selecting the search bar, an alternative menu will appear that
+              allows you to quickly create different types of search criteria based on the text in
+              the search bar. Such as searching the text/value in an extra property or in the file
+              path.
             </p>
             <p>You can also quickly refresh the gallery using the R shortcut.</p>
           </>

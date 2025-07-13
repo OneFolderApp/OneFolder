@@ -117,6 +117,16 @@ export class ClientFile {
     return this.annotations;
   }
 
+  @computed get hasAiTags(): boolean {
+    if (this.tags.size === 0) return false;
+    for (const obj of this.tags) {
+      if (obj.isAi === true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @action.bound setThumbnailPath(thumbnailPath: string): void {
     this.thumbnailPath = thumbnailPath;
   }

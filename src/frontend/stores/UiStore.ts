@@ -560,6 +560,12 @@ class UiStore {
     }
   }
 
+  @action.bound aiTagSelection(): void {
+    if (this.fileSelection.size > 0) {
+      this.rootStore.fileStore.aiTagFiles([...this.fileSelection]);
+    }
+  }
+
   @action.bound closeToolbarTagPopover(): void {
     this.isToolbarTagPopoverOpen = false;
   }

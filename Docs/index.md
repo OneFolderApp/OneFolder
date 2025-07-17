@@ -28,8 +28,10 @@ OneFolder/
 
 ## Documentation Index
 
-| Doc                    | Purpose                                        |
-| ---------------------- | ---------------------------------------------- |
-| [README.md](README.md) | Documentation guidelines and writing standards |
+| Doc                                                | Purpose                                                              |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| [README.md](README.md)                             | Documentation guidelines and writing standards                       |
+| [location-loading.md](location-loading.md)         | Complete process of loading new folders from selection to completion |
+| [thumbnail-generation.md](thumbnail-generation.md) | Detailed thumbnail creation system with format-specific processing   |
 
 _More documentation files will be added as features are documented._

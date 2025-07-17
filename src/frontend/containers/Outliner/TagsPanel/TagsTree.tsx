@@ -23,7 +23,7 @@ import { HOVER_TIME_TO_EXPAND } from '../LocationsPanel/useFileDnD';
 import { createDragReorderHelper } from '../TreeItemDnD';
 import TreeItemRevealer from '../TreeItemRevealer';
 import { TagItemContextMenu } from './ContextMenu';
-import SearchButton from './SearchButton';
+
 import { Action, Factory, State, reducer } from './state';
 import TagsMenu from './TagsMenu';
 
@@ -123,6 +123,70 @@ const toggleQuery = (nodeData: ClientTag, uiStore: UiStore) => {
 };
 
 const DnDHelper = createDragReorderHelper('tag-dnd-preview', DnDTagType);
+
+interface IUntaggedItemProps {
+  onClick: (event: React.MouseEvent) => void;
+  isSelected: boolean;
+  count: number;
+}
+
+/**
+ * Component that renders the "Untagged" pseudo-tag at the bottom of the tag tree
+ */
+const UntaggedItem = observer((props: IUntaggedItemProps) => {
+  const { onClick, count } = props;
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      onClick(event);
+    },
+    [onClick],
+  );
+
+  return (
+    <div
+      className="tree-content-label"
+      onClick={handleClick}
+      style={{
+        cursor: 'pointer',
+        backgroundColor: 'transparent',
+        color: 'inherit',
+        paddingLeft: 'calc(var(--treeitem-offset) + 1.5rem)', // Match root level tag indentation + extra padding
+        height: '1.5rem', // Match tag height
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--hover-color)';
+        e.currentTarget.style.color = 'var(--text-color-strong)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+        e.currentTarget.style.color = 'inherit';
+      }}
+    >
+      <span
+        style={{
+          color: 'var(--color-text-secondary)',
+          marginRight: '0.375rem',
+          display: 'inline-flex',
+          width: '0.75rem',
+          height: '0.75rem',
+        }}
+      >
+        {React.cloneElement(IconSet.TAG_BLANCO, {
+          style: { width: '0.75rem', height: '0.75rem' },
+        })}
+      </span>
+      <div
+        className="label-text"
+        data-tooltip={`Untagged images (${count})`}
+        style={{ fontSize: '0.7125rem' }}
+      >
+        Untagged ({count})
+      </div>
+    </div>
+  );
+});
 
 const TagItem = observer((props: ITagItemProps) => {
   const { nodeData, dispatch, expansion, isEditing, submit, pos, select } = props;
@@ -447,7 +511,7 @@ const mapTag = (tag: ClientTag): ITreeItem => ({
 });
 
 const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
-  const { tagStore, uiStore } = useStore();
+  const { tagStore, uiStore, fileStore } = useStore();
   const root = tagStore.root;
   const [state, dispatch] = useReducer(reducer, {
     expansion: {},
@@ -549,7 +613,7 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
     // Recursive sorting function
     const sortTags = (tags: ClientTag[]) => {
       // First, sort children of each tag
-      tags.forEach(tag => {
+      tags.forEach((tag) => {
         if (tag.subTags && tag.subTags.length > 0) {
           sortTags(tag.subTags);
         }
@@ -558,8 +622,12 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       tags.sort((a, b) => {
         const nameA = a.name.toLowerCase();
         const nameB = b.name.toLowerCase();
-        if (nameA < nameB) return direction === 'asc' ? -1 : 1;
-        if (nameA > nameB) return direction === 'asc' ? 1 : -1;
+        if (nameA < nameB) {
+          return direction === 'asc' ? -1 : 1;
+        }
+        if (nameA > nameB) {
+          return direction === 'asc' ? 1 : -1;
+        }
         return 0;
       });
     };
@@ -599,6 +667,27 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
       props.onKeyDown?.(e);
     }
   });
+
+  // Handle untagged item click
+  const handleUntaggedClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!e.ctrlKey) {
+        fileStore.fetchUntaggedFiles();
+        return;
+      }
+      // With ctrl key pressed, either add/remove a Untagged criteria based on whether it's already there
+      const maybeUntaggedCrit = uiStore.searchCriteriaList.find(
+        (crit) => crit instanceof ClientTagSearchCriteria && !crit.value,
+      );
+
+      if (maybeUntaggedCrit) {
+        uiStore.removeSearchCriteria(maybeUntaggedCrit);
+      } else {
+        uiStore.addSearchCriteria(new ClientTagSearchCriteria('tags'));
+      }
+    },
+    [fileStore, uiStore],
+  );
 
   // Helper to compute expansion state for all tags
   const handleExpandAll = useAction(() => {
@@ -670,6 +759,15 @@ const TagsTree = observer((props: Partial<MultiSplitPaneProps>) => {
           toggleExpansion={toggleExpansion}
           onBranchKeyDown={handleBranchOnKeyDown}
           onLeafKeyDown={handleLeafOnKeyDown}
+        />
+      )}
+
+      {/* Untagged pseudo-tag - always show it unless there are no tags at all */}
+      {root.subTags.length > 0 && (
+        <UntaggedItem
+          onClick={handleUntaggedClick}
+          isSelected={fileStore.showsUntaggedContent}
+          count={fileStore.numUntaggedFiles}
         />
       )}
 

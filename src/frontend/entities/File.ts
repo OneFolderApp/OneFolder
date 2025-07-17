@@ -17,6 +17,7 @@ import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
 import ExifIO from 'common/ExifIO';
+import { AppToaster } from '../components/Toaster';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -131,7 +132,8 @@ export class ClientFile {
         action((t) => t.path),
       );
 
-      // this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+      // Write tags to file metadata immediately
+      this.writeTagsToFile(tagHierarchy);
 
       tag.incrementFileCount();
 
@@ -149,12 +151,36 @@ export class ClientFile {
         action((t) => t.path),
       );
 
-      //   this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+      // Write updated tags to file metadata immediately
+      this.writeTagsToFile(tagHierarchy);
+
       tag.decrementFileCount();
 
       if (this.tags.size === 0) {
         this.store.incrementNumUntaggedFiles();
       }
+    }
+  }
+
+  /**
+   * Writes the current tags to the file's metadata
+   * Shows error notification if the write fails, but doesn't interrupt the app flow
+   */
+  private async writeTagsToFile(tagHierarchy: string[][]): Promise<void> {
+    try {
+      await this.exifTool.writeTags(this.absolutePath, tagHierarchy);
+      // Silent success - no notification needed
+    } catch (error) {
+      // Show user-friendly error with retry option
+      AppToaster.show({
+        message: `Failed to sync tags for ${this.filename}`,
+        timeout: 5000,
+        clickAction: {
+          label: 'Retry',
+          onClick: () => this.writeTagsToFile(tagHierarchy),
+        },
+      });
+      console.error('Metadata write failed for', this.absolutePath, error);
     }
   }
 

@@ -13,25 +13,29 @@ OneFolder/
 │   ├── backend/         # Electron main process and file system operations
 │   ├── api/            # Data storage, search, and external API interfaces
 │   ├── ipc/            # Inter-process communication between main/renderer
-│   └── main.ts         # Electron app entry point
-├── resources/          # Static assets (icons, images, themes, exiftool)
-├── widgets/            # Reusable UI components and utilities
+│   └── main.ts         # Electron main process entry point
 ├── common/             # Shared utilities and configuration
-├── wasm/              # WebAssembly modules (masonry layout, EXR decoder)
-├── tests/             # Test files and setup
-└── package.json       # Dependencies and build scripts
+├── widgets/            # Reusable UI components
+├── resources/          # Static assets (icons, styles, themes)
+├── wasm/              # WebAssembly modules for image processing
+└── tests/             # Test files and configurations
 ```
 
-**Tech Stack:** Electron + React + MobX + TypeScript, with ExifTool for metadata editing and WebAssembly for performance-critical operations.
+## Tech Stack
+
+- **Desktop Framework**: Electron with TypeScript
+- **Frontend**: React with MobX for state management
+- **Image Processing**: ExifTool, WebAssembly decoders
+- **Database**: IndexedDB via Dexie
+- **Build**: Webpack with custom configuration
 
 ---
 
 ## Documentation Index
 
-| Doc                                                | Purpose                                                              |
-| -------------------------------------------------- | -------------------------------------------------------------------- |
-| [README.md](README.md)                             | Documentation guidelines and writing standards                       |
-| [location-loading.md](location-loading.md)         | Complete process of loading new folders from selection to completion |
-| [thumbnail-generation.md](thumbnail-generation.md) | Detailed thumbnail creation system with format-specific processing   |
-
-_More documentation files will be added as features are documented._
+| Document                                                        | Description                                                          |
+| --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [README.md](README.md)                                          | Documentation guidelines and writing standards                       |
+| [Location Loading Process](location-loading.md)                 | Complete workflow from folder selection to indexed files             |
+| [Thumbnail Generation System](thumbnail-generation.md)          | Image processing, caching, and format-specific handling              |
+| [Metadata Sync Implementation](metadata-sync-implementation.md) | Plan for immediate tag synchronization between app and file metadata |

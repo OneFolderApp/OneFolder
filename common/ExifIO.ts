@@ -259,26 +259,34 @@ class ExifIO {
     // Can add and remove simultaneously with `exiftool -keywords+="add this" -keywords-="remove this"`
     // Multiple at once with `-sep ", " -keywords="one, two, three"`
 
+    let metadata: any;
+
     if (!tagNameHierarchy.length) {
-      return;
-    }
-
-    const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
-
-    console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
-
-    const res = await ep.writeMetadata(
-      filepath,
-      {
+      // Clear all tag fields when no tags are present
+      console.debug('Clearing all tags from', filepath);
+      metadata = {
+        HierarchicalSubject: '',
+        Subject: '',
+        Keywords: '',
+      };
+    } else {
+      // Write tags normally when tags are present
+      const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
+      console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
+      metadata = {
         HierarchicalSubject: tagNameHierarchy.map((hierarchy) =>
           hierarchy.join(this.hierarchicalSeparator),
         ),
         Subject: subject,
         Keywords: subject,
         // History: {},
-      },
-      [...defaultWriteArgs, ...this.extraArgs],
-    );
+      };
+    }
+
+    const res = await ep.writeMetadata(filepath, metadata, [
+      ...defaultWriteArgs,
+      ...this.extraArgs,
+    ]);
     if (!res.error?.endsWith('1 image files updated')) {
       console.error('Could not update file tags metadata', res);
       throw new Error(res.error || 'Unknown error');

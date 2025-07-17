@@ -1,7 +1,7 @@
 {
   "name": "onefolder",
   "productName": "OneFolder",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "A tool for managing your visual library",
   "main": "build/main.bundle.js",
   "scripts": {
@@ -16,7 +16,8 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "build:masonry": "cd wasm/wasm-build && cargo run masonry masonry/masonry-scalar && cargo run masonry masonry/masonry-simd -- -C target-feature=+simd128",
-    "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr"
+    "build:exr": "cd wasm/wasm-build && cargo run exr-decoder exr",
+    "release": "git add . && git commit -m \"v$npm_package_version\" && git tag \"v$npm_package_version\" && git push && git push --tags"
   },
   "build": {
     "appId": "com.onefolder-app.onefolder",

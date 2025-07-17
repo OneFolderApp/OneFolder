@@ -170,9 +170,25 @@ class ExifIO {
 
   async readDescription(filepath: string): Promise<string | undefined> {
     const metadata = await ep.readMetadata(filepath, ['MWG:Description', ...this.extraArgs]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Log warning but don't throw for sync warnings
+      if (
+        metadata.error.includes('IPTCDigest') ||
+        metadata.error.includes('XMP may be out of sync')
+      ) {
+        console.warn('Metadata sync warning for', filepath, ':', metadata.error);
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+
+    if (!metadata.data?.[0]) {
+      return undefined; // No description found, not an error
+    }
+
     const entry = metadata.data[0];
     return entry.Description?.toString();
   }
@@ -259,26 +275,34 @@ class ExifIO {
     // Can add and remove simultaneously with `exiftool -keywords+="add this" -keywords-="remove this"`
     // Multiple at once with `-sep ", " -keywords="one, two, three"`
 
+    let metadata: any;
+
     if (!tagNameHierarchy.length) {
-      return;
-    }
-
-    const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
-
-    console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
-
-    const res = await ep.writeMetadata(
-      filepath,
-      {
+      // Clear all tag fields when no tags are present
+      console.debug('Clearing all tags from', filepath);
+      metadata = {
+        HierarchicalSubject: '',
+        Subject: '',
+        Keywords: '',
+      };
+    } else {
+      // Write tags normally when tags are present
+      const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
+      console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
+      metadata = {
         HierarchicalSubject: tagNameHierarchy.map((hierarchy) =>
           hierarchy.join(this.hierarchicalSeparator),
         ),
         Subject: subject,
         Keywords: subject,
         // History: {},
-      },
-      [...defaultWriteArgs, ...this.extraArgs],
-    );
+      };
+    }
+
+    const res = await ep.writeMetadata(filepath, metadata, [
+      ...defaultWriteArgs,
+      ...this.extraArgs,
+    ]);
     if (!res.error?.endsWith('1 image files updated')) {
       console.error('Could not update file tags metadata', res);
       throw new Error(res.error || 'Unknown error');

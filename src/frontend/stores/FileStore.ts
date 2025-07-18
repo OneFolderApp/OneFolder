@@ -304,7 +304,7 @@ class FileStore {
     }
   }
 
-  @action.bound async reIndexAllFiles(): Promise<void> {
+  @action.bound async reIndexAllFiles(importMetadata?: boolean): Promise<void> {
     const toastKey = 'reindex-all-files';
     let isCancelled = false;
     let completedLocations = 0;
@@ -322,23 +322,61 @@ class FileStore {
       const numLocations = locations.length;
 
       if (numLocations === 0) {
-        AppToaster.show({ message: 'No locations to re-index.', timeout: 3000 }, toastKey);
+        AppToaster.show(
+          {
+            message: 'No locations to re-index. Add some locations first to use this feature.',
+            timeout: 5000,
+          },
+          toastKey,
+        );
         // Restore setting before early return
         this.rootStore.uiStore.setImportMetadataAtLocationLoading(originalMetadataImportSetting);
         return;
       }
 
-      // Temporarily disable metadata import during re-indexing
-      this.rootStore.uiStore.setImportMetadataAtLocationLoading(false);
+      // Check if any locations exist on disk before starting
+      const locationChecks = await Promise.allSettled(
+        locations.map(async (location) => {
+          const exists = await fse.pathExists(location.path);
+          return { location, exists };
+        }),
+      );
+
+      const missingLocations = locationChecks
+        .filter(
+          (
+            result,
+          ): result is PromiseFulfilledResult<{ location: ClientLocation; exists: boolean }> =>
+            result.status === 'fulfilled' && !result.value.exists,
+        )
+        .map((result) => result.value.location);
+
+      if (missingLocations.length > 0) {
+        const locationNames = missingLocations.map((l) => `"${l.name}"`).join(', ');
+        AppToaster.show(
+          {
+            message: `Warning: ${missingLocations.length} location${
+              missingLocations.length !== 1 ? 's' : ''
+            } not found: ${locationNames}. Re-indexing will continue with available locations.`,
+            timeout: 7000,
+          },
+          `${toastKey}-missing-locations`,
+        );
+      }
+
+      // Set metadata import setting based on user choice (default to false if not provided)
+      const shouldImportMetadata = importMetadata ?? false;
+      this.rootStore.uiStore.setImportMetadataAtLocationLoading(shouldImportMetadata);
+
+      const actionDescription = shouldImportMetadata
+        ? 'Re-indexing with metadata import'
+        : 'Re-indexing (files only)';
 
       AppToaster.show(
         {
-          message: 'Starting re-index of all locations...',
+          message: `Starting ${actionDescription.toLowerCase()} of all locations...`,
           timeout: 0,
-          clickAction: {
-            label: 'Cancel',
-            onClick: handleCancelled,
-          },
+          clickAction: { label: 'Cancel', onClick: handleCancelled },
         },
         toastKey,
       );
@@ -361,14 +399,15 @@ class FileStore {
         const location = locations[i];
         const progress = `${i + 1}/${numLocations}`;
 
+        const locationMessage = shouldImportMetadata
+          ? `${actionDescription} ${progress}: ${location.name} (importing metadata)...`
+          : `${actionDescription} ${progress}: ${location.name}...`;
+
         AppToaster.show(
           {
-            message: `Re-indexing ${progress}: ${location.name}...`,
+            message: locationMessage,
             timeout: 0,
-            clickAction: {
-              label: 'Cancel',
-              onClick: handleCancelled,
-            },
+            clickAction: { label: 'Cancel', onClick: handleCancelled },
           },
           toastKey,
         );
@@ -378,14 +417,13 @@ class FileStore {
           completedLocations++;
         } catch (error) {
           console.error(`Failed to re-index location "${location.name}":`, error);
-          AppToaster.show(
-            {
-              message: `Warning: Failed to re-index "${location.name}". Continuing with remaining locations...`,
-              timeout: 5000,
-            },
-            `${toastKey}-error-${i}`,
-          );
-          // Continue with next location instead of stopping
+
+          const errorMessage =
+            shouldImportMetadata && error instanceof Error && error.message.includes('metadata')
+              ? `Warning: Failed to re-index "${location.name}" (metadata import error). Continuing with remaining locations...`
+              : `Warning: Failed to re-index "${location.name}". Continuing with remaining locations...`;
+
+          AppToaster.show({ message: errorMessage, timeout: 5000 }, `${toastKey}-error-${i}`);
         }
 
         // Check cancellation after each location
@@ -406,22 +444,18 @@ class FileStore {
       // Final refresh and update counts
       await this.refetch();
       await this.refetchFileCounts();
+      this.fetchAllFiles(); // Switch to "All Files" view
 
-      // Switch to "All Files" view to show results
-      this.fetchAllFiles();
+      const metadataNote = shouldImportMetadata
+        ? ' Tags from image metadata have been imported.'
+        : ' Metadata was not imported - only file discovery performed.';
 
       const successMessage =
         completedLocations === numLocations
-          ? `Re-indexing complete! Found ${this.numTotalFiles} files across ${numLocations} locations.`
-          : `Re-indexing completed with warnings. Found ${this.numTotalFiles} files. ${completedLocations}/${numLocations} locations processed successfully.`;
+          ? `${actionDescription} complete! Found ${this.numTotalFiles} files across ${numLocations} locations.${metadataNote}`
+          : `${actionDescription} completed with warnings. Found ${this.numTotalFiles} files. ${completedLocations}/${numLocations} locations processed successfully.${metadataNote}`;
 
-      AppToaster.show(
-        {
-          message: successMessage,
-          timeout: 7000,
-        },
-        toastKey,
-      );
+      AppToaster.show({ message: successMessage, timeout: 7000 }, toastKey);
     } catch (e) {
       console.error('Could not re-index files', e);
       AppToaster.show(

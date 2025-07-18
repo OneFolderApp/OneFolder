@@ -126,6 +126,7 @@ type PersistentPreferenceFields =
   | 'isThumbnailTagOverlayEnabled'
   | 'isFaceModuleEnabled'
   | 'importMetadataAtLocationLoading'
+  | 'importMetadataAtReIndexing'
   | 'isThumbnailFilenameOverlayEnabled'
   | 'isThumbnailResolutionOverlayEnabled'
   | 'inspectorIsDescriptionVisible'
@@ -175,6 +176,7 @@ class UiStore {
   @observable isThumbnailTagOverlayEnabled: boolean = true;
   @observable isFaceModuleEnabled: boolean = false;
   @observable importMetadataAtLocationLoading: boolean = true;
+  @observable importMetadataAtReIndexing: boolean = true;
   @observable isThumbnailFilenameOverlayEnabled: boolean = false;
   @observable isThumbnailResolutionOverlayEnabled: boolean = false;
   @observable inspectorIsDescriptionVisible: boolean = true;
@@ -584,6 +586,10 @@ class UiStore {
     this.importMetadataAtLocationLoading = val;
   }
 
+  @action.bound setImportMetadataAtReIndexing(enable: boolean): void {
+    this.importMetadataAtReIndexing = enable;
+  }
+
   @action.bound setImportDirectory(dir: string): void {
     this.importDirectory = dir;
   }
@@ -987,6 +993,7 @@ class UiStore {
         this.importMetadataAtLocationLoading = Boolean(
           prefs.importMetadataAtLocationLoading ?? true,
         );
+        this.importMetadataAtReIndexing = Boolean(prefs.importMetadataAtReIndexing ?? true);
         this.isFaceModuleEnabled = Boolean(prefs.isFaceModuleEnabled ?? false);
         this.isThumbnailFilenameOverlayEnabled = Boolean(
           prefs.isThumbnailFilenameOverlayEnabled ?? false,
@@ -1071,6 +1078,7 @@ class UiStore {
       inspectorIsInformationVisible: this.inspectorIsInformationVisible,
       isFaceModuleEnabled: this.isFaceModuleEnabled,
       importMetadataAtLocationLoading: this.importMetadataAtLocationLoading,
+      importMetadataAtReIndexing: this.importMetadataAtReIndexing,
       isThumbnailResolutionOverlayEnabled: this.isThumbnailResolutionOverlayEnabled,
       outlinerWidth: this.outlinerWidth,
       inspectorWidth: this.inspectorWidth,

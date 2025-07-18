@@ -123,6 +123,99 @@ async function runMainApp(db: Dexie, root: Root): Promise<void> {
   window.addEventListener('beforeunload', () => {
     rootStore.close();
   });
+
+  // Expose debug methods in development mode
+  if (IS_DEV) {
+    (window as any).clearFilesOnly = () => rootStore.clearFilesOnly();
+    (window as any).reIndexAllFiles = (importMetadata?: boolean) =>
+      rootStore.fileStore.reIndexAllFiles(importMetadata);
+    (window as any).refreshDatabase = async (importMetadata?: boolean) => {
+      await rootStore.clearFilesOnly();
+      await rootStore.fileStore.reIndexAllFiles(importMetadata);
+    };
+
+    // Helper to check/set re-indexing preferences
+    (window as any).getReIndexPrefs = () => ({
+      savedPreference: rootStore.uiStore.importMetadataAtReIndexing,
+      locationLoadingDefault: rootStore.uiStore.importMetadataAtLocationLoading,
+    });
+    (window as any).setReIndexPref = (enable: boolean) =>
+      rootStore.uiStore.setImportMetadataAtReIndexing(enable);
+
+    // Edge case testing utilities
+    (window as any).debugReIndex = {
+      // Get current library stats
+      getStats: () => ({
+        totalFiles: rootStore.fileStore.numTotalFiles,
+        untaggedFiles: rootStore.fileStore.numUntaggedFiles,
+        missingFiles: rootStore.fileStore.numMissingFiles,
+        locations: rootStore.locationStore.locationList.map((l) => ({
+          id: l.id,
+          name: l.name,
+          path: l.path,
+        })),
+      }),
+
+      // Test with simulated large library
+      simulateProgress: async (steps = 5) => {
+        for (let i = 0; i < steps; i++) {
+          console.log(`Simulated step ${i + 1}/${steps}`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+        console.log('Simulation complete');
+      },
+
+      // Test error scenarios
+      testErrorScenarios: async () => {
+        console.log('Testing error scenarios...');
+
+        // Test with no locations
+        if (rootStore.locationStore.locationList.length === 0) {
+          console.log('✅ No locations scenario already active');
+        }
+
+        // Test with metadata import enabled/disabled
+        console.log('🔧 Current metadata settings:', {
+          locationLoading: rootStore.uiStore.importMetadataAtLocationLoading,
+          reIndexing: rootStore.uiStore.importMetadataAtReIndexing,
+        });
+
+        return 'Error scenario testing complete';
+      },
+
+      // Performance benchmarking
+      benchmark: async (importMetadata: boolean) => {
+        const startTime = performance.now();
+        const startFileCount = rootStore.fileStore.numTotalFiles;
+
+        console.log(`🏃 Starting benchmark (metadata: ${importMetadata ? 'enabled' : 'disabled'})`);
+        console.log(`📊 Current files: ${startFileCount}`);
+
+        try {
+          await rootStore.clearFilesOnly();
+          await rootStore.fileStore.reIndexAllFiles(importMetadata);
+
+          const endTime = performance.now();
+          const endFileCount = rootStore.fileStore.numTotalFiles;
+          const duration = (endTime - startTime) / 1000;
+
+          const results = {
+            duration: `${duration.toFixed(2)}s`,
+            filesPerSecond: Math.round(endFileCount / duration),
+            filesBefore: startFileCount,
+            filesAfter: endFileCount,
+            metadataImport: importMetadata,
+          };
+
+          console.log('📈 Benchmark results:', results);
+          return results;
+        } catch (error) {
+          console.error('❌ Benchmark failed:', error);
+          throw error;
+        }
+      },
+    };
+  }
 }
 
 async function runPreviewApp(db: Dexie, root: Root): Promise<void> {

@@ -144,28 +144,17 @@ export class ClientTag {
     this._parent = parent;
   }
 
-  @action.bound rename(name: string): void {
+  @action.bound setName(name: string): void {
     const oldName = this.name;
     this.name = name;
 
     // Update metadata in all files that have this tag OR any of its descendant tags
     if (oldName !== name) {
-      console.log(`Renaming tag "${oldName}" to "${name}"`);
-
       // Get this tag and all its descendants (children, grandchildren, etc.)
       const allAffectedTags = Array.from(this.getSubTree());
-      console.log(
-        'Affected tags (including descendants):',
-        allAffectedTags.map((t) => t.name),
-      );
 
       // Update metadata for files with each affected tag
       for (const tag of allAffectedTags) {
-        console.log(
-          `Updating metadata for files with tag "${tag.name}" (new path: [${tag.path.join(
-            ' > ',
-          )}])`,
-        );
         this.store.updateMetadataForTag(tag);
       }
     }
@@ -180,14 +169,7 @@ export class ClientTag {
       return false;
     }
 
-    const oldParentName = tag.parent.name;
-    const newParentName = this.name;
     let hierarchyChanged = false;
-
-    console.log(
-      `Moving tag "${tag.name}" from parent "${oldParentName}" to parent "${newParentName}"`,
-    );
-    console.log(`Old hierarchy: [${tag.path.join(' > ')}]`);
 
     // Move to different pos in same parent: Reorder tag.subTags and return
     if (this === tag.parent) {
@@ -197,7 +179,6 @@ export class ClientTag {
         const newIndex = currentIndex < at ? at - 1 : at;
         this.subTags.remove(tag);
         this.subTags.splice(newIndex, 0, tag);
-        console.log('Reordered within same parent - no hierarchy change needed');
       }
     } else {
       // Insert subTag into tag - this changes the hierarchy
@@ -209,28 +190,20 @@ export class ClientTag {
         this.subTags.push(tag);
       }
       tag.setParent(this);
-
-      console.log(`New hierarchy: [${tag.path.join(' > ')}]`);
-      console.log(`Hierarchy changed: ${hierarchyChanged}`);
     }
 
     // Update metadata in all files that have this tag if hierarchy changed
     // Use setTimeout to ensure the parent relationship and computed path are fully updated
     if (hierarchyChanged) {
-      console.log(`Scheduling metadata update for moved tag "${tag.name}" and all its descendants`);
       setTimeout(() => {
-        console.log(`Executing metadata update for moved tag "${tag.name}" with new path`);
-
         // Get the moved tag and all its descendants (children, grandchildren, etc.)
         const allAffectedTags = Array.from(tag.getSubTree());
-        console.log('All affected tags count:', allAffectedTags.length);
 
         // Update metadata for files with each affected tag
         for (const affectedTag of allAffectedTags) {
-          console.log('Updating metadata for files with tag:', affectedTag.name);
           this.store.updateMetadataForTag(affectedTag);
         }
-      }, 100);
+      }, 0);
     }
 
     return true;

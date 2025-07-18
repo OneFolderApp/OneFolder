@@ -297,21 +297,14 @@ export default class Backend implements DataStorage {
   async countFiles(): Promise<[fileCount: number, untaggedFileCount: number]> {
     console.info('IndexedDB: Getting number stats of files...');
     return this.#db.transaction('r', this.#files, async () => {
-      const [fileCount, taggedFileCount] = await Promise.all([
-        this.#files.count(),
-        this.#files
-          .where('tags')
-          .between(
-            // UUID NIL
-            '00000000-0000-0000-0000-000000000000',
-            // UUID MAX
-            'ffffffff-ffff-ffff-ffff-ffffffffffff',
-            true,
-            true,
-          )
-          .count(),
-      ]);
-      return [fileCount, fileCount - taggedFileCount];
+      const fileCount = await this.#files.count();
+
+      // Count files with empty tags array (untagged files)
+      // Fixed: Previous implementation used incorrect UUID range query on tags field
+      // which caused negative counts when files had multiple tags
+      const untaggedFileCount = await this.#files.filter((file) => file.tags.length === 0).count();
+
+      return [fileCount, untaggedFileCount];
     });
   }
 

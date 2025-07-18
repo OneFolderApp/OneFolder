@@ -106,6 +106,12 @@ class RootStore {
     fileStoreInit().then(() => {
       rootStore.tagStore.initializeFileCounts(rootStore.fileStore.fileList);
 
+      // Ensure untagged count is correct after all initialization
+      // This fixes any race conditions between database counts and memory calculations
+      if (rootStore.fileStore.showsAllContent) {
+        rootStore.fileStore.updateFileListState();
+      }
+
       // If slide mode was recovered from previous session, it's disabled by setContentQuery :/
       // hacky workaround
       if (isSlideMode) {

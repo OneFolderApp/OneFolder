@@ -22,10 +22,6 @@ export const OutlinerActionBar = observer(() => {
   const { fileStore } = useStore();
   const [showReIndexModal, setShowReIndexModal] = useState(false);
 
-  const handleReIndexClick = () => {
-    setShowReIndexModal(true);
-  };
-
   const handleReIndexConfirm = (button: DialogButton) => {
     setShowReIndexModal(false);
     if (button === DialogButton.PrimaryButton) {

@@ -81,13 +81,10 @@ class FileStore {
     const affectedFiles = this.getFilesWithTag(tag);
 
     if (affectedFiles.length === 0) {
-      console.log(`No files found with tag "${tag.name}" - skipping metadata update`);
       return;
     }
 
     const toastKey = `update-metadata-${tag.id}`;
-
-    console.log(`Updating metadata for tag "${tag.name}" in ${affectedFiles.length} files`);
 
     try {
       AppToaster.show(
@@ -98,48 +95,35 @@ class FileStore {
         toastKey,
       );
 
-      // Update metadata for each affected file
-      for (let i = 0; i < affectedFiles.length; i++) {
-        const file = affectedFiles[i];
+      // Process files efficiently
+      const tasks = affectedFiles.map((file) => async () => {
         const allTags = Array.from(file.tags);
         const tagHierarchy = [];
         for (const tag of allTags) {
           tagHierarchy.push(tag.path);
         }
 
-        console.log(`File: ${file.filename}`);
-        console.log('  All tag hierarchies being written:', tagHierarchy);
-
         try {
           await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);
         } catch (error) {
-          console.error('Failed to update metadata for', file.absolutePath, error);
+          console.error(`Failed to update metadata for file ${file.filename}:`, error);
         }
+      });
 
-        // Show progress for large batches
-        if (affectedFiles.length > 10 && i % 10 === 0) {
-          AppToaster.show(
-            {
-              message: `Updating metadata... ${Math.round((i / affectedFiles.length) * 100)}%`,
-              timeout: 0,
-            },
-            toastKey,
-          );
-        }
-      }
+      await promiseAllLimit(tasks, 5);
 
       AppToaster.show(
         {
-          message: `Updated metadata for ${affectedFiles.length} files`,
+          message: `Successfully updated metadata for ${affectedFiles.length} files`,
           timeout: 3000,
         },
         toastKey,
       );
     } catch (error) {
-      console.error('Failed to update metadata for tag', tag.name, error);
+      console.error('Error during metadata update:', error);
       AppToaster.show(
         {
-          message: `Failed to update metadata for tag "${tag.name}"`,
+          message: 'Failed to update metadata for some files',
           timeout: 5000,
         },
         toastKey,
@@ -172,16 +156,17 @@ class FileStore {
           // Temporarily disable immediate metadata sync for efficient bulk operations
           const reenableSync = file.disableImmediateSync();
 
-          // Clear all existing tags without triggering metadata writes
-          file.clearTags();
+          // Clear all existing tags WITHOUT affecting untagged count (this is import, not manual removal)
+          file.tags.clear();
 
           // Now add the tags found in file metadata
           const { tagStore } = this.rootStore;
           for (const tagHierarchy of tagsNameHierarchies) {
             const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1]);
             if (match) {
-              // If there is a match to the leaf tag, just add it to the file
-              file.addTag(match);
+              // If there is a match to the leaf tag, add it directly without count side effects
+              file.tags.add(match);
+              match.incrementFileCount();
             } else {
               // If there is no direct match to the leaf, insert it in the tag hierarchy: first check if any of its parents exist
               let curTag = tagStore.root;
@@ -193,7 +178,9 @@ class FileStore {
                   curTag = await tagStore.create(curTag, nodeName);
                 }
               }
-              file.addTag(curTag);
+              // Add the tag directly without count side effects
+              file.tags.add(curTag);
+              curTag.incrementFileCount();
             }
           }
 
@@ -816,7 +803,7 @@ class FileStore {
    * - `numUntaggedFiles`
    * - `numMissingFiles`
    */
-  @action private updateFileListState() {
+  @action updateFileListState(): void {
     let missingFiles = 0;
     let untaggedFiles = 0;
     this.index.clear();
@@ -836,6 +823,7 @@ class FileStore {
     } else if (this.showsUntaggedContent) {
       this.numUntaggedFiles = this.fileList.length;
     }
+    // Don't set numUntaggedFiles for other content types to avoid race conditions
   }
 
   /** Initializes the total and untagged file counters by querying the database with count operations */

@@ -392,7 +392,7 @@ const TagItem = observer((props: ITagItemProps) => {
       <span style={{ color: nodeData.viewColor }}>{icon}</span>
       <Label
         text={nodeData.name}
-        setText={nodeData.rename}
+        setText={nodeData.setName}
         isEditing={isEditing}
         onSubmit={submit}
         tooltip={`${nodeData.path.join(' › ')} (${nodeData.fileCount})`}

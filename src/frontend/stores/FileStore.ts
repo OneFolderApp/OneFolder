@@ -87,10 +87,7 @@ class FileStore {
 
     const toastKey = `update-metadata-${tag.id}`;
 
-    console.log(
-      `Updating metadata for tag "${tag.name}" (path: [${tag.path.join(' > ')}]) in ${
-        affectedFiles.length
-      } files`,
+    console.log(`Updating metadata for tag "${tag.name}" in ${affectedFiles.length} files`);
 
     try {
       AppToaster.show(
@@ -109,9 +106,9 @@ class FileStore {
         for (const tag of allTags) {
           tagHierarchy.push(tag.path);
         }
-        
+
         console.log(`File: ${file.filename}`);
-        console.log(`  All tag hierarchies being written:`, tagHierarchy);
+        console.log('  All tag hierarchies being written:', tagHierarchy);
 
         try {
           await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);

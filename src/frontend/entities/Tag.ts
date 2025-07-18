@@ -219,15 +219,12 @@ export class ClientTag {
     if (hierarchyChanged) {
       console.log(`Scheduling metadata update for moved tag "${tag.name}" and all its descendants`);
       setTimeout(() => {
-        console.log(
-          `Executing metadata update for moved tag "${tag.name}" with new path: [${tag.path.join(
-            ' > ',
-          )}]`,
+        console.log(`Executing metadata update for moved tag "${tag.name}" with new path`);
 
         // Get the moved tag and all its descendants (children, grandchildren, etc.)
         const allAffectedTags = Array.from(tag.getSubTree());
         console.log('All affected tags count:', allAffectedTags.length);
-        
+
         // Update metadata for files with each affected tag
         for (const affectedTag of allAffectedTags) {
           console.log('Updating metadata for files with tag:', affectedTag.name);

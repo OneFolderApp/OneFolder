@@ -33,6 +33,12 @@ interface IMetaData {
   dateCreated: Date;
 }
 
+/** Extended metadata that includes optional tag information */
+interface IExtendedMetaData extends IMetaData {
+  /** Tag hierarchies extracted from image metadata (HierarchicalSubject, Subject, Keywords) */
+  tagHierarchies?: string[][];
+}
+
 /**
  * A File as it is stored in the Client.
  * It is stored in a MobX store, which can observe changed made to it and subsequently
@@ -296,6 +302,37 @@ export async function getMetaData(stats: FileStats, imageLoader: ImageLoader): P
     width: dimensions.width,
     height: dimensions.height,
     dateCreated: stats.dateCreated,
+  };
+}
+
+/**
+ * Enhanced version that can optionally read tags alongside basic metadata in a single ExifTool call.
+ * This eliminates redundant ExifTool calls during location loading.
+ */
+export async function getMetaDataWithTags(
+  stats: FileStats,
+  imageLoader: ImageLoader,
+  readTags: boolean = false,
+): Promise<IExtendedMetaData> {
+  const path = stats.absolutePath;
+
+  if (!readTags) {
+    // Use existing method for backwards compatibility
+    const basicMetadata = await getMetaData(stats, imageLoader);
+    return basicMetadata;
+  }
+
+  // Use the new combined ExifTool call for optimal performance
+  const { dimensions, tags } = await imageLoader.getImageResolutionAndTags(stats.absolutePath);
+
+  return {
+    name: Path.basename(path),
+    extension: Path.extname(path).slice(1).toLowerCase() as IMG_EXTENSIONS_TYPE,
+    size: stats.size,
+    width: dimensions.width,
+    height: dimensions.height,
+    dateCreated: stats.dateCreated,
+    tagHierarchies: tags,
   };
 }
 

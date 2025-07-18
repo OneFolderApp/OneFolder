@@ -11,11 +11,12 @@ import { ID, generateId } from '../../api/id';
 import { LocationDTO } from '../../api/location';
 import { RendererMessenger } from '../../ipc/renderer';
 import { AppToaster } from '../components/Toaster';
-import { getMetaData, mergeMovedFile } from '../entities/File';
+import { getMetaData, getMetaDataWithTags, mergeMovedFile } from '../entities/File';
 import { ClientLocation, ClientSubLocation } from '../entities/Location';
 import { ClientStringSearchCriteria } from '../entities/SearchCriteria';
 import ImageLoader from '../image/ImageLoader';
 import RootStore from './RootStore';
+import TagStore from './TagStore';
 
 const PREFERENCES_STORAGE_KEY = 'location-store-preferences';
 type Preferences = { extensions: IMG_EXTENSIONS_TYPE[] };
@@ -396,24 +397,47 @@ class LocationStore {
       return;
     }
 
-    const showProgressToaster = (progress: number) =>
-      !isCancelled &&
+    const totalFiles = filePaths.length;
+    const showProgressToaster = (progress: number) => {
+      if (isCancelled) {
+        return;
+      }
+
+      const completedFiles = Math.trunc(progress * totalFiles);
+      const percentage = Math.trunc(progress * 100);
+
+      // Format numbers with thousands separators for better readability
+      const completedFormatted = completedFiles.toLocaleString();
+      const totalFormatted = totalFiles.toLocaleString();
+
       AppToaster.show(
         {
-          // message: 'Gathering image metadata...',
-          message: `Loading ${Math.trunc(progress * 100)}%...`,
+          message: `Loading ${percentage}% \n ${totalFormatted}/${completedFormatted}`,
           timeout: 0,
         },
         toastKey,
       );
+    };
 
     showProgressToaster(0);
 
     // Load file meta info, with only N jobs in parallel and a progress + cancel callback
     // TODO: Should make N configurable, or determine based on the system/disk performance
     const N = 50;
+
+    // Use the enhanced single-pass approach that reads both dimensions and tags in one ExifTool call
+    const shouldReadTags = this.rootStore.uiStore.importMetadataAtLocationLoading;
     const files = await promiseAllLimit(
-      filePaths.map((path) => () => pathToIFile(path, location, this.rootStore.imageLoader)),
+      filePaths.map(
+        (path) => () =>
+          pathToIFileWithMetadata(
+            path,
+            location,
+            this.rootStore.imageLoader,
+            this.rootStore.tagStore,
+            shouldReadTags,
+          ),
+      ),
       N,
       showProgressToaster,
       () => isCancelled,
@@ -426,9 +450,8 @@ class LocationStore {
     await this.rootStore.fileStore.refetch();
     await this.rootStore.fileStore.refetchFileCounts();
 
-    if (this.rootStore.uiStore.importMetadataAtLocationLoading) {
-      await this.rootStore.fileStore.readTagsFromFiles();
-    }
+    // No need for separate readTagsFromFiles() call - tags are already processed during file creation!
+    // This eliminates the redundant ExifTool reads that were making location loading slow
   }
 
   @action.bound async delete(location: ClientLocation): Promise<void> {
@@ -570,6 +593,74 @@ export async function pathToIFile(
     dateLastIndexed: now,
     annotations: '{}',
     ...(await getMetaData(stats, imageLoader)),
+  };
+}
+
+/**
+ * Enhanced version of pathToIFile that can optionally read and process tags during file creation.
+ * This eliminates the need for a separate readTagsFromFiles() call during location loading.
+ */
+export async function pathToIFileWithMetadata(
+  stats: FileStats,
+  loc: ClientLocation,
+  imageLoader: ImageLoader,
+  tagStore?: TagStore,
+  readTags: boolean = false,
+): Promise<FileDTO> {
+  const now = new Date();
+
+  if (!readTags || !tagStore) {
+    // Use existing method for backwards compatibility
+    return pathToIFile(stats, loc, imageLoader);
+  }
+
+  // Use the enhanced metadata reading that gets both dimensions and tags in one call
+  const extendedMetadata = await getMetaDataWithTags(stats, imageLoader, true);
+
+  // Process tags and convert them to tag IDs for the database
+  const tagIds: string[] = [];
+
+  if (extendedMetadata.tagHierarchies && extendedMetadata.tagHierarchies.length > 0) {
+    for (const tagHierarchy of extendedMetadata.tagHierarchies) {
+      const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1]);
+      if (match) {
+        // If there is a match to the leaf tag, add it directly
+        tagIds.push(match.id);
+        match.incrementFileCount();
+      } else {
+        // If there is no direct match to the leaf, insert it in the tag hierarchy
+        let curTag = tagStore.root;
+        for (const nodeName of tagHierarchy) {
+          const nodeMatch = tagStore.findByName(nodeName);
+          if (nodeMatch) {
+            curTag = nodeMatch;
+          } else {
+            curTag = await tagStore.create(curTag, nodeName);
+          }
+        }
+        tagIds.push(curTag.id);
+        curTag.incrementFileCount();
+      }
+    }
+  }
+
+  return {
+    absolutePath: stats.absolutePath,
+    relativePath: stats.absolutePath.replace(loc.path, ''),
+    ino: stats.ino,
+    id: generateId(),
+    locationId: loc.id,
+    tags: tagIds,
+    dateAdded: now,
+    dateModified: now,
+    dateLastIndexed: now,
+    annotations: '{}',
+    name: extendedMetadata.name,
+    extension: extendedMetadata.extension,
+    size: extendedMetadata.size,
+    width: extendedMetadata.width,
+    height: extendedMetadata.height,
+    dateCreated: extendedMetadata.dateCreated,
   };
 }
 

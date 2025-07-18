@@ -224,6 +224,31 @@ class ImageLoader {
     return dimensions;
   }
 
+  /**
+   * Reads both image dimensions and tags in a single ExifTool call for optimal performance.
+   * This eliminates the need for separate getImageResolution() and tag reading calls.
+   */
+  async getImageResolutionAndTags(absolutePath: string): Promise<{
+    dimensions: { width: number; height: number };
+    tags: string[][];
+  }> {
+    const result = await this.exifIO.getDimensionsAndTags(absolutePath);
+
+    // Apply PSD fallback logic if needed (same as getImageResolution)
+    if (
+      absolutePath.toLowerCase().endsWith('psd') &&
+      (result.dimensions.width === 0 || result.dimensions.height === 0)
+    ) {
+      try {
+        const psdData = await this.psdLoader.decode(await fse.readFile(absolutePath));
+        result.dimensions.width = psdData.width;
+        result.dimensions.height = psdData.height;
+      } catch (e) {}
+    }
+
+    return result;
+  }
+
   private async extractKritaThumbnail(absolutePath: string, outputPath: string) {
     const zip = new StreamZip.async({ file: absolutePath });
     let success = false;

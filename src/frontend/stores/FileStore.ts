@@ -150,11 +150,15 @@ class FileStore {
       let processedFiles = 0;
       const updateProgress = () => {
         processedFiles++;
+        const percentage = ((100 * processedFiles) / numFiles).toFixed(0);
+
+        // Format numbers with thousands separators for better readability
+        const processedFormatted = processedFiles.toLocaleString();
+        const totalFormatted = numFiles.toLocaleString();
+
         AppToaster.show(
           {
-            message: `Reading tags from files ${((100 * processedFiles) / numFiles).toFixed(
-              0,
-            )}%...`,
+            message: `Reading tags ${percentage}% (${processedFormatted}/${totalFormatted} files)...`,
             timeout: 0,
           },
           toastKey,
@@ -290,9 +294,15 @@ class FileStore {
     try {
       const numFiles = this.fileList.length;
       for (let i = 0; i < numFiles; i++) {
+        const percentage = ((100 * i) / numFiles).toFixed(0);
+
+        // Format numbers with thousands separators for better readability
+        const processedFormatted = i.toLocaleString();
+        const totalFormatted = numFiles.toLocaleString();
+
         AppToaster.show(
           {
-            message: `Writing tags to files ${((100 * i) / numFiles).toFixed(0)}%...`,
+            message: `Writing tags ${percentage}% (${processedFormatted}/${totalFormatted} files)...`,
             timeout: 0,
           },
           toastKey,

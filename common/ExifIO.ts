@@ -253,6 +253,71 @@ class ExifIO {
     }
   }
 
+  /**
+   * Reads both image dimensions and tags in a single ExifTool call for optimal performance.
+   * This eliminates the need for separate getDimensions() and readTags() calls during location loading.
+   */
+  async getDimensionsAndTags(filepath: string): Promise<{
+    dimensions: { width: number; height: number };
+    tags: string[][];
+  }> {
+    let metadata: Awaited<ReturnType<typeof ep.readMetadata>> | undefined = undefined;
+    try {
+      metadata = await ep.readMetadata(filepath, [
+        's3',
+        'ImageWidth',
+        'ImageHeight',
+        'HierarchicalSubject',
+        'Subject',
+        'Keywords',
+        ...this.extraArgs,
+      ]);
+
+      // Handle warnings vs actual errors (same logic as readTags)
+      if (metadata.error) {
+        // Silently ignore common sync warnings that don't affect functionality
+        if (
+          metadata.error.includes('IPTCDigest') ||
+          metadata.error.includes('XMP may be out of sync')
+        ) {
+          // These are common metadata sync warnings that don't affect functionality
+          // Just continue without logging - the metadata is still readable
+        } else {
+          // Only throw for actual errors
+          throw new Error(metadata.error);
+        }
+      }
+
+      if (!metadata.data?.[0]) {
+        throw new Error('No metadata entry');
+      }
+
+      const entry = metadata.data[0];
+      const { ImageWidth, ImageHeight } = entry;
+
+      // Extract dimensions (with fallback to 0 if not available)
+      const dimensions = {
+        width: ImageWidth || 0,
+        height: ImageHeight || 0,
+      };
+
+      // Extract tags using existing conversion logic
+      const tags = ExifIO.convertMetadataToHierarchy(
+        entry,
+        runInAction(() => this.hierarchicalSeparator),
+      );
+
+      return { dimensions, tags };
+    } catch (e) {
+      console.error('Could not read image dimensions and tags from', filepath, e, metadata);
+      // Return safe defaults on error
+      return {
+        dimensions: { width: 0, height: 0 },
+        tags: [],
+      };
+    }
+  }
+
   async readAllExifTags(filepath: string): Promise<exiftool.IMetadata> {
     const metadata = await ep.readMetadata(filepath, ['-File:all']);
     if (metadata.error || !metadata.data?.[0]) {

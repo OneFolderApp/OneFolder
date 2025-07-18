@@ -47,6 +47,9 @@ export default class Backend implements DataStorage {
     this.#db = db;
     this.#notifyChange = notifyChange;
   }
+  clearFilesOnly(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 
   async fetchVisualHashes(absolutePaths: string[]): Promise<VisualHashDTO[]> {
     console.info('IndexedDB: Fetching visual hashes for', absolutePaths.length, 'files...');

@@ -1,5 +1,5 @@
 import fse from 'fs-extra';
-import { action, computed, makeObservable, observable, runInAction } from 'mobx';
+import { action, computed, makeObservable, observable, runInAction, transaction } from 'mobx';
 
 import { getThumbnailPath } from 'common/fs';
 import { promiseAllLimit } from 'common/promise';
@@ -135,16 +135,34 @@ class FileStore {
     const toastKey = 'read-tags-from-file';
     try {
       const numFiles = this.fileList.length;
-      for (let i = 0; i < numFiles; i++) {
+
+      if (numFiles === 0) {
         AppToaster.show(
           {
-            message: `Reading tags from files ${((100 * i) / numFiles).toFixed(0)}%...`,
+            message: 'No files to read tags from.',
+            timeout: 3000,
+          },
+          toastKey,
+        );
+        return;
+      }
+
+      let processedFiles = 0;
+      const updateProgress = () => {
+        processedFiles++;
+        AppToaster.show(
+          {
+            message: `Reading tags from files ${((100 * processedFiles) / numFiles).toFixed(
+              0,
+            )}%...`,
             timeout: 0,
           },
           toastKey,
         );
-        const file = runInAction(() => this.fileList[i]);
+      };
 
+      // Create tasks for parallel processing
+      const tasks = this.fileList.map((file) => async () => {
         const absolutePath = file.absolutePath;
 
         try {
@@ -186,10 +204,20 @@ class FileStore {
 
           // Re-enable sync and write final metadata once
           await reenableSync();
+
+          // Update progress
+          updateProgress();
         } catch (e) {
           console.error('Could not import tags for', absolutePath, e);
+          updateProgress(); // Still update progress even on error
         }
-      }
+      });
+
+      // Process files in parallel with a concurrency limit to prevent overwhelming the system
+      // Use a smaller limit for ExifTool operations since they're more resource-intensive
+      const concurrencyLimit = 3;
+      await promiseAllLimit(tasks, concurrencyLimit);
+
       AppToaster.show(
         {
           message: 'Reading tags from files... Done!',
@@ -890,7 +918,10 @@ class FileStore {
     // Run the existence check with at most N checks in parallel
     // TODO: Should make N configurable, or determine based on the system/disk performance
     // NOTE: This is _not_ await intentionally, since we want to show the files to the user as soon as possible
-    runInAction(() => {
+
+    // Use transaction to batch all file list updates into a single reaction
+    // This prevents MobX reaction storm when updating large file lists (57k+ files)
+    transaction(() => {
       // TODO: restores this line later, currently broken for large lists, see https://github.com/mobxjs/mobx/pull/3189 (look ma, I'm contributing to open source!)
       // this.fileList.replace(newClientFiles);
       this.fileList.clear();
@@ -903,7 +934,10 @@ class FileStore {
     const N = 50;
     return promiseAllLimit(existenceCheckPromises, N)
       .then(() => {
-        this.updateFileListState(); // update missing image counter
+        // Batch the final state update to avoid additional reactions
+        transaction(() => {
+          this.updateFileListState(); // update missing image counter
+        });
       })
       .catch((e) => console.error('An error occured during existence checking!', e));
   }

@@ -291,7 +291,10 @@ export class ClientLocation {
         }
       } else if (data.type === 'remove') {
         const { value } = data;
-        console.log(`Location "${this.name}": File ${value} has been removed.`);
+        // Skip logging for ExifTool temporary files
+        if (!value.includes('_exiftool_tmp')) {
+          console.log(`Location "${this.name}": File ${value} has been removed.`);
+        }
         this.store.hideFile(value);
       } else if (data.type === 'error') {
         const { value } = data;

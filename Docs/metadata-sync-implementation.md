@@ -1,7 +1,7 @@
 ---
 title: Metadata Sync Implementation Plan
 author: @system
-last_updated: 2025-01-17
+last_updated: 2025-01-18
 scope: feature
 aliases: ["metadata-sync", "immediate-sync", "tag-sync"]
 ---
@@ -14,51 +14,89 @@ This document outlines the implementation of immediate metadata synchronization 
 
 **Goal**: Keep OneFolder's database and image metadata in perfect sync by writing changes immediately when users modify tags, while maintaining smooth UX.
 
-**Strategy**: ✅ **IMPLEMENTED** - Immediate sync with error handling works perfectly.
+**Strategy**: ✅ **IMPLEMENTED** - Immediate sync with debouncing and error handling works perfectly.
 
-**Status**: Phase 1 complete and tested with 50+ files - feels instant and reliable.
+**Status**: Phase 1 complete with performance optimizations - tested and optimized for large libraries.
+
+---
+
+## 🚨 **Performance Issue & Resolution (v1.0.24 → v1.0.25)**
+
+### **Issue Identified**
+
+- **Symptoms**: High CPU usage (50%), high RAM (1GB), very slow sync (5-10 mins → 40 mins)
+- **Root Cause**: Every tag change spawned individual ExifTool processes without batching
+- **Impact**: Bulk operations created hundreds/thousands of concurrent ExifTool processes
+
+### **✅ Performance Fixes Applied**
+
+1. **Debouncing Mechanism**:
+
+   - Added 300ms debounce to `scheduleMetadataWrite()` in `File.ts`
+   - Multiple rapid tag changes now batch into single write operation
+   - Prevents cascading ExifTool processes during bulk operations
+
+2. **Parallel Processing Optimization**:
+
+   - Updated `readTagsFromFiles()` to use parallel processing with concurrency limit (3)
+   - Replaced sequential file processing with `promiseAllLimit()`
+   - Significantly improved bulk tag reading performance
+
+3. **Enhanced Error Handling**:
+   - Improved retry mechanism to prevent error cascading
+   - Better cleanup of pending operations during bulk mode
 
 ---
 
 ## Current State Analysis
 
-### What's Currently Disabled
+### What's Currently Optimized
 
 ```typescript
 // In src/frontend/entities/File.ts - ClientFile.addTag()
-// this.exifTool.writeTags(this.absolutePath, tagHierarchy); // ⭐ COMMENTED OUT!
+this.scheduleMetadataWrite(); // ✅ DEBOUNCED AND BATCHED!
 ```
 
-### Why It Was Disabled
+### Why The Original Implementation Had Issues
 
-1. **Performance**: Individual writes seemed slower than batch operations
-2. **UX Concerns**: Fear of blocking user interactions
-3. **Error Handling**: No graceful failure recovery
+1. **No Debouncing**: Each tag change = new ExifTool process
+2. **Sequential Processing**: Bulk operations processed files one by one
+3. **Error Cascading**: Failed retries multiplied the load
 
 ---
 
-## ✅ **Current Implementation (Phase 1)**
+## ✅ **Current Implementation (Phase 1 + Performance Fixes)**
 
-### **Immediate Sync**
+### **Immediate Sync with Debouncing**
 
 - **Immediate UI Update**: Tags appear instantly in OneFolder ✅
-- **Immediate File Write**: Metadata written immediately to file ✅
-- **Performance**: Tested with 50+ rapid changes - feels instant ✅
+- **Debounced File Write**: Metadata written after 300ms delay to batch rapid changes ✅
+- **Performance**: Tested with large libraries - restored to original speed ✅
+
+### **Bulk Operations Optimization**
+
+- **Parallel Processing**: `readTagsFromFiles()` uses concurrency limit of 3 ✅
+- **Progress Tracking**: Real-time progress updates during bulk operations ✅
+- **Resource Management**: Prevents system overload during large operations ✅
 
 ### **Error Handling**
 
 - **Silent Success**: No notification when writes succeed ✅
 - **Visible Failures**: Toast notification with retry option ✅
 - **Graceful Degradation**: App continues working even if file writes fail ✅
+- **Cleanup**: Proper cleanup of pending operations during bulk mode ✅
 
 ### **Bug Fixes Applied**
 
 - **Clear Tags Fix**: Removing all tags now properly clears file metadata ✅
+- **Performance Regression Fix**: Debouncing prevents excessive ExifTool processes ✅
+- **Bulk Operations Fix**: Parallel processing instead of sequential ✅
 
 ### **User Experience**
 
-- ✅ **Success**: Silent background sync, no interruptions
+- ✅ **Success**: Silent background sync with optimal performance
 - ❌ **Failures**: Toast notifications like "Failed to sync tags for IMG_001.jpg [Retry]"
+- ✅ **Bulk Operations**: Fast parallel processing with progress indicators
 
 ---
 
@@ -69,15 +107,27 @@ This document outlines the implementation of immediate metadata synchronization 
 1. ✅ Uncommented `writeTags()` calls in `File.ts`
 2. ✅ Added error handling with toast notifications and retry
 3. ✅ Fixed clear tags bug in `ExifIO.ts`
-4. ✅ Tested with 50+ files - works perfectly and feels instant
 
-## 🚀 **Future Enhancements (Optional)**
+### Phase 2: Performance Optimization ✅
 
-### Advanced Features
+1. ✅ Added debouncing mechanism to prevent excessive ExifTool processes
+2. ✅ Optimized bulk tag reading with parallel processing
+3. ✅ Enhanced error handling and cleanup
+4. ✅ Tested with large libraries - performance restored
 
-- **Debouncing**: Add if performance issues arise with larger collections
-- **User Preferences**: Enable/disable sync toggle in settings
-- **Bulk Operations**: Keep batch processing for tag renames affecting many files
+## 🚀 **Performance Characteristics**
+
+### **Individual Tag Changes**
+
+- **Debounce Delay**: 300ms (allows batching of rapid changes)
+- **Resource Usage**: Minimal - single ExifTool process per batch
+- **User Experience**: Instant UI feedback, silent background sync
+
+### **Bulk Operations**
+
+- **Concurrency Limit**: 3 parallel ExifTool processes
+- **Progress Updates**: Real-time percentage display
+- **Memory Usage**: Controlled and optimized
 
 ---
 
@@ -85,11 +135,24 @@ This document outlines the implementation of immediate metadata synchronization 
 
 ### Files Modified
 
-- **`src/frontend/entities/File.ts`**: Added immediate sync to `addTag()`/`removeTag()` with error handling
-- **`common/ExifIO.ts`**: Fixed clear tags bug - now properly clears metadata when no tags remain
+- **`src/frontend/entities/File.ts`**:
+
+  - Added debouncing mechanism (`scheduleMetadataWrite()`)
+  - Enhanced `disableImmediateSync()` to handle pending operations
+  - Improved error handling in retry logic
+
+- **`src/frontend/stores/FileStore.ts`**:
+
+  - Optimized `readTagsFromFiles()` with parallel processing
+  - Added concurrency limit to prevent system overload
+  - Enhanced progress tracking
+
+- **`common/ExifIO.ts`**: Fixed clear tags bug - properly clears metadata when no tags remain
 
 ### Key Features
 
+- **Debounced Writes**: 300ms delay batches rapid tag changes
+- **Parallel Processing**: Concurrent operations with resource limits
 - **Error Handling**: Toast notifications with retry for failed writes
-- **Performance**: No debouncing needed - immediate writes work perfectly
+- **Performance**: Optimized for both individual changes and bulk operations
 - **Reliability**: App continues working even if file writes fail

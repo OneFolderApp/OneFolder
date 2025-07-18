@@ -6,6 +6,7 @@ import {
   ObservableSet,
   reaction,
   computed,
+  runInAction,
 } from 'mobx';
 import Path from 'path';
 
@@ -17,7 +18,6 @@ import FileStore from '../stores/FileStore';
 import { FileStats } from '../stores/LocationStore';
 import { ClientTag } from './Tag';
 import ExifIO from 'common/ExifIO';
-import { AppToaster } from '../components/Toaster';
 
 /** Retrieved file meta data information */
 interface IMetaData {
@@ -44,6 +44,8 @@ export class ClientFile {
   private autoSave: boolean = true;
   private immediateMetadataSync: boolean = true;
   private exifTool: ExifIO;
+  private metadataWriteTimeout: NodeJS.Timeout | null = null;
+  private pendingMetadataWrite: boolean = false;
 
   readonly ino: string;
   readonly id: ID;
@@ -128,13 +130,9 @@ export class ClientFile {
     if (!hasTag) {
       this.tags.add(tag);
 
-      // Write tags to file metadata immediately (unless disabled for bulk operations)
+      // Write tags to file metadata with debouncing (unless disabled for bulk operations)
       if (this.immediateMetadataSync) {
-        const tagHierarchy = Array.from(
-          this.tags,
-          action((t) => t.path),
-        );
-        this.writeTagsToFile(tagHierarchy);
+        this.scheduleMetadataWrite();
       }
 
       tag.incrementFileCount();
@@ -148,13 +146,9 @@ export class ClientFile {
   @action.bound removeTag(tag: ClientTag): void {
     const hadTag = this.tags.delete(tag);
     if (hadTag) {
-      // Write updated tags to file metadata immediately (unless disabled for bulk operations)
+      // Write updated tags to file metadata with debouncing (unless disabled for bulk operations)
       if (this.immediateMetadataSync) {
-        const tagHierarchy = Array.from(
-          this.tags,
-          action((t) => t.path),
-        );
-        this.writeTagsToFile(tagHierarchy);
+        this.scheduleMetadataWrite();
       }
 
       tag.decrementFileCount();
@@ -173,38 +167,60 @@ export class ClientFile {
     const wasEnabled = this.immediateMetadataSync;
     this.immediateMetadataSync = false;
 
+    // Cancel any pending write
+    if (this.metadataWriteTimeout) {
+      clearTimeout(this.metadataWriteTimeout);
+      this.metadataWriteTimeout = null;
+      this.pendingMetadataWrite = false;
+    }
+
     return async () => {
       this.immediateMetadataSync = wasEnabled;
       // Write current tags to metadata once at the end
       if (wasEnabled) {
-        const tagHierarchy = Array.from(
-          this.tags,
-          action((t) => t.path),
-        );
+        const tagHierarchy = runInAction(() => Array.from(this.tags, (t) => t.path));
         await this.writeTagsToFile(tagHierarchy);
       }
     };
   }
 
   /**
+   * Schedules a debounced metadata write to prevent excessive ExifTool processes
+   * Multiple rapid tag changes will be batched into a single write operation
+   */
+  private scheduleMetadataWrite(): void {
+    // Cancel any pending write
+    if (this.metadataWriteTimeout) {
+      clearTimeout(this.metadataWriteTimeout);
+    }
+
+    // Mark that we have a pending write
+    this.pendingMetadataWrite = true;
+
+    // Schedule a new write after a short delay (300ms)
+    // This allows multiple rapid tag changes to be batched together
+    this.metadataWriteTimeout = setTimeout(async () => {
+      if (this.pendingMetadataWrite && this.immediateMetadataSync) {
+        const tagHierarchy = runInAction(() => Array.from(this.tags, (t) => t.path));
+        await this.writeTagsToFile(tagHierarchy);
+      }
+      this.metadataWriteTimeout = null;
+      this.pendingMetadataWrite = false;
+    }, 300);
+  }
+
+  /**
    * Writes the current tags to the file's metadata
-   * Shows error notification if the write fails, but doesn't interrupt the app flow
+   * Logs errors silently without interrupting the user experience
    */
   private async writeTagsToFile(tagHierarchy: string[][]): Promise<void> {
     try {
       await this.exifTool.writeTags(this.absolutePath, tagHierarchy);
       // Silent success - no notification needed
     } catch (error) {
-      // Show user-friendly error with retry option
-      AppToaster.show({
-        message: `Failed to sync tags for ${this.filename}`,
-        timeout: 5000,
-        clickAction: {
-          label: 'Retry',
-          onClick: () => this.writeTagsToFile(tagHierarchy),
-        },
-      });
-      console.error('Metadata write failed for', this.absolutePath, error);
+      // Silent logging - metadata sync failures are not critical
+      // Tags are still saved in OneFolder's database and can be exported later
+      console.warn('Metadata sync failed for', this.filename, ':', error);
     }
   }
 

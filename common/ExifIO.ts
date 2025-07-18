@@ -127,8 +127,24 @@ class ExifIO {
       'Keywords',
       ...this.extraArgs,
     ]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+
+    // Handle warnings vs actual errors (same logic as readDescription)
+    if (metadata.error) {
+      // Silently ignore common sync warnings that don't affect functionality
+      if (
+        metadata.error.includes('IPTCDigest') ||
+        metadata.error.includes('XMP may be out of sync')
+      ) {
+        // These are common metadata sync warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
+    }
+
+    if (!metadata.data?.[0]) {
+      throw new Error('No metadata entry');
     }
     const entry = metadata.data[0];
     return ExifIO.convertMetadataToHierarchy(
@@ -310,7 +326,12 @@ class ExifIO {
       ...defaultWriteArgs,
       ...this.extraArgs,
     ]);
-    if (!res.error?.endsWith('1 image files updated')) {
+
+    // Success responses: "1 image files updated" or "0 image files updated\n1 image files unchanged"
+    const isSuccess =
+      res.error?.endsWith('1 image files updated') || res.error?.includes('image files unchanged');
+
+    if (!isSuccess) {
       console.error('Could not update file tags metadata', res);
       throw new Error(res.error || 'Unknown error');
     }

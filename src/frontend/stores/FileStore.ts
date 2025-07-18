@@ -63,6 +63,93 @@ class FileStore {
     this.debouncedSaveFilesToSave = debounce(this.saveFilesToSave, 100).bind(this);
   }
 
+  /**
+   * Finds all files that have a specific tag
+   * @param tag The tag to search for
+   * @returns Array of files that have this tag
+   */
+  @action getFilesWithTag(tag: ClientTag): ClientFile[] {
+    return this.fileList.filter((file) => file.tags.has(tag));
+  }
+
+  /**
+   * Updates metadata for all files that have a specific tag
+   * This is used when a tag is renamed or moved in hierarchy
+   * @param tag The tag that was modified
+   */
+  @action.bound async updateMetadataForTag(tag: ClientTag): Promise<void> {
+    const affectedFiles = this.getFilesWithTag(tag);
+
+    if (affectedFiles.length === 0) {
+      console.log(`No files found with tag "${tag.name}" - skipping metadata update`);
+      return;
+    }
+
+    const toastKey = `update-metadata-${tag.id}`;
+
+    console.log(
+      `Updating metadata for tag "${tag.name}" (path: [${tag.path.join(' > ')}]) in ${
+        affectedFiles.length
+      } files`,
+
+    try {
+      AppToaster.show(
+        {
+          message: `Updating metadata for ${affectedFiles.length} files...`,
+          timeout: 0,
+        },
+        toastKey,
+      );
+
+      // Update metadata for each affected file
+      for (let i = 0; i < affectedFiles.length; i++) {
+        const file = affectedFiles[i];
+        const allTags = Array.from(file.tags);
+        const tagHierarchy = [];
+        for (const tag of allTags) {
+          tagHierarchy.push(tag.path);
+        }
+        
+        console.log(`File: ${file.filename}`);
+        console.log(`  All tag hierarchies being written:`, tagHierarchy);
+
+        try {
+          await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);
+        } catch (error) {
+          console.error('Failed to update metadata for', file.absolutePath, error);
+        }
+
+        // Show progress for large batches
+        if (affectedFiles.length > 10 && i % 10 === 0) {
+          AppToaster.show(
+            {
+              message: `Updating metadata... ${Math.round((i / affectedFiles.length) * 100)}%`,
+              timeout: 0,
+            },
+            toastKey,
+          );
+        }
+      }
+
+      AppToaster.show(
+        {
+          message: `Updated metadata for ${affectedFiles.length} files`,
+          timeout: 3000,
+        },
+        toastKey,
+      );
+    } catch (error) {
+      console.error('Failed to update metadata for tag', tag.name, error);
+      AppToaster.show(
+        {
+          message: `Failed to update metadata for tag "${tag.name}"`,
+          timeout: 5000,
+        },
+        toastKey,
+      );
+    }
+  }
+
   @action.bound async readTagsFromFiles(): Promise<void> {
     const toastKey = 'read-tags-from-file';
     try {

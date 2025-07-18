@@ -7,6 +7,7 @@ import { ClientFile } from '../entities/File';
 import { ClientTagSearchCriteria } from '../entities/SearchCriteria';
 import { ClientTag } from '../entities/Tag';
 import RootStore from './RootStore';
+import { AppToaster } from '../components/Toaster';
 
 /**
  * Based on https://mobx.js.org/best/store.html
@@ -107,14 +108,58 @@ class TagStore {
     } = this;
     const ids: ID[] = [];
     tag.parent.subTags.remove(tag);
+
+    // Get all affected files before deleting the tags
+    const affectedFiles = new Set<ClientFile>();
     for (const t of tag.getSubTree()) {
+      const filesWithTag = fileStore.getFilesWithTag(t);
+      filesWithTag.forEach((file) => affectedFiles.add(file));
+
       t.dispose();
       tagGraph.delete(t.id);
       uiStore.deselectTag(t);
       ids.push(t.id);
     }
+
     await this.backend.removeTags(ids);
     fileStore.refetch();
+
+    // Update metadata for all affected files after tag deletion
+    if (affectedFiles.size > 0) {
+      const toastKey = 'delete-metadata-update';
+      try {
+        AppToaster.show(
+          {
+            message: `Updating metadata for ${affectedFiles.size} files after tag deletion...`,
+            timeout: 0,
+          },
+          toastKey,
+        );
+
+        for (const file of affectedFiles) {
+          const tagHierarchy = Array.from(file.tags).map((t) => t.path);
+          try {
+            await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);
+          } catch (error) {
+            console.error(
+              'Failed to update metadata after tag deletion for',
+              file.absolutePath,
+              error,
+            );
+          }
+        }
+
+        AppToaster.show(
+          {
+            message: `Updated metadata for ${affectedFiles.size} files`,
+            timeout: 3000,
+          },
+          toastKey,
+        );
+      } catch (error) {
+        console.error('Failed to update metadata after tag deletion', error);
+      }
+    }
   }
 
   @action.bound async deleteTags(tags: ClientTag[]): Promise<void> {
@@ -139,16 +184,47 @@ class TagStore {
     fileStore.refetch();
   }
 
+  /**
+   * Updates metadata for all files that have a specific tag
+   * Called when a tag is renamed or moved in hierarchy
+   */
+  @action.bound async updateMetadataForTag(tag: ClientTag): Promise<void> {
+    await this.rootStore.fileStore.updateMetadataForTag(tag);
+  }
+
   @action.bound async merge(tagToBeRemoved: ClientTag, tagToMergeWith: ClientTag): Promise<void> {
     // not dealing with tags that have subtags
     if (tagToBeRemoved.subTags.length > 0) {
       throw new Error('Merging a tag with sub-tags is currently not supported.');
     }
+
+    // Get files that have the tag being removed before the merge
+    const affectedFiles = this.rootStore.fileStore.getFilesWithTag(tagToBeRemoved);
+
     this.rootStore.uiStore.deselectTag(tagToBeRemoved);
     this.tagGraph.delete(tagToBeRemoved.id);
     tagToBeRemoved.parent.subTags.remove(tagToBeRemoved);
     await this.backend.mergeTags(tagToBeRemoved.id, tagToMergeWith.id);
     this.rootStore.fileStore.refetch();
+
+    // Update metadata for all affected files after merge
+    if (affectedFiles.length > 0) {
+      // Wait a bit for the refetch to complete and tags to be updated
+      setTimeout(async () => {
+        for (const file of affectedFiles) {
+          const tagHierarchy = Array.from(file.tags).map((t) => t.path);
+          try {
+            await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);
+          } catch (error) {
+            console.error(
+              'Failed to update metadata after tag merge for',
+              file.absolutePath,
+              error,
+            );
+          }
+        }
+      }, 1000);
+    }
   }
 
   @action.bound refetchFiles(): void {

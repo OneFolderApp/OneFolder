@@ -19,14 +19,37 @@ const enum TooltipInfo {
 }
 
 export const OutlinerActionBar = observer(() => {
-  const { fileStore } = useStore();
+  const rootStore = useStore();
+  const { fileStore } = rootStore;
   const [showReIndexModal, setShowReIndexModal] = useState(false);
+  const [isReIndexing, setIsReIndexing] = useState(false);
 
-  const handleReIndexConfirm = (button: DialogButton) => {
+  const handleReIndexClick = () => {
+    if (isReIndexing) {
+      return; // Prevent multiple simultaneous operations
+    }
+    setShowReIndexModal(true);
+  };
+
+  const handleReIndexConfirm = async (button: DialogButton) => {
     setShowReIndexModal(false);
     if (button === DialogButton.PrimaryButton) {
-      // TODO: Implement actual re-indexing functionality
-      console.log('Re-indexing would start here...');
+      if (isReIndexing) {
+        return; // Prevent multiple simultaneous operations
+      }
+
+      setIsReIndexing(true);
+      try {
+        // Clear files table while preserving locations and tags
+        await rootStore.clearFilesOnly();
+
+        // Re-index all existing locations
+        await fileStore.reIndexAllFiles();
+      } catch (error) {
+        console.error('Re-indexing failed:', error);
+      } finally {
+        setIsReIndexing(false);
+      }
     } else if (button === DialogButton.SecondaryButton) {
       // Export tags to metadata first
       fileStore.writeTagsToFiles();
@@ -37,12 +60,13 @@ export const OutlinerActionBar = observer(() => {
     <>
       <Toolbar id="actionbar" label="Action Bar" controls="content-view">
         <div>
-          {/* <ToolbarButton
+          <ToolbarButton
             text=""
             icon={IconSet.RELOAD}
             onClick={handleReIndexClick}
-            tooltip={TooltipInfo.ReIndex}
-          /> */}
+            tooltip={isReIndexing ? 'Re-indexing in progress...' : TooltipInfo.ReIndex}
+            disabled={isReIndexing}
+          />
 
           <ToolbarButton
             text={fileStore.numTotalFiles}
@@ -75,16 +99,16 @@ export const OutlinerActionBar = observer(() => {
         onClick={handleReIndexConfirm}
       >
         <p>
-          Are you sure you want to re-index your entire library? This will rebuild the database
-          scratch and may take several minutes depending on your library size.
+          Are you sure you want to re-index your entire library? This will refresh the database with
+          current files and may take several minutes depending on your library size.
         </p>
         <p>
           <strong>Important:</strong> Only tags that have been synced to image metadata will be
           preserved. Tags that exist only in the database may be lost.
         </p>
         <p>
-          <strong>Recommendation:</strong> Export your tags first as a backup before proceeding the
-          re-index operation.
+          <strong>Recommendation:</strong> Export your tags first as a backup before proceeding with
+          the re-index operation.
         </p>
       </Alert>
     </>

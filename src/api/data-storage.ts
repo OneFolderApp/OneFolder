@@ -45,6 +45,7 @@ export interface DataStorage {
   removeSearch(search: ID): Promise<void>;
   countFiles(): Promise<[fileCount: number, untaggedFileCount: number]>;
   clear(): Promise<void>;
+  clearFilesOnly(): Promise<void>;
 
   // Dismissed Duplicate Groups
   fetchDismissedDuplicateGroups(): Promise<DismissedDuplicateGroupDTO[]>;

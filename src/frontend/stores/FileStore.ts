@@ -261,38 +261,28 @@ class FileStore {
     const toastKey = 'write-tags-to-file';
     try {
       const numFiles = this.fileList.length;
-      const tagFilePairs = runInAction(() =>
-        this.fileList.map((f) => ({
-          absolutePath: f.absolutePath,
-          tagHierarchy: Array.from(
-            f.tags,
-            action((t) => t.path),
-          ),
-        })),
-      );
-      let lastToastVal = '0';
-      for (let i = 0; i < tagFilePairs.length; i++) {
-        const newToastVal = ((100 * i) / numFiles).toFixed(0);
-        if (lastToastVal !== newToastVal) {
-          lastToastVal = newToastVal;
-          AppToaster.show(
-            {
-              message: `Writing tags to files ${newToastVal}%...`,
-              timeout: 0,
-            },
-            toastKey,
-          );
-        }
+      for (let i = 0; i < numFiles; i++) {
+        AppToaster.show(
+          {
+            message: `Writing tags to files ${((100 * i) / numFiles).toFixed(0)}%...`,
+            timeout: 0,
+          },
+          toastKey,
+        );
+        const file = runInAction(() => this.fileList[i]);
+        const tagHierarchy = Array.from(
+          file.tags,
+          action((t) => t.path),
+        );
 
-        const { absolutePath, tagHierarchy } = tagFilePairs[i];
         try {
-          await this.rootStore.exifTool.writeTags(absolutePath, tagHierarchy);
+          await this.rootStore.exifTool.writeTags(file.absolutePath, tagHierarchy);
           await this.rootStore.exifTool.writeFacesAnnotations(
-            absolutePath,
-            JSON.parse(this.fileList[i].getAnnotations),
+            file.absolutePath,
+            JSON.parse(file.getAnnotations),
           );
         } catch (e) {
-          console.error('Could not write tags to', absolutePath, tagHierarchy, e);
+          console.error('Could not write tags to', file.absolutePath, tagHierarchy, e);
         }
       }
       AppToaster.show(
@@ -311,6 +301,139 @@ class FileStore {
         },
         toastKey,
       );
+    }
+  }
+
+  @action.bound async reIndexAllFiles(): Promise<void> {
+    const toastKey = 'reindex-all-files';
+    let isCancelled = false;
+    let completedLocations = 0;
+
+    const handleCancelled = () => {
+      console.debug('Aborting re-indexing process');
+      isCancelled = true;
+    };
+
+    // Store original setting to restore later
+    const originalMetadataImportSetting = this.rootStore.uiStore.importMetadataAtLocationLoading;
+
+    try {
+      const locations = this.rootStore.locationStore.locationList;
+      const numLocations = locations.length;
+
+      if (numLocations === 0) {
+        AppToaster.show({ message: 'No locations to re-index.', timeout: 3000 }, toastKey);
+        // Restore setting before early return
+        this.rootStore.uiStore.setImportMetadataAtLocationLoading(originalMetadataImportSetting);
+        return;
+      }
+
+      // Temporarily disable metadata import during re-indexing
+      this.rootStore.uiStore.setImportMetadataAtLocationLoading(false);
+
+      AppToaster.show(
+        {
+          message: 'Starting re-index of all locations...',
+          timeout: 0,
+          clickAction: {
+            label: 'Cancel',
+            onClick: handleCancelled,
+          },
+        },
+        toastKey,
+      );
+
+      // Re-index each location with error handling
+      for (let i = 0; i < numLocations; i++) {
+        if (isCancelled) {
+          AppToaster.show(
+            {
+              message: `Re-indexing cancelled. ${completedLocations}/${numLocations} locations completed.`,
+              timeout: 5000,
+            },
+            toastKey,
+          );
+          // Restore setting before cancellation return
+          this.rootStore.uiStore.setImportMetadataAtLocationLoading(originalMetadataImportSetting);
+          return;
+        }
+
+        const location = locations[i];
+        const progress = `${i + 1}/${numLocations}`;
+
+        AppToaster.show(
+          {
+            message: `Re-indexing ${progress}: ${location.name}...`,
+            timeout: 0,
+            clickAction: {
+              label: 'Cancel',
+              onClick: handleCancelled,
+            },
+          },
+          toastKey,
+        );
+
+        try {
+          await this.rootStore.locationStore.initLocation(location);
+          completedLocations++;
+        } catch (error) {
+          console.error(`Failed to re-index location "${location.name}":`, error);
+          AppToaster.show(
+            {
+              message: `Warning: Failed to re-index "${location.name}". Continuing with remaining locations...`,
+              timeout: 5000,
+            },
+            `${toastKey}-error-${i}`,
+          );
+          // Continue with next location instead of stopping
+        }
+
+        // Check cancellation after each location
+        if (isCancelled) {
+          AppToaster.show(
+            {
+              message: `Re-indexing cancelled. ${completedLocations}/${numLocations} locations completed.`,
+              timeout: 5000,
+            },
+            toastKey,
+          );
+          // Restore setting before cancellation return
+          this.rootStore.uiStore.setImportMetadataAtLocationLoading(originalMetadataImportSetting);
+          return;
+        }
+      }
+
+      // Final refresh and update counts
+      await this.refetch();
+      await this.refetchFileCounts();
+
+      // Switch to "All Files" view to show results
+      this.fetchAllFiles();
+
+      const successMessage =
+        completedLocations === numLocations
+          ? `Re-indexing complete! Found ${this.numTotalFiles} files across ${numLocations} locations.`
+          : `Re-indexing completed with warnings. Found ${this.numTotalFiles} files. ${completedLocations}/${numLocations} locations processed successfully.`;
+
+      AppToaster.show(
+        {
+          message: successMessage,
+          timeout: 7000,
+        },
+        toastKey,
+      );
+    } catch (e) {
+      console.error('Could not re-index files', e);
+      AppToaster.show(
+        {
+          message: `Failed to re-index files: ${e instanceof Error ? e.message : 'Unknown error'}`,
+          timeout: 7000,
+        },
+        toastKey,
+      );
+    } finally {
+      // Always restore the original metadata import setting
+      this.rootStore.uiStore.setImportMetadataAtLocationLoading(originalMetadataImportSetting);
     }
   }
 
@@ -607,6 +730,12 @@ class FileStore {
   @action.bound clearFileList(): void {
     this.fileList.clear();
     this.index.clear();
+  }
+
+  @action.bound resetFileCounts(): void {
+    this.numTotalFiles = 0;
+    this.numUntaggedFiles = 0;
+    this.numMissingFiles = 0;
   }
 
   @action get(id: ID): ClientFile | undefined {

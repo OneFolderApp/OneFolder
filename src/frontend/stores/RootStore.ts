@@ -184,6 +184,16 @@ class RootStore {
     this.fileStore.clearPersistentPreferences();
   }
 
+  async clearFilesOnly(): Promise<void> {
+    await this.#backend.clearFilesOnly();
+    // Reset file-related UI state but preserve locations, tags, and preferences
+    this.uiStore.clearFileSelection();
+    this.fileStore.clearFileList();
+
+    // Immediately reset file counts to 0 for better UX
+    this.fileStore.resetFileCounts();
+  }
+
   async close(): Promise<void> {
     // TODO: should be able to be done more reliably by running exiftool as a child process
     return this.exifTool.close();

@@ -47,8 +47,20 @@ export default class Backend implements DataStorage {
     this.#db = db;
     this.#notifyChange = notifyChange;
   }
-  clearFilesOnly(): Promise<void> {
-    throw new Error('Method not implemented.');
+  async clearFilesOnly(): Promise<void> {
+    console.info('IndexedDB: Clearing files only (preserving locations, tags, searches)...');
+    await this.#db.transaction(
+      'rw',
+      this.#files,
+      this.#visualHashes,
+      this.#dismissedDuplicateGroups,
+      async () => {
+        await this.#files.clear();
+        await this.#visualHashes.clear();
+        await this.#dismissedDuplicateGroups.clear();
+      },
+    );
+    this.#notifyChange();
   }
 
   async fetchVisualHashes(absolutePaths: string[]): Promise<VisualHashDTO[]> {

@@ -82,10 +82,16 @@ class FileStore {
         try {
           const tagsNameHierarchies = await this.rootStore.exifTool.readTags(absolutePath);
 
-          // Now that we know the tag names in file metadata, add them to the files in OneFolder
-          // Main idea: Find matching tag with same name, otherwise, insert new
-          //   for now, just match by the name at the bottom of the hierarchy
+          // CRITICAL FIX: Clear existing tags first to prevent re-adding deleted tags
+          // This ensures the file's tags in OneFolder match exactly what's in the metadata
 
+          // Temporarily disable immediate metadata sync for efficient bulk operations
+          const reenableSync = file.disableImmediateSync();
+
+          // Clear all existing tags without triggering metadata writes
+          file.clearTags();
+
+          // Now add the tags found in file metadata
           const { tagStore } = this.rootStore;
           for (const tagHierarchy of tagsNameHierarchies) {
             const match = tagStore.findByName(tagHierarchy[tagHierarchy.length - 1]);
@@ -106,6 +112,9 @@ class FileStore {
               file.addTag(curTag);
             }
           }
+
+          // Re-enable sync and write final metadata once
+          await reenableSync();
         } catch (e) {
           console.error('Could not import tags for', absolutePath, e);
         }

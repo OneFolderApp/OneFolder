@@ -42,6 +42,7 @@ export class ClientFile {
   private store: FileStore;
   private saveHandler: IReactionDisposer;
   private autoSave: boolean = true;
+  private immediateMetadataSync: boolean = true;
   private exifTool: ExifIO;
 
   readonly ino: string;
@@ -127,13 +128,14 @@ export class ClientFile {
     if (!hasTag) {
       this.tags.add(tag);
 
-      const tagHierarchy = Array.from(
-        this.tags,
-        action((t) => t.path),
-      );
-
-      // Write tags to file metadata immediately
-      this.writeTagsToFile(tagHierarchy);
+      // Write tags to file metadata immediately (unless disabled for bulk operations)
+      if (this.immediateMetadataSync) {
+        const tagHierarchy = Array.from(
+          this.tags,
+          action((t) => t.path),
+        );
+        this.writeTagsToFile(tagHierarchy);
+      }
 
       tag.incrementFileCount();
 
@@ -146,13 +148,14 @@ export class ClientFile {
   @action.bound removeTag(tag: ClientTag): void {
     const hadTag = this.tags.delete(tag);
     if (hadTag) {
-      const tagHierarchy = Array.from(
-        this.tags,
-        action((t) => t.path),
-      );
-
-      // Write updated tags to file metadata immediately
-      this.writeTagsToFile(tagHierarchy);
+      // Write updated tags to file metadata immediately (unless disabled for bulk operations)
+      if (this.immediateMetadataSync) {
+        const tagHierarchy = Array.from(
+          this.tags,
+          action((t) => t.path),
+        );
+        this.writeTagsToFile(tagHierarchy);
+      }
 
       tag.decrementFileCount();
 
@@ -160,6 +163,27 @@ export class ClientFile {
         this.store.incrementNumUntaggedFiles();
       }
     }
+  }
+
+  /**
+   * Temporarily disables immediate metadata sync for bulk operations
+   * Returns a function to re-enable sync and write the final metadata
+   */
+  @action.bound disableImmediateSync(): () => Promise<void> {
+    const wasEnabled = this.immediateMetadataSync;
+    this.immediateMetadataSync = false;
+
+    return async () => {
+      this.immediateMetadataSync = wasEnabled;
+      // Write current tags to metadata once at the end
+      if (wasEnabled) {
+        const tagHierarchy = Array.from(
+          this.tags,
+          action((t) => t.path),
+        );
+        await this.writeTagsToFile(tagHierarchy);
+      }
+    };
   }
 
   /**

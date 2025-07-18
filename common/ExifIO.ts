@@ -288,11 +288,18 @@ class ExifIO {
     } else {
       // Write tags normally when tags are present
       const subject = tagNameHierarchy.map((entry) => entry[entry.length - 1]);
-      console.debug('Writing', tagNameHierarchy.join(', '), 'to', filepath);
+      const hierarchicalSubject = tagNameHierarchy.map((hierarchy) =>
+        hierarchy.join(this.hierarchicalSeparator),
+      );
+
+      console.debug(`Writing tags to ${filepath}:`);
+      console.debug(`  Hierarchical separator: "${this.hierarchicalSeparator}"`);
+      console.debug('  Tag hierarchies:', tagNameHierarchy);
+      console.debug('  HierarchicalSubject values:', hierarchicalSubject);
+      console.debug('  Subject/Keywords values:', subject);
+
       metadata = {
-        HierarchicalSubject: tagNameHierarchy.map((hierarchy) =>
-          hierarchy.join(this.hierarchicalSeparator),
-        ),
+        HierarchicalSubject: hierarchicalSubject,
         Subject: subject,
         Keywords: subject,
         // History: {},

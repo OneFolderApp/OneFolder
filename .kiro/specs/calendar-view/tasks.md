@@ -40,7 +40,7 @@
   - Handle scroll events with throttling to prevent performance issues
   - _Requirements: 2.1, 2.2, 2.3, 6.1, 6.4_
 
-- [ ] 6. Create main CalendarGallery component
+- [x] 6. Create main CalendarGallery component
 
   - Build main CalendarGallery component that orchestrates all calendar functionality
   - Integrate date grouping, layout calculation, and virtualized rendering
@@ -48,7 +48,7 @@
   - Add proper component lifecycle management and cleanup
   - _Requirements: 1.1, 1.2, 3.2_
 
-- [ ] 7. Add keyboard navigation support
+- [x] 7. Add keyboard navigation support
 
   - Implement arrow key navigation between photos within and across months
   - Add support for Ctrl+click and Shift+click multi-selection patterns

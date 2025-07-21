@@ -89,6 +89,12 @@
       box-shadow: 0 0 0 0.125rem var(--accent-color);
     }
     
+    &--focused {
+      outline: 0.1875rem solid var(--accent-color);
+      outline-offset: 0.125rem;
+      z-index: 10;
+    }
+    
     &--broken {
       opacity: 0.6;
       

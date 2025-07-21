@@ -20,6 +20,9 @@ export {
 // Layout engine
 export { CalendarLayoutEngine, DEFAULT_LAYOUT_CONFIG } from './layoutEngine';
 
+// Keyboard navigation
+export { CalendarKeyboardNavigation } from './CalendarKeyboardNavigation';
+
 // Components
 export { MonthHeader } from './MonthHeader';
 export type { MonthHeaderProps } from './MonthHeader';

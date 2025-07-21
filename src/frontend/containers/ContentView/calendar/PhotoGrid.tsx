@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ClientFile } from '../../../entities/File';
 import { useStore } from '../../../contexts/StoreContext';
@@ -13,6 +13,8 @@ export interface PhotoGridProps {
   containerWidth: number;
   /** Callback for photo selection events */
   onPhotoSelect: (photo: ClientFile, additive: boolean, range: boolean) => void;
+  /** ID of the currently focused photo (for keyboard navigation) */
+  focusedPhotoId?: string;
 }
 
 /**
@@ -23,7 +25,8 @@ export interface PhotoGridProps {
 export const PhotoGrid: React.FC<PhotoGridProps> = observer(({ 
   photos, 
   containerWidth, 
-  onPhotoSelect 
+  onPhotoSelect,
+  focusedPhotoId
 }) => {
   const { uiStore } = useStore();
   
@@ -85,11 +88,34 @@ export const PhotoGrid: React.FC<PhotoGridProps> = observer(({
     width: '100%',
   };
 
+  // Refs for managing focus
+  const photoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Focus the appropriate photo when focusedPhotoId changes
+  useEffect(() => {
+    if (focusedPhotoId) {
+      const photoElement = photoRefs.current.get(focusedPhotoId);
+      if (photoElement) {
+        photoElement.focus();
+      }
+    }
+  }, [focusedPhotoId]);
+
+  // Handle ref assignment
+  const setPhotoRef = useCallback((photoId: string, element: HTMLDivElement | null) => {
+    if (element) {
+      photoRefs.current.set(photoId, element);
+    } else {
+      photoRefs.current.delete(photoId);
+    }
+  }, []);
+
   return (
     <div className="calendar-photo-grid" style={gridStyle}>
       {photos.map((photo) => {
         const eventManager = new CommandDispatcher(photo);
         const isSelected = uiStore.fileSelection.has(photo);
+        const isFocused = focusedPhotoId === photo.id;
         
         const itemStyle: React.CSSProperties = {
           width: `${gridLayout.itemWidth}px`,
@@ -101,7 +127,8 @@ export const PhotoGrid: React.FC<PhotoGridProps> = observer(({
         return (
           <div
             key={photo.id}
-            className={`calendar-photo-item${isSelected ? ' calendar-photo-item--selected' : ''}${photo.isBroken ? ' calendar-photo-item--broken' : ''}`}
+            ref={(el) => setPhotoRef(photo.id, el)}
+            className={`calendar-photo-item${isSelected ? ' calendar-photo-item--selected' : ''}${photo.isBroken ? ' calendar-photo-item--broken' : ''}${isFocused ? ' calendar-photo-item--focused' : ''}`}
             style={itemStyle}
             onClick={(e) => handlePhotoClick(photo, e)}
             onDoubleClick={(e) => handlePhotoDoubleClick(photo, e)}
@@ -114,7 +141,7 @@ export const PhotoGrid: React.FC<PhotoGridProps> = observer(({
             onDragEnd={eventManager.dragEnd}
             aria-selected={isSelected}
             role="gridcell"
-            tabIndex={0}
+            tabIndex={isFocused ? 0 : -1}
           >
             <div className="calendar-photo-thumbnail">
               <Thumbnail

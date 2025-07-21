@@ -1,96 +1,175 @@
-import React from 'react';
-import { GalleryProps } from './utils';
-import { shell } from 'electron';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
+import { action } from 'mobx';
+import { GalleryProps, getThumbnailSize } from './utils';
+import { useStore } from '../../contexts/StoreContext';
+import {
+  groupFilesByMonth,
+  CalendarVirtualizedRenderer,
+  MonthGroup,
+  CalendarLayoutEngine,
+  CalendarKeyboardNavigation,
+} from './calendar';
 
-import IMG_1 from 'resources/images/sample-calendar-pictures/photos_1.jpg';
-import IMG_2 from 'resources/images/sample-calendar-pictures/photos_2.jpg';
-import IMG_3 from 'resources/images/sample-calendar-pictures/photos_3.jpg';
-import IMG_4 from 'resources/images/sample-calendar-pictures/photos_4.jpg';
-import IMG_5 from 'resources/images/sample-calendar-pictures/photos_5.jpg';
-import IMG_6 from 'resources/images/sample-calendar-pictures/photos_6.jpg';
-import IMG_7 from 'resources/images/sample-calendar-pictures/photos_7.jpg';
-import IMG_8 from 'resources/images/sample-calendar-pictures/photos_8.jpg';
-import IMG_9 from 'resources/images/sample-calendar-pictures/photos_9.jpg';
-import IMG_10 from 'resources/images/sample-calendar-pictures/photos_10.jpg';
-import IMG_11 from 'resources/images/sample-calendar-pictures/photos_11.jpg';
-import IMG_12 from 'resources/images/sample-calendar-pictures/photos_12.jpg';
-import IMG_13 from 'resources/images/sample-calendar-pictures/photos_13.jpg';
+const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
+  const { fileStore, uiStore } = useStore();
+  const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
+  const keyboardNavigationRef = useRef<CalendarKeyboardNavigation | null>(null);
+  const [focusedPhotoId, setFocusedPhotoId] = useState<string | undefined>(undefined);
 
-type ProfilePicProps = {
-  src: string;
-};
+  const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
 
-const ProfilePic = ({ src }: ProfilePicProps) => {
+  // Create layout engine for keyboard navigation
+  const layoutEngine = useMemo(() => {
+    return new CalendarLayoutEngine({
+      containerWidth: contentRect.width,
+      thumbnailSize,
+      thumbnailPadding: 8,
+      headerHeight: 48,
+      groupMargin: 24,
+    });
+  }, [contentRect.width, thumbnailSize]);
+
+  // Group files by month when file list changes
+  useEffect(() => {
+    const groups = groupFilesByMonth(fileStore.fileList);
+    setMonthGroups(groups);
+
+    // Update layout engine and keyboard navigation
+    if (groups.length > 0) {
+      layoutEngine.calculateLayout(groups);
+      keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+        layoutEngine,
+        fileStore.fileList,
+        groups,
+      );
+    }
+  }, [fileStore.fileList, fileStore.fileListLastModified, layoutEngine]);
+
+  // Update focused photo when selection changes from outside keyboard navigation
+  useEffect(() => {
+    const currentIndex = lastSelectionIndex.current;
+    if (currentIndex !== undefined && fileStore.fileList[currentIndex]) {
+      const selectedFile = fileStore.fileList[currentIndex];
+      setFocusedPhotoId(selectedFile.id);
+    }
+  }, [fileStore.fileList, lastSelectionIndex]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const onKeyDown = action((e: KeyboardEvent) => {
+      if (!monthGroups.length || !keyboardNavigationRef.current) {
+        return;
+      }
+
+      const currentIndex = lastSelectionIndex.current;
+      if (currentIndex === undefined) {
+        return;
+      }
+
+      let newIndex: number | null = null;
+
+      // Handle arrow key navigation
+      if (e.key === 'ArrowUp') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'up');
+      } else if (e.key === 'ArrowDown') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'down');
+      } else if (e.key === 'ArrowLeft') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'left');
+      } else if (e.key === 'ArrowRight') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'right');
+      }
+
+      if (newIndex !== null && newIndex !== currentIndex) {
+        e.preventDefault();
+
+        // Handle multi-selection with Ctrl+click and Shift+click patterns
+        const isAdditive = e.ctrlKey || e.metaKey;
+        const isRange = e.shiftKey;
+
+        const newFile = fileStore.fileList[newIndex];
+        select(newFile, isAdditive, isRange);
+
+        // Update focused photo for visual feedback
+        setFocusedPhotoId(newFile.id);
+
+        // Scroll to ensure the selected photo is visible
+        const scrollPosition = keyboardNavigationRef.current.getScrollPositionForPhoto(newIndex);
+        if (scrollPosition !== null && containerRef.current) {
+          const containerHeight = containerRef.current.clientHeight;
+          const currentScrollTop = containerRef.current.scrollTop;
+          const photoHeight = thumbnailSize + 16; // thumbnail + padding
+
+          // Check if photo is outside viewport
+          if (
+            scrollPosition < currentScrollTop ||
+            scrollPosition > currentScrollTop + containerHeight - photoHeight
+          ) {
+            // Smooth scroll to center the photo in viewport
+            const targetScrollTop = Math.max(0, scrollPosition - containerHeight / 2);
+            containerRef.current.scrollTo({
+              top: targetScrollTop,
+              behavior: 'smooth',
+            });
+          }
+        }
+      }
+    });
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [monthGroups, fileStore.fileList, select, lastSelectionIndex, thumbnailSize]);
+
+  // Handle scroll position persistence
+  const handleScroll = useCallback((scrollTop: number) => {
+    scrollPositionRef.current = scrollTop;
+  }, []);
+
+  // Restore scroll position when returning to calendar view
+  useEffect(() => {
+    if (containerRef.current && scrollPositionRef.current > 0) {
+      containerRef.current.scrollTop = scrollPositionRef.current;
+    }
+  }, [monthGroups]);
+
+  // Show empty state if no files
+  if (fileStore.fileList.length === 0) {
+    return (
+      <div className="calendar-gallery">
+        <div className="calendar-gallery__empty-state">
+          <p>No photos to display in calendar view</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while grouping files
+  if (monthGroups.length === 0 && fileStore.fileList.length > 0) {
+    return (
+      <div className="calendar-gallery">
+        <div className="calendar-gallery__loading-state">
+          <p>Loading calendar view...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="calendar-gallery__profile">
-      <img
-        className="calendar-gallery__profile-picture"
-        src={src}
-        alt={`Profile picture of ${name}`}
+    <div ref={containerRef} className="calendar-gallery">
+      <CalendarVirtualizedRenderer
+        monthGroups={monthGroups}
+        containerWidth={contentRect.width}
+        containerHeight={contentRect.height}
+        thumbnailSize={thumbnailSize}
+        onPhotoSelect={select}
+        onScrollChange={handleScroll}
+        overscan={2}
+        focusedPhotoId={focusedPhotoId}
       />
     </div>
   );
-};
+});
 
-const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
-  return (
-    <div className="calendar-gallery">
-      <div className="wip-container">
-        The calendar is not ready yet.
-        <br />
-        <br />
-        If you want to speed up the development you <br /> can vote on our roadmap:
-        <br />
-        <button
-          className="wip-link"
-          onClick={() => {
-            shell.openExternal('https://onefolder.canny.io/feedback/p/calendar-view');
-          }}
-        >
-          onefolder.canny.io/feedback/p/calendar-view
-        </button>
-        <br />
-        <br />
-        <br />
-        Comments and ideas are welcome 🙏
-      </div>
-
-      <h1>January 2024</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_8} />
-        <ProfilePic src={IMG_9} />
-      </div>
-
-      <h1>December 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_10} />
-        <ProfilePic src={IMG_11} />
-        <ProfilePic src={IMG_12} />
-        <ProfilePic src={IMG_13} />
-      </div>
-
-      <h1>November 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_9} />
-
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_8} />
-      </div>
-    </div>
-  );
-};
-
-export default ListGallery;
+export default CalendarGallery;

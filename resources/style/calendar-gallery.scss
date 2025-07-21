@@ -63,3 +63,95 @@
     }
   }
 }
+
+// PhotoGrid component styles
+.calendar-photo-grid {
+  background: var(--background-color);
+  
+  .calendar-photo-item {
+    border-radius: 0.25rem;
+    overflow: hidden;
+    transition: all 0.15s ease;
+    border: 0.125rem solid transparent;
+    
+    &:hover {
+      transform: translateY(-0.125rem);
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    }
+    
+    &:focus {
+      outline: 0.125rem solid var(--accent-color);
+      outline-offset: 0.125rem;
+    }
+    
+    &--selected {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 0.125rem var(--accent-color);
+    }
+    
+    &--broken {
+      opacity: 0.6;
+      
+      .calendar-photo-thumbnail {
+        background: var(--background-color-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        &::before {
+          content: '⚠';
+          font-size: 1.5rem;
+          color: var(--text-color-muted);
+        }
+      }
+    }
+  }
+  
+  .calendar-photo-thumbnail {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: var(--background-color-subtle);
+    
+    img, video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .image-placeholder,
+    .image-loading,
+    .image-error {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--background-color-muted);
+      color: var(--text-color-muted);
+      font-size: 0.875rem;
+    }
+    
+    .image-loading::before {
+      content: '⟳';
+      animation: spin 1s linear infinite;
+    }
+    
+    .image-error::before {
+      content: '⚠';
+    }
+  }
+  
+  // Responsive grid adjustments
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

@@ -23,3 +23,5 @@ export { CalendarLayoutEngine, DEFAULT_LAYOUT_CONFIG } from './layoutEngine';
 // Components
 export { MonthHeader } from './MonthHeader';
 export type { MonthHeaderProps } from './MonthHeader';
+export { PhotoGrid } from './PhotoGrid';
+export type { PhotoGridProps } from './PhotoGrid';

@@ -151,6 +151,153 @@
   }
 }
 
+// CalendarVirtualizedRenderer component styles
+.calendar-virtualized-renderer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--background-color);
+  
+  // Smooth scrolling behavior
+  scroll-behavior: smooth;
+  
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: var(--background-color-subtle);
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 0.25rem;
+    
+    &:hover {
+      background: var(--text-color-muted);
+    }
+  }
+  
+  // Performance optimizations during scrolling
+  &--scrolling {
+    .calendar-month-header,
+    .calendar-photo-grid {
+      will-change: transform;
+    }
+    
+    // Reduce visual effects during scrolling for performance
+    .calendar-photo-item {
+      transition: none;
+      
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+    }
+  }
+  
+  // Empty state styling
+  &--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .calendar-empty-state {
+      text-align: center;
+      color: var(--text-color-muted);
+      font-size: 1rem;
+      padding: 2rem;
+      
+      p {
+        margin: 0;
+        opacity: 0.7;
+      }
+    }
+  }
+  
+  // Virtualized content container
+  .calendar-virtualized-content {
+    position: relative;
+    width: 100%;
+    
+    // Ensure proper stacking context for virtualized items
+    > div {
+      position: absolute;
+      width: 100%;
+      z-index: 1;
+      
+      // Month headers should be above photo grids
+      &:has(.calendar-month-header) {
+        z-index: 2;
+      }
+    }
+  }
+  
+  // Loading states for virtualized content
+  .calendar-virtualized-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-color-muted);
+    font-size: 0.875rem;
+    
+    &::before {
+      content: '⟳';
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+  }
+  
+  // Focus management for keyboard navigation
+  &:focus-within {
+    .calendar-photo-item:focus {
+      z-index: 10;
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    // Adjust scrollbar for mobile
+    &::-webkit-scrollbar {
+      width: 0.25rem;
+    }
+    
+    // Reduce scroll smoothness on mobile for better performance
+    scroll-behavior: auto;
+  }
+  
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    .calendar-photo-item {
+      border-width: 0.1875rem;
+      
+      &--selected {
+        border-width: 0.25rem;
+      }
+    }
+  }
+  
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+    
+    .calendar-photo-item {
+      transition: none;
+      
+      &:hover {
+        transform: none;
+      }
+    }
+    
+    .image-loading::before {
+      animation: none;
+    }
+  }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

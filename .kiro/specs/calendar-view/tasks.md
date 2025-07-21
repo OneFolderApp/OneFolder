@@ -16,7 +16,7 @@
   - Write tests for layout calculations with different container sizes and photo counts
   - _Requirements: 1.1, 4.4, 6.3_
 
-- [ ] 3. Build MonthHeader component
+- [x] 3. Build MonthHeader component
 
   - Create MonthHeader component with month/year display and photo count
   - Implement styling consistent with existing app header patterns

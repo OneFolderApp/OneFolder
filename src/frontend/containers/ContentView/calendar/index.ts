@@ -19,3 +19,7 @@ export {
 
 // Layout engine
 export { CalendarLayoutEngine, DEFAULT_LAYOUT_CONFIG } from './layoutEngine';
+
+// Components
+export { MonthHeader } from './MonthHeader';
+export type { MonthHeaderProps } from './MonthHeader';

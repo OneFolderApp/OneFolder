@@ -1,96 +1,443 @@
-import React from 'react';
-import { GalleryProps } from './utils';
-import { shell } from 'electron';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
+import { action } from 'mobx';
+import { GalleryProps, getThumbnailSize } from './utils';
+import { useStore } from '../../contexts/StoreContext';
+import { useWindowResize } from '../../hooks/useWindowResize';
+import { ViewMethod } from '../../stores/UiStore';
+import {
+  safeGroupFilesByMonth,
+  validateMonthGroups,
+  CalendarVirtualizedRenderer,
+  MonthGroup,
+  CalendarLayoutEngine,
+  CalendarKeyboardNavigation,
+  CalendarErrorBoundary,
+  EmptyState,
+  LoadingState,
+} from './calendar';
+import { KeyboardShortcutsHelp } from './calendar/KeyboardShortcutsHelp';
+import { useProgressiveLoader } from './calendar/ProgressiveLoader';
+import { calendarPerformanceMonitor } from './calendar/PerformanceMonitor';
 
-import IMG_1 from 'resources/images/sample-calendar-pictures/photos_1.jpg';
-import IMG_2 from 'resources/images/sample-calendar-pictures/photos_2.jpg';
-import IMG_3 from 'resources/images/sample-calendar-pictures/photos_3.jpg';
-import IMG_4 from 'resources/images/sample-calendar-pictures/photos_4.jpg';
-import IMG_5 from 'resources/images/sample-calendar-pictures/photos_5.jpg';
-import IMG_6 from 'resources/images/sample-calendar-pictures/photos_6.jpg';
-import IMG_7 from 'resources/images/sample-calendar-pictures/photos_7.jpg';
-import IMG_8 from 'resources/images/sample-calendar-pictures/photos_8.jpg';
-import IMG_9 from 'resources/images/sample-calendar-pictures/photos_9.jpg';
-import IMG_10 from 'resources/images/sample-calendar-pictures/photos_10.jpg';
-import IMG_11 from 'resources/images/sample-calendar-pictures/photos_11.jpg';
-import IMG_12 from 'resources/images/sample-calendar-pictures/photos_12.jpg';
-import IMG_13 from 'resources/images/sample-calendar-pictures/photos_13.jpg';
-
-type ProfilePicProps = {
-  src: string;
+// Generate a unique key for the current search state to persist scroll position
+const generateSearchKey = (searchCriteriaList: any[], searchMatchAny: boolean): string => {
+  const criteriaKey = searchCriteriaList
+    .map((c) => (c.serialize ? c.serialize() : JSON.stringify(c)))
+    .join('|');
+  return `${criteriaKey}:${searchMatchAny}`;
 };
 
-const ProfilePic = ({ src }: ProfilePicProps) => {
-  return (
-    <div className="calendar-gallery__profile">
-      <img
-        className="calendar-gallery__profile-picture"
-        src={src}
-        alt={`Profile picture of ${name}`}
-      />
-    </div>
+const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
+  const { fileStore, uiStore } = useStore();
+  const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLargeCollection, setIsLargeCollection] = useState(false);
+  const [progressiveProgress, setProgressiveProgress] = useState(0);
+  const [processedCount, setProcessedCount] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const keyboardNavigationRef = useRef<CalendarKeyboardNavigation | null>(null);
+  const [focusedPhotoId, setFocusedPhotoId] = useState<string | undefined>(undefined);
+  const [initialScrollPosition, setInitialScrollPosition] = useState<number>(0);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+
+  const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
+
+  // Generate search key for scroll position persistence
+  const searchKey = useMemo(
+    () => generateSearchKey(uiStore.searchCriteriaList, uiStore.searchMatchAny),
+    [uiStore.searchCriteriaList, uiStore.searchMatchAny],
   );
-};
 
-const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
-  return (
-    <div className="calendar-gallery">
-      <div className="wip-container">
-        The calendar is not ready yet.
-        <br />
-        <br />
-        If you want to speed up the development you <br /> can vote on our roadmap:
-        <br />
-        <button
-          className="wip-link"
-          onClick={() => {
-            shell.openExternal('https://onefolder.canny.io/feedback/p/calendar-view');
+  // Create layout engine for keyboard navigation with responsive handling
+  const layoutEngine = useMemo(() => {
+    return new CalendarLayoutEngine({
+      containerWidth: contentRect.width,
+      thumbnailSize,
+      thumbnailPadding: 8,
+      headerHeight: 48,
+      groupMargin: 24,
+    });
+  }, [contentRect.width, thumbnailSize]);
+
+  // Handle window resize events
+  useWindowResize({
+    debounceDelay: 200,
+    trackInnerDimensions: true,
+    onResize: () => {
+      // Only trigger layout recalculation if the width changes significantly
+      if (monthGroups.length > 0) {
+        console.log('Window resized, updating calendar layout');
+        setIsLayoutUpdating(true);
+
+        // Small delay to allow UI to update
+        setTimeout(() => {
+          try {
+            // Update layout engine with new dimensions
+            layoutEngine.updateConfig({
+              containerWidth: contentRect.width,
+              thumbnailSize,
+            });
+
+            // Recalculate layout
+            layoutEngine.calculateLayout(monthGroups);
+
+            // Update keyboard navigation
+            keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+              layoutEngine,
+              fileStore.fileList,
+              monthGroups,
+            );
+          } catch (error) {
+            console.error('Error updating layout for window resize:', error);
+          } finally {
+            // Reset layout updating state after a brief delay
+            setTimeout(() => {
+              setIsLayoutUpdating(false);
+            }, 200);
+          }
+        }, 0);
+      }
+    },
+  });
+
+  // Track previous thumbnail size for responsive updates
+  const previousThumbnailSizeRef = useRef(thumbnailSize);
+  const [isLayoutUpdating, setIsLayoutUpdating] = useState(false);
+
+  // Handle thumbnail size changes with responsive layout updates
+  useEffect(() => {
+    const currentThumbnailSize = thumbnailSize;
+    const previousThumbnailSize = previousThumbnailSizeRef.current;
+
+    if (currentThumbnailSize !== previousThumbnailSize && monthGroups.length > 0) {
+      setIsLayoutUpdating(true);
+
+      // Update layout engine configuration
+      layoutEngine.updateConfig({
+        containerWidth: contentRect.width,
+        thumbnailSize: currentThumbnailSize,
+      });
+
+      // Recalculate layout with new thumbnail size
+      try {
+        layoutEngine.calculateLayout(monthGroups);
+
+        // Update keyboard navigation with new layout
+        keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+          layoutEngine,
+          fileStore.fileList,
+          monthGroups,
+        );
+
+        console.log(
+          `Thumbnail size changed from ${previousThumbnailSize} to ${currentThumbnailSize}, layout recalculated`,
+        );
+      } catch (error) {
+        console.error('Error updating layout for thumbnail size change:', error);
+      }
+
+      // Reset layout updating state after a brief delay
+      setTimeout(() => {
+        setIsLayoutUpdating(false);
+      }, 200);
+    }
+
+    previousThumbnailSizeRef.current = currentThumbnailSize;
+  }, [thumbnailSize, monthGroups, layoutEngine, contentRect.width, fileStore.fileList]);
+
+  // Use progressive loader for optimized file processing
+  const progressiveLoader = useProgressiveLoader(fileStore.fileList, {
+    onComplete: (result) => {
+      const validGroups = validateMonthGroups(result.monthGroups);
+      setMonthGroups(validGroups);
+      setIsLoading(false);
+
+      // Update layout engine and keyboard navigation
+      if (validGroups.length > 0) {
+        calendarPerformanceMonitor.startTiming('layout-calculation');
+        layoutEngine.calculateLayout(validGroups);
+        calendarPerformanceMonitor.endTiming('layout-calculation');
+
+        keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+          layoutEngine,
+          fileStore.fileList,
+          validGroups,
+        );
+      }
+
+      // Set initial scroll position when entering calendar view
+      const savedScrollPosition = uiStore.getCalendarScrollPosition(searchKey);
+      setInitialScrollPosition(savedScrollPosition);
+
+      // Log performance summary for large collections
+      if (fileStore.fileList.length > 1000) {
+        calendarPerformanceMonitor.logPerformanceSummary();
+      }
+    },
+    onProgress: (progress) => {
+      setProcessedCount(progress.processed);
+      setProgressiveProgress(Math.round((progress.processed / progress.total) * 100));
+    },
+    onError: (error) => {
+      console.error('Error processing files for calendar view:', error);
+      setMonthGroups([]);
+      setIsLoading(false);
+    },
+    autoStart: true,
+    groupingConfig: {
+      batchSize: fileStore.fileList.length > 10000 ? 3000 : 2000,
+      yieldInterval: fileStore.fileList.length > 10000 ? 1500 : 1000,
+    },
+  });
+
+  // Update loading and collection state based on progressive loader
+  useEffect(() => {
+    const fileCount = fileStore.fileList.length;
+    const isLarge = fileCount > 1000;
+    setIsLargeCollection(isLarge);
+    setIsLoading(progressiveLoader.isLoading);
+  }, [fileStore.fileList.length, progressiveLoader.isLoading]);
+
+  // Update focused photo when selection changes from outside keyboard navigation
+  useEffect(() => {
+    const currentIndex = lastSelectionIndex.current;
+    if (currentIndex !== undefined && currentIndex < fileStore.fileList.length) {
+      const selectedFile = fileStore.fileList[currentIndex];
+      setFocusedPhotoId(selectedFile.id);
+    }
+  }, [fileStore.fileList, lastSelectionIndex]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const onKeyDown = action((e: KeyboardEvent) => {
+      if (!monthGroups.length || !keyboardNavigationRef.current) {
+        return;
+      }
+
+      const currentIndex = lastSelectionIndex.current;
+      if (currentIndex === undefined) {
+        return;
+      }
+
+      let newIndex: number | null = null;
+
+      // Handle keyboard shortcuts
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        setShowKeyboardHelp(!showKeyboardHelp);
+        return;
+      }
+
+      // Handle escape key
+      if (e.key === 'Escape') {
+        if (showKeyboardHelp) {
+          e.preventDefault();
+          setShowKeyboardHelp(false);
+          return;
+        }
+        // Clear selection if no help is shown
+        // Note: fileSelection handling would be implemented here
+        // if (fileStore.fileSelection.size > 0) {
+        //   e.preventDefault();
+        //   fileStore.clearSelection();
+        //   return;
+        // }
+      }
+
+      // Handle arrow key navigation
+      if (e.key === 'ArrowUp') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'up');
+      } else if (e.key === 'ArrowDown') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'down');
+      } else if (e.key === 'ArrowLeft') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'left');
+      } else if (e.key === 'ArrowRight') {
+        newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'right');
+      }
+
+      if (newIndex !== null && newIndex !== currentIndex) {
+        e.preventDefault();
+
+        // Handle multi-selection with Ctrl+click and Shift+click patterns
+        const isAdditive = e.ctrlKey || e.metaKey;
+        const isRange = e.shiftKey;
+
+        const newFile = fileStore.fileList[newIndex];
+        select(newFile, isAdditive, isRange);
+
+        // Update focused photo for visual feedback
+        setFocusedPhotoId(newFile.id);
+
+        // Scroll to ensure the selected photo is visible (smooth scrolling to selected items)
+        const scrollPosition = keyboardNavigationRef.current.getScrollPositionForPhoto(newIndex);
+        if (scrollPosition !== null && containerRef.current) {
+          const containerHeight = containerRef.current.clientHeight;
+          const currentScrollTop = containerRef.current.scrollTop;
+          const photoHeight = thumbnailSize + 16; // thumbnail + padding
+
+          // Check if photo is outside viewport
+          if (
+            scrollPosition < currentScrollTop ||
+            scrollPosition > currentScrollTop + containerHeight - photoHeight
+          ) {
+            // Smooth scroll to center the photo in viewport
+            const targetScrollTop = Math.max(0, scrollPosition - containerHeight / 2);
+            containerRef.current.scrollTo({
+              top: targetScrollTop,
+              behavior: 'smooth',
+            });
+          }
+        }
+      }
+    });
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [
+    monthGroups,
+    fileStore.fileList,
+    select,
+    lastSelectionIndex,
+    thumbnailSize,
+    showKeyboardHelp,
+    fileStore,
+  ]);
+
+  // Handle scroll position persistence when switching between view modes
+  const handleScroll = useCallback(
+    (scrollTop: number) => {
+      uiStore.setCalendarScrollPosition(searchKey, scrollTop);
+    },
+    [searchKey, uiStore],
+  );
+
+  // Scroll to selected item when selection changes from outside
+  useEffect(() => {
+    const currentIndex = lastSelectionIndex.current;
+    if (currentIndex !== undefined && keyboardNavigationRef.current && containerRef.current) {
+      const scrollPosition = keyboardNavigationRef.current.getScrollPositionForPhoto(currentIndex);
+      if (scrollPosition !== null) {
+        const containerHeight = containerRef.current.clientHeight;
+        const currentScrollTop = containerRef.current.scrollTop;
+        const photoHeight = thumbnailSize + 16;
+
+        // Only scroll if the selected item is not visible
+        if (
+          scrollPosition < currentScrollTop ||
+          scrollPosition > currentScrollTop + containerHeight - photoHeight
+        ) {
+          const targetScrollTop = Math.max(0, scrollPosition - containerHeight / 2);
+          containerRef.current.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth',
+          });
+        }
+      }
+    }
+  }, [lastSelectionIndex, thumbnailSize]);
+
+  // Note: Scroll-to-date functionality available for future enhancements
+  // Can be implemented when needed by accessing layoutEngine.getScrollPositionForDate
+
+  // Handle retry functionality for error boundary
+  const handleRetry = useCallback(() => {
+    setIsLoading(true);
+    setMonthGroups([]);
+    // Trigger re-processing by updating a dependency
+    const processFiles = async () => {
+      try {
+        const groups = safeGroupFilesByMonth(fileStore.fileList);
+        const validGroups = validateMonthGroups(groups);
+        setMonthGroups(validGroups);
+      } catch (error) {
+        console.error('Retry failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    processFiles();
+  }, [fileStore.fileList]);
+
+  // Handle fallback to different view
+  const handleFallback = useCallback(() => {
+    // Switch to list view as fallback
+    uiStore.setMethod(ViewMethod.List);
+  }, [uiStore]);
+
+  // Show empty state if no files
+  if (fileStore.fileList.length === 0) {
+    return (
+      <div className="calendar-gallery">
+        <EmptyState type="no-photos" />
+      </div>
+    );
+  }
+
+  // Show loading state while processing files
+  if (isLoading) {
+    const fileCount = fileStore.fileList.length;
+    const isVeryLargeCollection = fileCount > 5000;
+    const loadingType = isVeryLargeCollection
+      ? 'progressive'
+      : isLargeCollection
+      ? 'large-collection'
+      : 'initial';
+
+    return (
+      <div className="calendar-gallery">
+        <LoadingState
+          type={loadingType}
+          itemCount={fileCount}
+          processedCount={processedCount}
+          showProgress={isLargeCollection || isVeryLargeCollection}
+          progress={isVeryLargeCollection ? progressiveProgress : undefined}
+        />
+      </div>
+    );
+  }
+
+  // Show empty state if no valid groups after processing
+  if (monthGroups.length === 0 && fileStore.fileList.length > 0) {
+    return (
+      <div className="calendar-gallery">
+        <EmptyState
+          type="processing-error"
+          message="Unable to group photos by date. This may be due to missing date metadata or processing errors."
+          action={{
+            label: 'Switch to List View',
+            onClick: handleFallback,
           }}
-        >
-          onefolder.canny.io/feedback/p/calendar-view
-        </button>
-        <br />
-        <br />
-        <br />
-        Comments and ideas are welcome 🙏
+        />
       </div>
+    );
+  }
 
-      <h1>January 2024</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_8} />
-        <ProfilePic src={IMG_9} />
+  return (
+    <CalendarErrorBoundary onRetry={handleRetry} onFallback={handleFallback}>
+      <div ref={containerRef} className="calendar-gallery">
+        <CalendarVirtualizedRenderer
+          monthGroups={monthGroups}
+          containerWidth={contentRect.width}
+          containerHeight={contentRect.height}
+          thumbnailSize={thumbnailSize}
+          onPhotoSelect={select}
+          onScrollChange={handleScroll}
+          initialScrollTop={initialScrollPosition}
+          overscan={2}
+          focusedPhotoId={focusedPhotoId}
+          isLoading={isLayoutUpdating}
+          isLargeCollection={isLargeCollection}
+        />
+
+        {/* Keyboard shortcuts help */}
+        <KeyboardShortcutsHelp
+          isVisible={showKeyboardHelp}
+          onClose={() => setShowKeyboardHelp(false)}
+        />
       </div>
-
-      <h1>December 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_10} />
-        <ProfilePic src={IMG_11} />
-        <ProfilePic src={IMG_12} />
-        <ProfilePic src={IMG_13} />
-      </div>
-
-      <h1>November 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_9} />
-
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_8} />
-      </div>
-    </div>
+    </CalendarErrorBoundary>
   );
-};
+});
 
-export default ListGallery;
+export default CalendarGallery;

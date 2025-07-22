@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ClientFile } from '../../../entities/File';
-import { MonthGroup, LayoutItem, VisibleRange } from './types';
-import { CalendarLayoutEngine } from './layoutEngine';
+import { MonthGroup, VisibleRange } from './types';
 import { MonthHeader } from './MonthHeader';
 import { PhotoGrid } from './PhotoGrid';
 import { EmptyState } from './EmptyState';
 import { LoadingState } from './LoadingState';
 import { debouncedThrottle } from 'common/timeout';
+import { useResponsiveLayout } from './useResponsiveLayout';
 
 export interface CalendarVirtualizedRendererProps {
   /** Grouped photo data organized by month */
@@ -59,17 +59,19 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
     const [layoutError, setLayoutError] = useState<string | null>(null);
     const [memoryWarning, setMemoryWarning] = useState(false);
 
-    // Create layout engine instance
-    const layoutEngine = useMemo(() => {
-      const engine = new CalendarLayoutEngine({
-        containerWidth,
-        thumbnailSize,
-        thumbnailPadding: 8,
-        headerHeight: 48,
-        groupMargin: 24,
-      });
-      return engine;
-    }, [containerWidth, thumbnailSize]);
+    // Use responsive layout hook for handling window resize and layout recalculation
+    const { layoutEngine, isRecalculating, itemsPerRow, isResponsive, forceRecalculate } =
+      useResponsiveLayout(
+        {
+          containerWidth,
+          containerHeight,
+          thumbnailSize,
+          debounceDelay: 150,
+          minContainerWidth: 200,
+          maxItemsPerRow: 15,
+        },
+        monthGroups,
+      );
 
     // Calculate layout when month groups or layout config changes
     const layoutItems = useMemo(() => {
@@ -147,13 +149,21 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       }
     }, [initialScrollTop]);
 
-    // Update layout engine configuration when props change
+    // Handle layout recalculation errors
     useEffect(() => {
-      layoutEngine.updateConfig({
-        containerWidth,
-        thumbnailSize,
-      });
-    }, [layoutEngine, containerWidth, thumbnailSize]);
+      if (layoutError) {
+        console.error('Layout calculation error detected:', layoutError);
+        // Try to recover by forcing a recalculation
+        setTimeout(() => {
+          try {
+            forceRecalculate();
+            setLayoutError(null);
+          } catch (error) {
+            console.error('Failed to recover from layout error:', error);
+          }
+        }, 1000);
+      }
+    }, [layoutError, forceRecalculate]);
 
     // Monitor memory usage for very large collections
     useEffect(() => {
@@ -249,11 +259,28 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       );
     }
 
+    // Determine aspect ratio class for responsive styling
+    const aspectRatio = containerWidth / containerHeight;
+    const aspectRatioClass = aspectRatio >= 1 ? 'landscape' : 'portrait';
+
+    // Determine thumbnail size class for responsive styling
+    const getThumbnailSizeClass = () => {
+      if (thumbnailSize <= 120) {
+        return 'small';
+      }
+      if (thumbnailSize <= 180) {
+        return 'medium';
+      }
+      return 'large';
+    };
+
     return (
       <div
         ref={scrollContainerRef}
         className={`calendar-virtualized-renderer${
           isScrolling ? ' calendar-virtualized-renderer--scrolling' : ''
+        }${isResponsive ? ' calendar-virtualized-renderer--responsive' : ''}${
+          isRecalculating ? ' calendar-virtualized-renderer--recalculating' : ''
         }`}
         style={{
           height: containerHeight,
@@ -263,8 +290,26 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
         onScroll={handleScroll}
         role="grid"
         aria-label="Calendar view of photos"
+        data-items-per-row={itemsPerRow}
+        data-responsive={isResponsive}
+        data-aspect-ratio={aspectRatioClass}
+        data-thumbnail-size={getThumbnailSizeClass()}
       >
+        {/* Show recalculation indicator for significant layout changes */}
+        {isRecalculating && (
+          <div className="calendar-layout-recalculating">
+            <div className="calendar-layout-recalculating__indicator">Adjusting layout...</div>
+          </div>
+        )}
+
         {/* Spacer to create the full scrollable height */}
+        {/* Show recalculation indicator for significant layout changes */}
+        {isRecalculating && (
+          <div className="calendar-layout-recalculating">
+            <div className="calendar-layout-recalculating__indicator">Adjusting layout...</div>
+          </div>
+        )}
+
         <div
           style={{
             height: totalHeight,
@@ -277,6 +322,8 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
             style={{
               position: 'relative',
               pointerEvents: 'auto',
+              opacity: isRecalculating ? 0.7 : 1,
+              transition: isResponsive ? 'opacity 0.2s ease-in-out' : 'none',
             }}
           >
             {renderVisibleItems()}

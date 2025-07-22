@@ -15,7 +15,7 @@ export async function promiseRetry<T>(
     : fn().catch((error) => promiseRetry(fn, retries - 1, timeout * 2, error));
 }
 
-export function debounce<F extends (...args: any) => any>(func: F, wait: number = 300): F {
+export function debounce<F extends (...args: any) => any>(func: F, wait: number = 300): F & { cancel: () => void } {
   let timeoutID: number;
 
   if (!Number.isInteger(wait)) {
@@ -23,12 +23,19 @@ export function debounce<F extends (...args: any) => any>(func: F, wait: number 
     wait = 300;
   }
 
-  // conversion through any necessary as it wont satisfy criteria otherwise
-  return function (this: any, ...args: any[]) {
+  // Create the debounced function
+  const debounced = function (this: any, ...args: any[]) {
     clearTimeout(timeoutID);
-
     timeoutID = setTimeout(() => func.apply(this, args), wait) as unknown as number;
-  } as any as F;
+  };
+
+  // Add cancel method
+  (debounced as any).cancel = function() {
+    clearTimeout(timeoutID);
+  };
+
+  // Return the enhanced function
+  return debounced as any as F & { cancel: () => void };
 }
 
 export function throttle(fn: (...args: any) => any, wait: number = 300) {
@@ -52,12 +59,14 @@ export function throttle(fn: (...args: any) => any, wait: number = 300) {
  * @param fn The function to be called
  * @param wait How long to wait in between calls
  */
-export function debouncedThrottle<F extends (...args: any) => any>(fn: F, wait = 300) {
+export function debouncedThrottle<F extends (...args: any) => any>(fn: F, wait = 300): F & { cancel: () => void } {
   let last: Date | undefined;
   let deferTimer = 0;
 
   const db = debounce(fn);
-  return function debouncedThrottleFn(this: any, ...args: any) {
+  
+  // Create the debounced throttle function
+  const debouncedThrottleFn = function(this: any, ...args: any) {
     const now = new Date();
     if (last === undefined || now.getTime() < last.getTime() + wait) {
       clearTimeout(deferTimer);
@@ -71,6 +80,14 @@ export function debouncedThrottle<F extends (...args: any) => any>(fn: F, wait =
       fn.apply(this, args);
     }
   };
+  
+  // Add cancel method
+  (debouncedThrottleFn as any).cancel = function() {
+    clearTimeout(deferTimer);
+    db.cancel();
+  };
+  
+  return debouncedThrottleFn as any as F & { cancel: () => void };
 }
 
 export function timeoutPromise<T>(timeMS: number, promise: Promise<T>): Promise<T> {

@@ -181,7 +181,7 @@ export class CalendarLayoutEngine {
   }
 
   /**
-   * Calculates how many items fit per row
+   * Calculates how many items fit per row with responsive considerations
    */
   calculateItemsPerRow(): number {
     try {
@@ -199,11 +199,67 @@ export class CalendarLayoutEngine {
       }
 
       const itemsPerRow = Math.floor(availableWidth / itemSize);
-      return Math.max(1, itemsPerRow);
+      const calculatedItems = Math.max(1, itemsPerRow);
+      
+      // Apply responsive constraints
+      const maxItemsPerRow = this.getMaxItemsPerRow();
+      const minItemsPerRow = this.getMinItemsPerRow();
+      
+      return Math.min(Math.max(calculatedItems, minItemsPerRow), maxItemsPerRow);
     } catch (error) {
       console.error('Error calculating items per row:', error);
       return 1; // Safe fallback
     }
+  }
+
+  /**
+   * Gets the maximum items per row based on container width and thumbnail size
+   */
+  private getMaxItemsPerRow(): number {
+    // Prevent overcrowding on very wide screens
+    if (this.config.containerWidth > 2000) {
+      return 15; // Max 15 items on very wide screens
+    } else if (this.config.containerWidth > 1400) {
+      return 12; // Max 12 items on wide screens
+    } else if (this.config.containerWidth > 1000) {
+      return 10; // Max 10 items on medium-wide screens
+    }
+    return 8; // Max 8 items on smaller screens
+  }
+
+  /**
+   * Gets the minimum items per row based on container width
+   */
+  private getMinItemsPerRow(): number {
+    // Ensure at least some items are visible even on narrow screens
+    if (this.config.containerWidth < 400) {
+      return 1; // Single column on very narrow screens
+    } else if (this.config.containerWidth < 600) {
+      return 2; // At least 2 columns on narrow screens
+    }
+    return 3; // At least 3 columns on wider screens
+  }
+
+  /**
+   * Calculates responsive grid dimensions for different screen sizes
+   */
+  getResponsiveGridInfo(): {
+    itemsPerRow: number;
+    effectiveItemSize: number;
+    gridWidth: number;
+    hasHorizontalScroll: boolean;
+  } {
+    const itemsPerRow = this.calculateItemsPerRow();
+    const effectiveItemSize = this.config.thumbnailSize + this.config.thumbnailPadding;
+    const gridWidth = itemsPerRow * effectiveItemSize;
+    const hasHorizontalScroll = gridWidth > this.config.containerWidth;
+
+    return {
+      itemsPerRow,
+      effectiveItemSize,
+      gridWidth,
+      hasHorizontalScroll,
+    };
   }
 
   /**

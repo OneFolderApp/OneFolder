@@ -545,6 +545,203 @@
   }
 }
 
+// Responsive layout and window resize handling styles
+.calendar-virtualized-renderer {
+  // Responsive state - when layout is adapting to size changes
+  &--responsive {
+    .month-header,
+    .photo-grid {
+      transition: all 0.2s ease-in-out;
+    }
+  }
+
+  // Recalculating state - when layout is being recalculated
+  &--recalculating {
+    .month-header,
+    .photo-grid {
+      transition: opacity 0.2s ease-in-out;
+    }
+  }
+
+  // Scrolling state optimizations
+  &--scrolling {
+    .month-header,
+    .photo-grid {
+      will-change: transform;
+    }
+  }
+}
+
+// Layout recalculation indicator
+.calendar-layout-recalculating {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+  
+  &__indicator {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 8px auto;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    
+    // Subtle animation
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// PhotoGrid responsive styles
+.calendar-photo-grid {
+  transition: all 0.2s ease-in-out;
+  
+  // Screen size specific styles
+  &--mobile {
+    .calendar-photo-item {
+      border-radius: 4px; // Smaller border radius on mobile
+    }
+  }
+  
+  &--tablet {
+    .calendar-photo-item {
+      border-radius: 6px;
+    }
+  }
+  
+  &--desktop,
+  &--wide {
+    .calendar-photo-item {
+      border-radius: 8px;
+    }
+  }
+  
+  // Responsive state
+  &--responsive {
+    .calendar-photo-item {
+      transition: all 0.2s ease-in-out;
+    }
+  }
+}
+
+.calendar-photo-item {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  border: 2px solid transparent;
+  transition: all 0.15s ease-in-out;
+  
+  &:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &--selected {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent-alpha);
+  }
+  
+  &--focused {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  
+  &--broken {
+    opacity: 0.5;
+    
+    &::after {
+      content: '⚠';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: var(--color-text-secondary);
+    }
+  }
+}
+
+.calendar-photo-thumbnail {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .calendar-photo-item:hover & img {
+    transform: scale(1.05);
+  }
+}
+
+// Responsive grid adjustments for different screen sizes
+.calendar-gallery {
+  // Very narrow screens (mobile portrait)
+  @media (max-width: 480px) {
+    .calendar-photo-grid {
+      padding: 4px;
+      gap: 4px;
+    }
+    
+    .month-header {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+  }
+
+  // Narrow screens (mobile landscape, small tablets)
+  @media (min-width: 481px) and (max-width: 768px) {
+    .calendar-photo-grid {
+      padding: 6px;
+      gap: 6px;
+    }
+  }
+
+  // Medium screens (tablets)
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .calendar-photo-grid {
+      padding: 8px;
+      gap: 8px;
+    }
+  }
+
+  // Large screens (desktop)
+  @media (min-width: 1025px) and (max-width: 1440px) {
+    .calendar-photo-grid {
+      padding: 8px;
+      gap: 8px;
+    }
+  }
+
+  // Very large screens (wide desktop)
+  @media (min-width: 1441px) {
+    .calendar-photo-grid {
+      padding: 10px;
+      gap: 10px;
+    }
+  }
+}
+
 // Additional state-specific styles for CalendarVirtualizedRenderer
 .calendar-virtualized-renderer {
   &--loading {
@@ -606,6 +803,149 @@
         margin: 0;
         font-style: italic;
       }
+    }
+  }
+}// Res
+ponsive layout and window resize handling styles
+.calendar-virtualized-renderer {
+  // Responsive state - when layout is adapting to size changes
+  &--responsive {
+    .calendar-month-header,
+    .calendar-photo-grid {
+      transition: all 0.2s ease-in-out;
+    }
+  }
+
+  // Recalculating state - when layout is being recalculated
+  &--recalculating {
+    .calendar-month-header,
+    .calendar-photo-grid {
+      transition: opacity 0.2s ease-in-out;
+    }
+  }
+
+  // Scrolling state optimizations
+  &--scrolling {
+    .calendar-month-header,
+    .calendar-photo-grid {
+      will-change: transform;
+    }
+  }
+}
+
+// Layout recalculation indicator
+.calendar-layout-recalculating {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+  
+  &__indicator {
+    background: var(--background-color-subtle);
+    color: var(--text-color-muted);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 8px auto;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+// Enhanced responsive layout styles for different screen sizes
+.calendar-virtualized-renderer {
+  // Mobile portrait
+  @media (max-width: 480px) {
+    .calendar-photo-grid {
+      gap: 4px;
+      padding: 4px;
+    }
+    
+    .calendar-month-header {
+      padding: 8px;
+      
+      &__title {
+        font-size: 14px;
+      }
+      
+      &__count {
+        font-size: 12px;
+      }
+    }
+  }
+  
+  // Mobile landscape
+  @media (min-width: 481px) and (max-width: 768px) {
+    .calendar-photo-grid {
+      gap: 6px;
+      padding: 6px;
+    }
+    
+    .calendar-month-header {
+      padding: 10px;
+    }
+  }
+  
+  // Tablet
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .calendar-photo-grid {
+      gap: 8px;
+      padding: 8px;
+    }
+  }
+  
+  // Desktop
+  @media (min-width: 1025px) and (max-width: 1440px) {
+    .calendar-photo-grid {
+      gap: 8px;
+      padding: 8px;
+    }
+  }
+  
+  // Wide desktop
+  @media (min-width: 1441px) {
+    .calendar-photo-grid {
+      gap: 10px;
+      padding: 10px;
+    }
+  }
+  
+  // Aspect ratio specific adjustments
+  &[data-aspect-ratio="landscape"] {
+    .calendar-photo-grid {
+      // Optimize for landscape screens
+      gap: 8px;
+    }
+  }
+  
+  &[data-aspect-ratio="portrait"] {
+    .calendar-photo-grid {
+      // Optimize for portrait screens
+      gap: 6px;
+    }
+  }
+  
+  // Thumbnail size specific adjustments
+  &[data-thumbnail-size="small"] {
+    .calendar-photo-grid {
+      gap: 4px;
+    }
+  }
+  
+  &[data-thumbnail-size="medium"] {
+    .calendar-photo-grid {
+      gap: 6px;
+    }
+  }
+  
+  &[data-thumbnail-size="large"] {
+    .calendar-photo-grid {
+      gap: 8px;
     }
   }
 }

@@ -43,3 +43,7 @@ export type { LoadingStateProps } from './LoadingState';
 
 // Error handling
 export { CalendarErrorBoundary } from './CalendarErrorBoundary';
+
+// Responsive layout hook
+export { useResponsiveLayout } from './useResponsiveLayout';
+export type { ResponsiveLayoutConfig, ResponsiveLayoutResult } from './useResponsiveLayout';

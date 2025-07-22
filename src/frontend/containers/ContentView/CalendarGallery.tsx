@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 import { GalleryProps, getThumbnailSize } from './utils';
 import { useStore } from '../../contexts/StoreContext';
+import { useWindowResize } from '../../hooks/useWindowResize';
 import { ViewMethod } from '../../stores/UiStore';
 import {
   safeGroupFilesByMonth,
@@ -45,7 +46,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
     [uiStore.searchCriteriaList, uiStore.searchMatchAny],
   );
 
-  // Create layout engine for keyboard navigation
+  // Create layout engine for keyboard navigation with responsive handling
   const layoutEngine = useMemo(() => {
     return new CalendarLayoutEngine({
       containerWidth: contentRect.width,
@@ -55,6 +56,92 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
       groupMargin: 24,
     });
   }, [contentRect.width, thumbnailSize]);
+
+  // Handle window resize events
+  const { isResizing: isWindowResizing } = useWindowResize({
+    debounceDelay: 200,
+    trackInnerDimensions: true,
+    onResize: (dimensions) => {
+      // Only trigger layout recalculation if the width changes significantly
+      if (layoutEngine && monthGroups.length > 0) {
+        console.log('Window resized, updating calendar layout');
+        setIsLayoutUpdating(true);
+
+        // Small delay to allow UI to update
+        setTimeout(() => {
+          try {
+            // Update layout engine with new dimensions
+            layoutEngine.updateConfig({
+              containerWidth: contentRect.width,
+              thumbnailSize,
+            });
+
+            // Recalculate layout
+            layoutEngine.calculateLayout(monthGroups);
+
+            // Update keyboard navigation
+            keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+              layoutEngine,
+              fileStore.fileList,
+              monthGroups,
+            );
+          } catch (error) {
+            console.error('Error updating layout for window resize:', error);
+          } finally {
+            // Reset layout updating state after a brief delay
+            setTimeout(() => {
+              setIsLayoutUpdating(false);
+            }, 200);
+          }
+        }, 0);
+      }
+    },
+  });
+
+  // Track previous thumbnail size for responsive updates
+  const previousThumbnailSizeRef = useRef(thumbnailSize);
+  const [isLayoutUpdating, setIsLayoutUpdating] = useState(false);
+
+  // Handle thumbnail size changes with responsive layout updates
+  useEffect(() => {
+    const currentThumbnailSize = thumbnailSize;
+    const previousThumbnailSize = previousThumbnailSizeRef.current;
+
+    if (currentThumbnailSize !== previousThumbnailSize && monthGroups.length > 0) {
+      setIsLayoutUpdating(true);
+
+      // Update layout engine configuration
+      layoutEngine.updateConfig({
+        containerWidth: contentRect.width,
+        thumbnailSize: currentThumbnailSize,
+      });
+
+      // Recalculate layout with new thumbnail size
+      try {
+        layoutEngine.calculateLayout(monthGroups);
+
+        // Update keyboard navigation with new layout
+        keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+          layoutEngine,
+          fileStore.fileList,
+          monthGroups,
+        );
+
+        console.log(
+          `Thumbnail size changed from ${previousThumbnailSize} to ${currentThumbnailSize}, layout recalculated`,
+        );
+      } catch (error) {
+        console.error('Error updating layout for thumbnail size change:', error);
+      }
+
+      // Reset layout updating state after a brief delay
+      setTimeout(() => {
+        setIsLayoutUpdating(false);
+      }, 200);
+    }
+
+    previousThumbnailSizeRef.current = currentThumbnailSize;
+  }, [thumbnailSize, monthGroups, layoutEngine, contentRect.width, fileStore.fileList]);
 
   // Group files by month when file list changes
   useEffect(() => {
@@ -315,7 +402,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
           initialScrollTop={initialScrollPosition}
           overscan={2}
           focusedPhotoId={focusedPhotoId}
-          isLoading={isLoading}
+          isLoading={isLoading || isLayoutUpdating}
           isLargeCollection={isLargeCollection}
         />
       </div>

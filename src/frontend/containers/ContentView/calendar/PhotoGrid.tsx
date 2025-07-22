@@ -30,28 +30,59 @@ export const PhotoGrid: React.FC<PhotoGridProps> = observer(({
 }) => {
   const { uiStore } = useStore();
   
-  // Calculate grid layout based on thumbnail size and container width
+  // Helper function to determine screen size category
+  const getScreenSize = useCallback((width: number): 'mobile' | 'tablet' | 'desktop' | 'wide' => {
+    if (width < 768) return 'mobile';
+    if (width < 1024) return 'tablet';
+    if (width < 1440) return 'desktop';
+    return 'wide';
+  }, []);
+  
+  // Calculate responsive grid layout based on thumbnail size and container width
   const gridLayout = useMemo(() => {
     const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
     const padding = 8; // Match existing gallery padding
-    const minColumns = 1;
-    
-    // Calculate how many columns can fit
-    const availableWidth = containerWidth - (padding * 2); // Account for container padding
-    const itemWidth = thumbnailSize;
     const gap = 8; // Gap between items
     
-    const columns = Math.max(minColumns, Math.floor((availableWidth + gap) / (itemWidth + gap)));
+    // Responsive column calculation with constraints
+    const getResponsiveColumns = (width: number, itemSize: number): number => {
+      const availableWidth = width - (padding * 2);
+      const minColumns = 1;
+      const maxColumns = getMaxColumnsForWidth(width);
+      
+      const calculatedColumns = Math.floor((availableWidth + gap) / (itemSize + gap));
+      return Math.min(Math.max(minColumns, calculatedColumns), maxColumns);
+    };
+    
+    // Get maximum columns based on screen width to prevent overcrowding
+    const getMaxColumnsForWidth = (width: number): number => {
+      if (width < 480) return 2;      // Mobile portrait: max 2 columns
+      if (width < 768) return 3;      // Mobile landscape: max 3 columns
+      if (width < 1024) return 5;     // Tablet: max 5 columns
+      if (width < 1440) return 8;     // Desktop: max 8 columns
+      return 12;                      // Wide desktop: max 12 columns
+    };
+    
+    const columns = getResponsiveColumns(containerWidth, thumbnailSize);
+    const availableWidth = containerWidth - (padding * 2);
     const actualItemWidth = Math.floor((availableWidth - (gap * (columns - 1))) / columns);
+    
+    // Ensure minimum item size for usability
+    const minItemSize = 80;
+    const finalItemWidth = Math.max(actualItemWidth, minItemSize);
     
     return {
       columns,
-      itemWidth: actualItemWidth,
-      itemHeight: uiStore.thumbnailShape === 'square' ? actualItemWidth : Math.floor(actualItemWidth * 0.75),
+      itemWidth: finalItemWidth,
+      itemHeight: uiStore.thumbnailShape === 'square' 
+        ? finalItemWidth 
+        : Math.floor(finalItemWidth * 0.75),
       gap,
-      padding
+      padding,
+      isResponsive: containerWidth < 768, // Mark as responsive on smaller screens
+      screenSize: getScreenSize(containerWidth)
     };
-  }, [containerWidth, uiStore.thumbnailSize, uiStore.thumbnailShape]);
+  }, [containerWidth, uiStore.thumbnailSize, uiStore.thumbnailShape, getScreenSize]);
 
   // Handle photo click events
   const handlePhotoClick = useCallback((photo: ClientFile, event: React.MouseEvent<HTMLDivElement>) => {
@@ -111,7 +142,14 @@ export const PhotoGrid: React.FC<PhotoGridProps> = observer(({
   }, []);
 
   return (
-    <div className="calendar-photo-grid" style={gridStyle}>
+    <div 
+      className={`calendar-photo-grid calendar-photo-grid--${gridLayout.screenSize}${
+        gridLayout.isResponsive ? ' calendar-photo-grid--responsive' : ''
+      }`}
+      style={gridStyle}
+      data-columns={gridLayout.columns}
+      data-screen-size={gridLayout.screenSize}
+    >
       {photos.map((photo) => {
         const eventManager = new CommandDispatcher(photo);
         const isSelected = uiStore.fileSelection.has(photo);

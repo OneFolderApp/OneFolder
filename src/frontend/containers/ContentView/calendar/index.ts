@@ -13,8 +13,12 @@ export {
   createMonthGroupId,
   extractMonthYear,
   groupFilesByMonth,
+  safeGroupFilesByMonth,
+  progressiveGroupFilesByMonth,
   isReasonablePhotoDate,
   getSafeDateForGrouping,
+  isValidMonthGroup,
+  validateMonthGroups,
 } from './dateUtils';
 
 // Layout engine
@@ -30,3 +34,12 @@ export { PhotoGrid } from './PhotoGrid';
 export type { PhotoGridProps } from './PhotoGrid';
 export { CalendarVirtualizedRenderer } from './CalendarVirtualizedRenderer';
 export type { CalendarVirtualizedRendererProps } from './CalendarVirtualizedRenderer';
+
+// State components
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+export { LoadingState } from './LoadingState';
+export type { LoadingStateProps } from './LoadingState';
+
+// Error handling
+export { CalendarErrorBoundary } from './CalendarErrorBoundary';

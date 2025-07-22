@@ -5,6 +5,8 @@ import { MonthGroup, LayoutItem, VisibleRange } from './types';
 import { CalendarLayoutEngine } from './layoutEngine';
 import { MonthHeader } from './MonthHeader';
 import { PhotoGrid } from './PhotoGrid';
+import { EmptyState } from './EmptyState';
+import { LoadingState } from './LoadingState';
 import { debouncedThrottle } from 'common/timeout';
 
 export interface CalendarVirtualizedRendererProps {
@@ -26,6 +28,10 @@ export interface CalendarVirtualizedRendererProps {
   initialScrollTop?: number;
   /** ID of the currently focused photo (for keyboard navigation) */
   focusedPhotoId?: string;
+  /** Loading state for initial data processing */
+  isLoading?: boolean;
+  /** Whether this is a large collection that may need special handling */
+  isLargeCollection?: boolean;
 }
 
 /**
@@ -44,10 +50,14 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
     onScrollChange,
     initialScrollTop = 0,
     focusedPhotoId,
+    isLoading = false,
+    isLargeCollection = false,
   }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [scrollTop, setScrollTop] = useState(initialScrollTop);
     const [isScrolling, setIsScrolling] = useState(false);
+    const [layoutError, setLayoutError] = useState<string | null>(null);
+    const [memoryWarning, setMemoryWarning] = useState(false);
 
     // Create layout engine instance
     const layoutEngine = useMemo(() => {
@@ -66,12 +76,26 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       if (monthGroups.length === 0) {
         return [];
       }
-      return layoutEngine.calculateLayout(monthGroups);
+
+      try {
+        setLayoutError(null);
+        return layoutEngine.calculateLayout(monthGroups);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown layout error';
+        setLayoutError(errorMessage);
+        console.error('Layout calculation failed:', error);
+        return [];
+      }
     }, [layoutEngine, monthGroups]);
 
     // Calculate total height for the scrollable area
     const totalHeight = useMemo(() => {
-      return layoutEngine.getTotalHeight();
+      try {
+        return layoutEngine.getTotalHeight();
+      } catch (error) {
+        console.error('Error getting total height:', error);
+        return 0;
+      }
     }, [layoutEngine]);
 
     // Find visible items based on current scroll position
@@ -79,7 +103,17 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       if (layoutItems.length === 0) {
         return { startIndex: 0, endIndex: 0, totalItems: 0 };
       }
-      return layoutEngine.findVisibleItems(scrollTop, containerHeight, overscan);
+
+      try {
+        return layoutEngine.findVisibleItems(scrollTop, containerHeight, overscan);
+      } catch (error) {
+        console.error('Error finding visible items:', error);
+        return {
+          startIndex: 0,
+          endIndex: Math.min(5, layoutItems.length - 1),
+          totalItems: layoutItems.length,
+        };
+      }
     }, [layoutEngine, scrollTop, containerHeight, overscan, layoutItems.length]);
 
     // Get visible layout items
@@ -121,6 +155,23 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       });
     }, [layoutEngine, containerWidth, thumbnailSize]);
 
+    // Monitor memory usage for very large collections
+    useEffect(() => {
+      if (monthGroups.length > 0) {
+        const totalPhotos = monthGroups.reduce((sum, group) => sum + group.photos.length, 0);
+
+        // Show memory warning for extremely large collections
+        if (totalPhotos > 10000) {
+          setMemoryWarning(true);
+          console.warn(
+            `Calendar view: Large collection detected (${totalPhotos} photos). Performance may be impacted.`,
+          );
+        } else {
+          setMemoryWarning(false);
+        }
+      }
+    }, [monthGroups]);
+
     // Render visible items
     const renderVisibleItems = () => {
       return visibleItems.map((item) => {
@@ -160,13 +211,40 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       });
     };
 
+    // Handle loading state
+    if (isLoading) {
+      const loadingType = isLargeCollection ? 'large-collection' : 'initial';
+      return (
+        <div className="calendar-virtualized-renderer calendar-virtualized-renderer--loading">
+          <LoadingState type={loadingType} />
+        </div>
+      );
+    }
+
+    // Handle layout error
+    if (layoutError) {
+      return (
+        <div className="calendar-virtualized-renderer calendar-virtualized-renderer--error">
+          <EmptyState
+            type="processing-error"
+            message={`Layout calculation failed: ${layoutError}`}
+            action={{
+              label: 'Switch to List View',
+              onClick: () => {
+                // This would be handled by parent component
+                console.log('Fallback to list view requested');
+              },
+            }}
+          />
+        </div>
+      );
+    }
+
     // Handle empty state
     if (monthGroups.length === 0) {
       return (
         <div className="calendar-virtualized-renderer calendar-virtualized-renderer--empty">
-          <div className="calendar-empty-state">
-            <p>No photos to display</p>
-          </div>
+          <EmptyState type="no-photos" />
         </div>
       );
     }

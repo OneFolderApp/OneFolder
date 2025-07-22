@@ -14,10 +14,16 @@ export interface MonthHeaderProps {
  * provides proper semantic HTML structure for accessibility.
  */
 export const MonthHeader: React.FC<MonthHeaderProps> = ({ monthGroup, photoCount }) => {
-  const { displayName } = monthGroup;
+  const { displayName, id } = monthGroup;
+  
+  // Special handling for unknown date groups
+  const isUnknownDate = id === 'unknown-date';
+  const isFallbackGroup = id === 'fallback-group';
+  
+  const headerClassName = `calendar-month-header${isUnknownDate ? ' calendar-month-header--unknown-date' : ''}${isFallbackGroup ? ' calendar-month-header--fallback' : ''}`;
 
   return (
-    <header className="calendar-month-header" role="banner">
+    <header className={headerClassName} role="banner">
       <div className="calendar-month-header__content">
         <h2 className="calendar-month-header__title">
           {displayName}
@@ -26,6 +32,20 @@ export const MonthHeader: React.FC<MonthHeaderProps> = ({ monthGroup, photoCount
           {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
         </span>
       </div>
+      {isUnknownDate && (
+        <div className="calendar-month-header__description">
+          <p className="calendar-month-header__help-text">
+            These photos have missing or invalid date information
+          </p>
+        </div>
+      )}
+      {isFallbackGroup && (
+        <div className="calendar-month-header__description">
+          <p className="calendar-month-header__help-text">
+            Showing all photos due to grouping error
+          </p>
+        </div>
+      )}
     </header>
   );
 };

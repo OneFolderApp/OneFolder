@@ -308,3 +308,304 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+// Empty State component styles
+.calendar-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  padding: 2rem;
+  
+  .calendar-empty-state__content {
+    text-align: center;
+    max-width: 400px;
+  }
+  
+  .calendar-empty-state__icon {
+    margin-bottom: 1rem;
+    opacity: 0.6;
+    
+    .custom-icon-48 {
+      font-size: 3rem;
+      color: var(--text-color-muted);
+    }
+  }
+  
+  .calendar-empty-state__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color-strong);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+  }
+  
+  .calendar-empty-state__message {
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+  
+  .calendar-empty-state__action {
+    margin-top: 1.5rem;
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    min-height: 200px;
+    padding: 1rem;
+    
+    .calendar-empty-state__title {
+      font-size: 1rem;
+    }
+    
+    .calendar-empty-state__message {
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+// Loading State component styles
+.calendar-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  padding: 2rem;
+  
+  .calendar-loading-state__content {
+    text-align: center;
+    max-width: 400px;
+  }
+  
+  .calendar-loading-state__spinner {
+    margin-bottom: 1rem;
+    
+    .calendar-loading-state__icon {
+      font-size: 2rem;
+      color: var(--accent-color);
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  .calendar-loading-state__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color-strong);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+  }
+  
+  .calendar-loading-state__message {
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+  }
+  
+  .calendar-loading-state__progress {
+    margin-top: 1rem;
+    
+    .calendar-loading-state__progress-bar {
+      width: 100%;
+      height: 0.25rem;
+      background: var(--background-color-muted);
+      border-radius: 0.125rem;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+      
+      .calendar-loading-state__progress-fill {
+        height: 100%;
+        background: var(--accent-color);
+        border-radius: 0.125rem;
+        transition: width 0.3s ease;
+      }
+    }
+    
+    .calendar-loading-state__progress-text {
+      font-size: 0.75rem;
+      color: var(--text-color-muted);
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    min-height: 200px;
+    padding: 1rem;
+    
+    .calendar-loading-state__title {
+      font-size: 1rem;
+    }
+    
+    .calendar-loading-state__message {
+      font-size: 0.8125rem;
+    }
+  }
+  
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    .calendar-loading-state__icon {
+      animation: none;
+    }
+    
+    .calendar-loading-state__progress-fill {
+      transition: none;
+    }
+  }
+}
+
+// Error Boundary component styles
+.calendar-error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  padding: 2rem;
+  
+  .calendar-error-boundary__content {
+    text-align: center;
+    max-width: 500px;
+  }
+  
+  .calendar-error-boundary__icon {
+    margin-bottom: 1rem;
+    
+    .custom-icon-48 {
+      font-size: 3rem;
+      color: var(--warning-color, #f59e0b);
+    }
+  }
+  
+  .calendar-error-boundary__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color-strong);
+    margin: 0 0 0.75rem 0;
+    line-height: 1.4;
+  }
+  
+  .calendar-error-boundary__message {
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    margin: 0 0 1.5rem 0;
+    line-height: 1.5;
+  }
+  
+  .calendar-error-boundary__details {
+    margin-top: 1.5rem;
+    text-align: left;
+    
+    summary {
+      font-size: 0.8125rem;
+      color: var(--text-color-muted);
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+      
+      &:hover {
+        color: var(--text-color);
+      }
+    }
+    
+    .calendar-error-boundary__stack {
+      background: var(--background-color-muted);
+      border: 0.0625rem solid var(--border-color);
+      border-radius: 0.25rem;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      color: var(--text-color-muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    min-height: 250px;
+    padding: 1rem;
+    
+    .calendar-error-boundary__title {
+      font-size: 1.125rem;
+    }
+    
+    .calendar-error-boundary__message {
+      font-size: 0.8125rem;
+    }
+    
+    .calendar-error-boundary__stack {
+      font-size: 0.6875rem;
+      max-height: 150px;
+    }
+  }
+}
+
+// Additional state-specific styles for CalendarVirtualizedRenderer
+.calendar-virtualized-renderer {
+  &--loading {
+    .calendar-loading-state {
+      height: 100%;
+    }
+  }
+  
+  &--error {
+    .calendar-empty-state {
+      height: 100%;
+      
+      .calendar-empty-state__icon .custom-icon-48 {
+        color: var(--warning-color, #f59e0b);
+      }
+    }
+  }
+}
+
+// Enhanced empty state styling for calendar gallery
+.calendar-gallery {
+  .calendar-empty-state,
+  .calendar-loading-state,
+  .calendar-error-boundary {
+    height: 100%;
+    min-height: 400px;
+  }
+  
+  // Special styling for unknown date groups
+  .calendar-month-header {
+    &--unknown-date {
+      .calendar-month-header__title {
+        color: var(--warning-color, #f59e0b);
+        
+        &::before {
+          content: '⚠ ';
+          margin-right: 0.25rem;
+        }
+      }
+    }
+    
+    &--fallback {
+      .calendar-month-header__title {
+        color: var(--error-color, #ef4444);
+        
+        &::before {
+          content: '⚠ ';
+          margin-right: 0.25rem;
+        }
+      }
+    }
+    
+    .calendar-month-header__description {
+      margin-top: 0.5rem;
+      
+      .calendar-month-header__help-text {
+        font-size: 0.75rem;
+        color: var(--text-color-muted);
+        margin: 0;
+        font-style: italic;
+      }
+    }
+  }
+}

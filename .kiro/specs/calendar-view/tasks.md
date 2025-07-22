@@ -56,7 +56,7 @@
   - Ensure keyboard navigation works correctly with virtualization
   - _Requirements: 3.2, 3.3_
 
-- [ ] 8. Implement scroll position management
+- [x] 8. Implement scroll position management
 
   - Add scroll position persistence when switching between view modes
   - Implement smooth scrolling to selected items when selection changes
@@ -64,7 +64,7 @@
   - Add scroll-to-date functionality for future enhancements
   - _Requirements: 2.4, 6.1_
 
-- [ ] 9. Add empty and error state handling
+- [x] 9. Add empty and error state handling
 
   - Create empty state component for when no photos exist in collection
   - Implement fallback handling for photos with missing or invalid date metadata

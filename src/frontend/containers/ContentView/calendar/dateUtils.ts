@@ -64,10 +64,12 @@ export function groupFilesByMonth(files: ClientFile[]): MonthGroup[] {
   const unknownDateFiles: ClientFile[] = [];
   
   for (const file of files) {
-    const monthYear = extractMonthYear(file.dateCreated);
+    // Try to get a safe date for grouping (with fallbacks)
+    const safeDate = getSafeDateForGrouping(file);
+    const monthYear = safeDate ? extractMonthYear(safeDate) : null;
     
     if (monthYear === null) {
-      // Handle files with invalid dates
+      // Handle files with invalid dates - use enhanced fallback handling
       unknownDateFiles.push(file);
       continue;
     }
@@ -90,11 +92,11 @@ export function groupFilesByMonth(files: ClientFile[]): MonthGroup[] {
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10) - 1; // Convert back to 0-11
     
-    // Sort files within the group by dateCreated (oldest first within month)
+    // Sort files within the group by their best available date (oldest first within month)
     const sortedFiles = groupFiles.sort((a, b) => {
-      const dateA = a.dateCreated.getTime();
-      const dateB = b.dateCreated.getTime();
-      return dateA - dateB;
+      const dateA = getSafeDateForGrouping(a) || new Date(0);
+      const dateB = getSafeDateForGrouping(b) || new Date(0);
+      return dateA.getTime() - dateB.getTime();
     });
     
     monthGroups.push({
@@ -108,10 +110,13 @@ export function groupFilesByMonth(files: ClientFile[]): MonthGroup[] {
   
   // Add unknown date group if there are files with invalid dates
   if (unknownDateFiles.length > 0) {
-    // Sort unknown date files by filename as fallback
-    const sortedUnknownFiles = unknownDateFiles.sort((a, b) => 
-      a.name.localeCompare(b.name)
-    );
+    // Sort unknown date files by filename as fallback, with secondary sort by file size
+    const sortedUnknownFiles = unknownDateFiles.sort((a, b) => {
+      const nameComparison = a.name.localeCompare(b.name);
+      if (nameComparison !== 0) return nameComparison;
+      // Secondary sort by file size for files with identical names
+      return (a.size || 0) - (b.size || 0);
+    });
     
     monthGroups.push({
       year: 0,
@@ -178,4 +183,191 @@ export function getSafeDateForGrouping(file: ClientFile): Date | null {
   }
   
   return null;
+}
+
+/**
+ * Safely groups files with error handling and graceful degradation
+ * @param files Array of ClientFile objects to group
+ * @returns Array of MonthGroup objects, with fallback handling for errors
+ */
+export function safeGroupFilesByMonth(files: ClientFile[]): MonthGroup[] {
+  try {
+    return groupFilesByMonth(files);
+  } catch (error) {
+    console.error('Error grouping files by month:', error);
+    
+    // Fallback: create a single group with all files
+    const fallbackGroup: MonthGroup = {
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      photos: Array.isArray(files) ? files.sort((a, b) => a.name.localeCompare(b.name)) : [],
+      displayName: 'All Photos (Fallback)',
+      id: 'fallback-group'
+    };
+    
+    return [fallbackGroup];
+  }
+}
+
+/**
+ * Validates that a month group has reasonable data
+ * @param group MonthGroup to validate
+ * @returns true if group is valid, false otherwise
+ */
+export function isValidMonthGroup(group: MonthGroup): boolean {
+  if (!group || typeof group !== 'object') {
+    return false;
+  }
+  
+  // Check required properties
+  if (typeof group.year !== 'number' || typeof group.month !== 'number') {
+    return false;
+  }
+  
+  if (!Array.isArray(group.photos)) {
+    return false;
+  }
+  
+  if (typeof group.displayName !== 'string' || typeof group.id !== 'string') {
+    return false;
+  }
+  
+  // Check month is in valid range (except for special groups like unknown-date)
+  if (group.id !== 'unknown-date' && group.id !== 'fallback-group') {
+    if (group.month < 0 || group.month > 11) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Filters out invalid month groups and logs warnings
+ * @param groups Array of MonthGroup objects to validate
+ * @returns Array of valid MonthGroup objects
+ */
+export function validateMonthGroups(groups: MonthGroup[]): MonthGroup[] {
+  const validGroups = groups.filter((group, index) => {
+    const isValid = isValidMonthGroup(group);
+    if (!isValid) {
+      console.warn(`Invalid month group at index ${index}:`, group);
+    }
+    return isValid;
+  });
+  
+  if (validGroups.length !== groups.length) {
+    console.warn(`Filtered out ${groups.length - validGroups.length} invalid month groups`);
+  }
+  
+  return validGroups;
+}
+
+/**
+ * Progressive grouping for very large collections
+ * @param files Array of ClientFile objects to group
+ * @param batchSize Number of files to process per batch
+ * @param onProgress Callback for progress updates
+ * @returns Promise that resolves to array of MonthGroup objects
+ */
+export async function progressiveGroupFilesByMonth(
+  files: ClientFile[],
+  batchSize: number = 1000,
+  onProgress?: (processed: number, total: number) => void
+): Promise<MonthGroup[]> {
+  if (files.length <= batchSize) {
+    // For small collections, use regular grouping
+    return safeGroupFilesByMonth(files);
+  }
+
+  const groupMap = new Map<string, ClientFile[]>();
+  const unknownDateFiles: ClientFile[] = [];
+  let processed = 0;
+
+  // Process files in batches
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
+    
+    for (const file of batch) {
+      try {
+        const safeDate = getSafeDateForGrouping(file);
+        const monthYear = safeDate ? extractMonthYear(safeDate) : null;
+        
+        if (monthYear === null) {
+          unknownDateFiles.push(file);
+          continue;
+        }
+        
+        const groupId = createMonthGroupId(monthYear.month, monthYear.year);
+        
+        if (!groupMap.has(groupId)) {
+          groupMap.set(groupId, []);
+        }
+        
+        groupMap.get(groupId)!.push(file);
+      } catch (error) {
+        console.warn('Error processing file in progressive grouping:', file.name, error);
+        unknownDateFiles.push(file);
+      }
+    }
+    
+    processed += batch.length;
+    onProgress?.(processed, files.length);
+    
+    // Yield control to prevent blocking the UI
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  // Convert to MonthGroup array (same logic as regular grouping)
+  const monthGroups: MonthGroup[] = [];
+  
+  for (const [groupId, groupFiles] of groupMap.entries()) {
+    const [yearStr, monthStr] = groupId.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10) - 1;
+    
+    const sortedFiles = groupFiles.sort((a, b) => {
+      const dateA = getSafeDateForGrouping(a) || new Date(0);
+      const dateB = getSafeDateForGrouping(b) || new Date(0);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    monthGroups.push({
+      year,
+      month,
+      photos: sortedFiles,
+      displayName: formatMonthYear(month, year),
+      id: groupId
+    });
+  }
+  
+  // Add unknown date group if needed
+  if (unknownDateFiles.length > 0) {
+    const sortedUnknownFiles = unknownDateFiles.sort((a, b) => {
+      const nameComparison = a.name.localeCompare(b.name);
+      if (nameComparison !== 0) return nameComparison;
+      return (a.size || 0) - (b.size || 0);
+    });
+    
+    monthGroups.push({
+      year: 0,
+      month: 0,
+      photos: sortedUnknownFiles,
+      displayName: 'Unknown Date',
+      id: 'unknown-date'
+    });
+  }
+  
+  // Sort month groups
+  monthGroups.sort((a, b) => {
+    if (a.id === 'unknown-date') return 1;
+    if (b.id === 'unknown-date') return -1;
+    
+    if (a.year !== b.year) {
+      return b.year - a.year;
+    }
+    return b.month - a.month;
+  });
+  
+  return monthGroups;
 }

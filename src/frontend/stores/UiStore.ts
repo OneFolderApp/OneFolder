@@ -145,7 +145,8 @@ type PersistentPreferenceFields =
   | 'isSlideMode'
   | 'firstItem'
   | 'searchMatchAny'
-  | 'searchCriteriaList';
+  | 'searchCriteriaList'
+  | 'calendarScrollPositions';
 
 class UiStore {
   static MIN_OUTLINER_WIDTH = 192; // default of 12 rem
@@ -193,6 +194,8 @@ class UiStore {
   /** Index of the first item in the viewport. Also acts as the current item shown in slide mode */
   // TODO: Might be better to store the ID to the file. I believe we were storing the index for performance, but we have instant conversion between index/ID now
   @observable firstItem: number = 0;
+  /** Calendar view scroll positions keyed by search criteria hash */
+  @observable calendarScrollPositions: Map<string, number> = observable(new Map());
   @observable thumbnailSize: ThumbnailSize | number = 'medium';
   @observable thumbnailShape: ThumbnailShape = 'square';
   @observable upscaleMode: UpscaleMode = 'smooth';
@@ -314,6 +317,18 @@ class UiStore {
     if (isFinite(index) && index < this.rootStore.fileStore.fileList.length) {
       this.firstItem = index;
     }
+  }
+
+  @action.bound setCalendarScrollPosition(searchKey: string, scrollTop: number): void {
+    this.calendarScrollPositions.set(searchKey, scrollTop);
+  }
+
+  @action.bound getCalendarScrollPosition(searchKey: string): number {
+    return this.calendarScrollPositions.get(searchKey) || 0;
+  }
+
+  @action.bound clearCalendarScrollPositions(): void {
+    this.calendarScrollPositions.clear();
   }
 
   @action setMethod(method: ViewMethod): void {
@@ -1033,6 +1048,14 @@ class UiStore {
           this.firstItem = prefs.firstItem;
           this.searchMatchAny = prefs.searchMatchAny;
           this.isSlideMode = prefs.isSlideMode;
+          
+          // Restore calendar scroll positions
+          if (prefs.calendarScrollPositions && Array.isArray(prefs.calendarScrollPositions)) {
+            this.calendarScrollPositions.clear();
+            prefs.calendarScrollPositions.forEach(([key, value]: [string, number]) => {
+              this.calendarScrollPositions.set(key, value);
+            });
+          }
         }
         console.info('recovered', prefs);
       } catch (e) {
@@ -1087,6 +1110,7 @@ class UiStore {
       firstItem: this.firstItem,
       searchMatchAny: this.searchMatchAny,
       searchCriteriaList: this.searchCriteriaList.map((c) => c.serialize(this.rootStore)),
+      calendarScrollPositions: Array.from(this.calendarScrollPositions.entries()),
     };
     return preferences;
   }

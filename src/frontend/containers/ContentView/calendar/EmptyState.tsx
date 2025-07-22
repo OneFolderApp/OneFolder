@@ -59,19 +59,39 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, message, icon, act
   const displayMessage = message || content.message;
 
   return (
-    <div className="calendar-empty-state">
+    <div 
+      className="calendar-empty-state"
+      role="status"
+      aria-live="polite"
+      aria-label={`Empty state: ${content.title}`}
+    >
       <div className="calendar-empty-state__content">
-        <div className="calendar-empty-state__icon">
+        <div 
+          className="calendar-empty-state__icon"
+          aria-hidden="true"
+        >
           <span className="custom-icon-48">{displayIcon}</span>
         </div>
-        <h3 className="calendar-empty-state__title">{content.title}</h3>
-        <p className="calendar-empty-state__message">{displayMessage}</p>
+        <h3 
+          className="calendar-empty-state__title"
+          id="empty-state-title"
+        >
+          {content.title}
+        </h3>
+        <p 
+          className="calendar-empty-state__message"
+          id="empty-state-message"
+          aria-describedby="empty-state-title"
+        >
+          {displayMessage}
+        </p>
         {action && (
           <div className="calendar-empty-state__action">
             <Button
               styling="outlined"
               text={action.label}
               onClick={action.onClick}
+              aria-describedby="empty-state-message"
             />
           </div>
         )}

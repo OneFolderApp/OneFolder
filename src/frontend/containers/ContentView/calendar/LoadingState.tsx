@@ -103,23 +103,59 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   const content = getDefaultContent();
   const displayMessage = message || content.message;
 
+  const progressValue = Math.max(0, Math.min(100, progress));
+  const progressLabel = `Loading progress: ${Math.round(progressValue)}%`;
+
   return (
-    <div className="calendar-loading-state">
+    <div 
+      className="calendar-loading-state"
+      role="status"
+      aria-live="polite"
+      aria-label={`Loading: ${content.title}`}
+    >
       <div className="calendar-loading-state__content">
-        <div className="calendar-loading-state__spinner">
+        <div 
+          className="calendar-loading-state__spinner"
+          aria-hidden="true"
+        >
           <span className="custom-icon-32 calendar-loading-state__icon">{IconSet.LOADING}</span>
         </div>
-        <h3 className="calendar-loading-state__title">{content.title}</h3>
-        <p className="calendar-loading-state__message">{displayMessage}</p>
+        <h3 
+          className="calendar-loading-state__title"
+          id="loading-state-title"
+        >
+          {content.title}
+        </h3>
+        <p 
+          className="calendar-loading-state__message"
+          id="loading-state-message"
+          aria-describedby="loading-state-title"
+        >
+          {displayMessage}
+        </p>
         {showProgress && (
-          <div className="calendar-loading-state__progress">
+          <div 
+            className="calendar-loading-state__progress"
+            role="progressbar"
+            aria-valuenow={progressValue}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={progressLabel}
+            aria-describedby="loading-state-message"
+          >
             <div className="calendar-loading-state__progress-bar">
               <div
                 className="calendar-loading-state__progress-fill"
-                style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                style={{ width: `${progressValue}%` }}
+                aria-hidden="true"
               />
             </div>
-            <span className="calendar-loading-state__progress-text">{Math.round(progress)}%</span>
+            <span 
+              className="calendar-loading-state__progress-text"
+              aria-live="polite"
+            >
+              {Math.round(progressValue)}%
+            </span>
           </div>
         )}
       </div>

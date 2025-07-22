@@ -17,6 +17,7 @@ import {
   EmptyState,
   LoadingState,
 } from './calendar';
+import { KeyboardShortcutsHelp } from './calendar/KeyboardShortcutsHelp';
 import { useProgressiveLoader } from './calendar/ProgressiveLoader';
 import { calendarPerformanceMonitor } from './calendar/PerformanceMonitor';
 import { calendarMemoryManager } from './calendar/MemoryManager';
@@ -41,6 +42,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
   const keyboardNavigationRef = useRef<CalendarKeyboardNavigation | null>(null);
   const [focusedPhotoId, setFocusedPhotoId] = useState<string | undefined>(undefined);
   const [initialScrollPosition, setInitialScrollPosition] = useState<number>(0);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
 
@@ -223,6 +225,29 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
 
       let newIndex: number | null = null;
 
+      // Handle keyboard shortcuts
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        setShowKeyboardHelp(!showKeyboardHelp);
+        return;
+      }
+
+      // Handle escape key
+      if (e.key === 'Escape') {
+        if (showKeyboardHelp) {
+          e.preventDefault();
+          setShowKeyboardHelp(false);
+          return;
+        }
+        // Clear selection if no help is shown
+        // Note: fileSelection handling would be implemented here
+        // if (fileStore.fileSelection.size > 0) {
+        //   e.preventDefault();
+        //   fileStore.clearSelection();
+        //   return;
+        // }
+      }
+
       // Handle arrow key navigation
       if (e.key === 'ArrowUp') {
         newIndex = keyboardNavigationRef.current.getNextPhotoIndex(currentIndex, 'up');
@@ -272,7 +297,15 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
 
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [monthGroups, fileStore.fileList, select, lastSelectionIndex, thumbnailSize]);
+  }, [
+    monthGroups,
+    fileStore.fileList,
+    select,
+    lastSelectionIndex,
+    thumbnailSize,
+    showKeyboardHelp,
+    fileStore,
+  ]);
 
   // Handle scroll position persistence when switching between view modes
   const handleScroll = useCallback(
@@ -398,6 +431,12 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
           focusedPhotoId={focusedPhotoId}
           isLoading={isLoading || isLayoutUpdating}
           isLargeCollection={isLargeCollection}
+        />
+
+        {/* Keyboard shortcuts help */}
+        <KeyboardShortcutsHelp
+          isVisible={showKeyboardHelp}
+          onClose={() => setShowKeyboardHelp(false)}
         />
       </div>
     </CalendarErrorBoundary>

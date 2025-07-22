@@ -254,16 +254,27 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
 
         if (item.type === 'header') {
           return (
-            <div key={key} style={style}>
+            <div
+              key={key}
+              style={style}
+              role="region"
+              aria-labelledby={`month-header-${item.monthGroup.id}`}
+            >
               <MonthHeader
                 monthGroup={item.monthGroup}
                 photoCount={item.monthGroup.photos.length}
+                isInView={true}
               />
             </div>
           );
         } else if (item.type === 'grid' && item.photos) {
           return (
-            <div key={key} style={style}>
+            <div
+              key={key}
+              style={style}
+              role="region"
+              aria-labelledby={`month-header-${item.monthGroup.id}`}
+            >
               <PhotoGrid
                 photos={item.photos}
                 containerWidth={containerWidth}
@@ -331,6 +342,18 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       return 'large';
     };
 
+    // Generate accessible description for the calendar view
+    const totalPhotos = monthGroups.reduce((sum, group) => sum + group.photos.length, 0);
+    const calendarAriaLabel = `Calendar view showing ${totalPhotos} ${
+      totalPhotos === 1 ? 'photo' : 'photos'
+    } organized by date across ${monthGroups.length} time ${
+      monthGroups.length === 1 ? 'period' : 'periods'
+    }. ${isRecalculating ? 'Layout is being recalculated.' : ''}`;
+
+    // Generate instructions for screen readers
+    const calendarInstructions =
+      'Use arrow keys to navigate between photos. Press Enter or Space to select. Hold Ctrl or Cmd for multiple selection. Hold Shift for range selection. Press question mark for keyboard shortcuts help.';
+
     return (
       <div
         ref={scrollContainerRef}
@@ -345,27 +368,40 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
           position: 'relative',
         }}
         onScroll={handleScroll}
-        role="grid"
-        aria-label="Calendar view of photos"
+        role="application"
+        aria-label={calendarAriaLabel}
+        aria-describedby="calendar-instructions"
+        aria-live="polite"
+        aria-busy={isRecalculating}
         data-items-per-row={itemsPerRow}
         data-responsive={isResponsive}
         data-aspect-ratio={aspectRatioClass}
         data-thumbnail-size={getThumbnailSizeClass()}
+        tabIndex={0}
       >
+        {/* Hidden instructions for screen readers */}
+        <div id="calendar-instructions" className="sr-only" aria-hidden="false">
+          {calendarInstructions}
+        </div>
+
         {/* Show recalculation indicator for significant layout changes */}
         {isRecalculating && (
-          <div className="calendar-layout-recalculating">
-            <div className="calendar-layout-recalculating__indicator">Adjusting layout...</div>
+          <div
+            className="calendar-layout-recalculating"
+            role="status"
+            aria-live="polite"
+            aria-label="Layout is being recalculated"
+          >
+            <div className="calendar-layout-recalculating__indicator">
+              <span className="calendar-layout-recalculating__spinner" aria-hidden="true">
+                ⟳
+              </span>
+              <span>Adjusting layout...</span>
+            </div>
           </div>
         )}
 
         {/* Spacer to create the full scrollable height */}
-        {/* Show recalculation indicator for significant layout changes */}
-        {isRecalculating && (
-          <div className="calendar-layout-recalculating">
-            <div className="calendar-layout-recalculating__indicator">Adjusting layout...</div>
-          </div>
-        )}
 
         <div
           style={{

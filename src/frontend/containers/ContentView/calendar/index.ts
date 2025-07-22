@@ -64,5 +64,9 @@ export {
 export type { GroupingConfig, GroupingProgress, GroupingResult } from './OptimizedDateGrouping';
 
 // Progressive loading
-export { ProgressiveLoader, useProgressiveLoader } from './ProgressiveLoader';
+export { useProgressiveLoader } from './ProgressiveLoader';
 export type { ProgressiveLoaderProps, ProgressiveLoaderState } from './ProgressiveLoader';
+
+// Keyboard shortcuts help
+export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+export type { KeyboardShortcutsHelpProps, KeyboardShortcut } from './KeyboardShortcutsHelp';

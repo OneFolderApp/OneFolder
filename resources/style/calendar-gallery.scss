@@ -833,7 +833,7 @@ ponsive layout and window resize handling styles
   }
 }
 
-// Layout recalculation indicator
+// Layout recalculation indicator with smooth transitions
 .calendar-layout-recalculating {
   position: absolute;
   top: 0;
@@ -841,20 +841,135 @@ ponsive layout and window resize handling styles
   right: 0;
   z-index: 10;
   pointer-events: none;
+  animation: slideInFromTop 0.3s ease-out;
   
   &__indicator {
-    background: var(--background-color-subtle);
-    color: var(--text-color-muted);
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 12px;
+    background: var(--background-color-alt);
+    color: var(--text-color);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 500;
-    margin: 8px auto;
+    margin: 12px auto;
     width: fit-content;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid var(--border-color);
-    animation: pulse 1.5s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(8px);
+    
+    // Subtle animation for the indicator
+    animation: fadeInScale 0.3s ease-out;
   }
+  
+  &__spinner {
+    animation: spin 1s linear infinite;
+    font-size: 16px;
+    color: var(--accent-color);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Screen reader only content
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Smooth transitions for all interactive elements
+.calendar-photo-item,
+.calendar-month-header,
+.calendar-virtualized-renderer {
+  transition: all 0.2s ease-in-out;
+}
+
+// Enhanced focus indicators for accessibility
+.calendar-photo-item:focus,
+.calendar-photo-item--focused {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 2px;
+  z-index: 10;
+  
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    outline-width: 4px;
+    outline-offset: 3px;
+  }
+}
+
+// Loading indicators with smooth animations
+.calendar-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--background-color-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-color-muted);
+  
+  &__spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  &--smooth {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Enhanced error state for broken photos
+.calendar-photo-error-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.calendar-photo-item--broken:hover .calendar-photo-error-description,
+.calendar-photo-item--broken:focus .calendar-photo-error-description {
+  opacity: 1;
 }
 
 // Enhanced responsive layout styles for different screen sizes
@@ -946,6 +1061,496 @@ ponsive layout and window resize handling styles
   &[data-thumbnail-size="large"] {
     .calendar-photo-grid {
       gap: 8px;
+    }
+  }
+}
+// Keyboa
+rd Shortcuts Help component styles
+.keyboard-shortcuts-help {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-in-out;
+
+  &__backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    position: relative;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    max-width: 600px;
+    max-height: 80vh;
+    width: 90vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color-strong);
+    margin: 0;
+  }
+
+  &__close {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    
+    &:hover {
+      background: var(--background-color-subtle);
+    }
+  }
+
+  &__description {
+    padding: 0 1.5rem 1rem 1.5rem;
+    color: var(--text-color-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+
+  &__category {
+    margin-bottom: 2rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__category-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color-strong);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-radius: 0.25rem;
+    transition: all 0.15s ease-in-out;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--border-color-subtle);
+    }
+
+    &--focused,
+    &:focus {
+      background: var(--background-color-subtle);
+      outline: 2px solid var(--accent-color);
+      outline-offset: -2px;
+    }
+  }
+
+  &__keys {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  &__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 1.75rem;
+    padding: 0 0.5rem;
+    background: var(--background-color-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-color-strong);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  &__description {
+    flex: 1;
+    margin-left: 1rem;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  &__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--background-color-subtle);
+  }
+
+  &__tip {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-color-muted);
+    text-align: center;
+
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.5rem;
+      height: 1.25rem;
+      padding: 0 0.25rem;
+      background: var(--background-color);
+      border: 1px solid var(--border-color);
+      border-radius: 0.1875rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-color-strong);
+    }
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    &__content {
+      width: 95vw;
+      max-height: 90vh;
+    }
+
+    &__header,
+    &__description,
+    &__body {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    &__item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    &__description {
+      margin-left: 0;
+    }
+  }
+
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    &__content {
+      border-width: 2px;
+    }
+
+    &__key {
+      border-width: 2px;
+      font-weight: 600;
+    }
+
+    &__item--focused {
+      outline-width: 3px;
+    }
+  }
+
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+
+    &__item {
+      transition: none;
+    }
+  }
+}
+
+// Enhanced accessibility and theme compatibility
+.calendar-gallery {
+  // Ensure proper color contrast ratios
+  --calendar-text-contrast-ratio: 4.5; // WCAG AA standard
+  --calendar-focus-outline-width: 3px;
+  --calendar-focus-outline-offset: 2px;
+  
+  // High contrast theme support
+  @media (prefers-contrast: high) {
+    --calendar-focus-outline-width: 4px;
+    --calendar-focus-outline-offset: 3px;
+    
+    .calendar-photo-item {
+      border-width: 3px;
+      
+      &--selected {
+        border-width: 4px;
+        box-shadow: 0 0 0 2px var(--accent-color);
+      }
+      
+      &:focus,
+      &--focused {
+        outline-width: var(--calendar-focus-outline-width);
+        outline-offset: var(--calendar-focus-outline-offset);
+      }
+    }
+    
+    .calendar-month-header {
+      border-bottom-width: 2px;
+      
+      &__title {
+        font-weight: 700;
+      }
+    }
+  }
+  
+  // Dark theme optimizations
+  @media (prefers-color-scheme: dark) {
+    .calendar-photo-item {
+      &:hover {
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+      }
+      
+      &--selected {
+        box-shadow: 0 0 0 2px var(--accent-color), 0 0 8px rgba(255, 255, 255, 0.2);
+      }
+    }
+    
+    .calendar-loading-state__progress-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .keyboard-shortcuts-help {
+      &__backdrop {
+        background: rgba(0, 0, 0, 0.7);
+      }
+      
+      &__content {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      }
+    }
+  }
+  
+  // Light theme optimizations
+  @media (prefers-color-scheme: light) {
+    .calendar-photo-item {
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      
+      &--selected {
+        box-shadow: 0 0 0 2px var(--accent-color), 0 0 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+  
+  // Forced colors mode (Windows High Contrast)
+  @media (forced-colors: active) {
+    .calendar-photo-item {
+      border: 2px solid ButtonText;
+      
+      &--selected {
+        border-color: Highlight;
+        background: Highlight;
+      }
+      
+      &:focus,
+      &--focused {
+        outline: 3px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+    
+    .calendar-month-header {
+      border-bottom: 2px solid ButtonText;
+      
+      &__title {
+        color: ButtonText;
+      }
+      
+      &__count {
+        color: GrayText;
+      }
+    }
+    
+    .keyboard-shortcuts-help {
+      &__content {
+        border: 2px solid ButtonText;
+        background: ButtonFace;
+      }
+      
+      &__key {
+        border: 1px solid ButtonText;
+        background: ButtonFace;
+        color: ButtonText;
+      }
+    }
+  }
+}
+
+// Enhanced loading indicators with better accessibility
+.calendar-loading-state {
+  // Announce loading state changes to screen readers
+  &[aria-live="polite"] {
+    .calendar-loading-state__title,
+    .calendar-loading-state__message {
+      // Ensure content changes are announced
+      transition: opacity 0.1s ease-in-out;
+    }
+  }
+  
+  // Better progress bar accessibility
+  &__progress {
+    // Ensure progress updates are announced
+    &[role="progressbar"] {
+      .calendar-loading-state__progress-text {
+        font-weight: 600;
+        color: var(--text-color-strong);
+      }
+    }
+  }
+}
+
+// Enhanced empty state accessibility
+.calendar-empty-state {
+  // Better focus management for action buttons
+  &__action {
+    .button {
+      min-height: 44px; // Touch target size
+      padding: 0.75rem 1.5rem;
+      
+      &:focus {
+        outline: 3px solid var(--accent-color);
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+// Smooth transitions with respect for reduced motion
+.calendar-photo-item,
+.calendar-month-header,
+.calendar-loading-state,
+.calendar-empty-state {
+  @media (prefers-reduced-motion: no-preference) {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    
+    // Only allow opacity transitions for essential feedback
+    &:focus,
+    &:hover {
+      transition: opacity 0.1s ease-in-out;
+    }
+  }
+}
+
+// Enhanced keyboard navigation indicators
+.calendar-virtualized-renderer {
+  &:focus-within {
+    .calendar-photo-item--focused {
+      // Ensure focused item is always visible
+      z-index: 100;
+      position: relative;
+      
+      // Add subtle glow effect for better visibility
+      &::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border: 2px solid var(--accent-color);
+        border-radius: 0.5rem;
+        pointer-events: none;
+        opacity: 0.6;
+        animation: focusGlow 2s ease-in-out infinite alternate;
+      }
+    }
+  }
+}
+
+@keyframes focusGlow {
+  from { opacity: 0.4; }
+  to { opacity: 0.8; }
+}
+
+// Touch-friendly improvements for mobile devices
+@media (pointer: coarse) {
+  .calendar-photo-item {
+    // Larger touch targets
+    min-width: 44px;
+    min-height: 44px;
+    
+    // Better touch feedback
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease-in-out;
+    }
+  }
+  
+  .keyboard-shortcuts-help {
+    &__item {
+      // Larger touch targets for mobile
+      padding: 1rem 0;
+    }
+    
+    &__close {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+}
+
+// Print styles for accessibility
+@media print {
+  .calendar-gallery {
+    .calendar-photo-item {
+      border: 1px solid #000;
+      break-inside: avoid;
+    }
+    
+    .calendar-month-header {
+      border-bottom: 2px solid #000;
+      break-after: avoid;
+      
+      &__title {
+        color: #000;
+        font-weight: bold;
+      }
+    }
+    
+    .keyboard-shortcuts-help {
+      display: none; // Hide interactive elements in print
     }
   }
 }

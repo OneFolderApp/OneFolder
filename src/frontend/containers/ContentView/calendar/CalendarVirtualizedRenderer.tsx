@@ -8,6 +8,8 @@ import { EmptyState } from './EmptyState';
 import { LoadingState } from './LoadingState';
 import { debouncedThrottle } from 'common/timeout';
 import { useResponsiveLayout } from './useResponsiveLayout';
+import { calendarMemoryManager } from './MemoryManager';
+import { calendarPerformanceMonitor } from './PerformanceMonitor';
 
 export interface CalendarVirtualizedRendererProps {
   /** Grouped photo data organized by month */
@@ -118,10 +120,38 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       }
     }, [layoutEngine, scrollTop, containerHeight, overscan, layoutItems.length]);
 
-    // Get visible layout items
+    // Get visible layout items and update memory manager
     const visibleItems = useMemo(() => {
-      return layoutItems.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
-    }, [layoutItems, visibleRange.startIndex, visibleRange.endIndex]);
+      const items = layoutItems.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
+
+      // Update memory manager with visibility information
+      const visibleFileIds: string[] = [];
+      const allFileIds: string[] = [];
+
+      for (const group of monthGroups) {
+        for (const photo of group.photos) {
+          allFileIds.push(photo.id);
+        }
+      }
+
+      for (const item of items) {
+        if (item.type === 'grid' && item.photos) {
+          for (const photo of item.photos) {
+            visibleFileIds.push(photo.id);
+          }
+        }
+      }
+
+      calendarMemoryManager.updateVisibility(visibleFileIds, allFileIds);
+
+      // Record virtualization metrics
+      calendarPerformanceMonitor.recordVirtualizationMetrics(
+        visibleRange.endIndex - visibleRange.startIndex + 1,
+        layoutItems.length,
+      );
+
+      return items;
+    }, [layoutItems, visibleRange.startIndex, visibleRange.endIndex, monthGroups]);
 
     // Throttled scroll handler to prevent performance issues
     const throttledScrollHandler = useRef(
@@ -132,12 +162,16 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       }, 16), // ~60fps
     );
 
-    // Handle scroll events
+    // Handle scroll events with performance monitoring
     const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
       const target = event.currentTarget;
       const newScrollTop = target.scrollTop;
 
       setIsScrolling(true);
+
+      // Record scroll performance metrics
+      calendarPerformanceMonitor.recordScrollEvent();
+
       throttledScrollHandler.current(newScrollTop);
     }, []);
 
@@ -165,10 +199,18 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
       }
     }, [layoutError, forceRecalculate]);
 
-    // Monitor memory usage for very large collections
+    // Monitor memory usage and manage thumbnail resources for very large collections
     useEffect(() => {
       if (monthGroups.length > 0) {
         const totalPhotos = monthGroups.reduce((sum, group) => sum + group.photos.length, 0);
+
+        // Configure memory manager based on collection size
+        if (totalPhotos > 5000) {
+          calendarMemoryManager.updateConfig({
+            maxThumbnailCache: Math.min(2000, Math.floor(totalPhotos * 0.1)),
+            aggressiveCleanup: totalPhotos > 20000,
+          });
+        }
 
         // Show memory warning for extremely large collections
         if (totalPhotos > 10000) {
@@ -176,11 +218,26 @@ export const CalendarVirtualizedRenderer: React.FC<CalendarVirtualizedRendererPr
           console.warn(
             `Calendar view: Large collection detected (${totalPhotos} photos). Performance may be impacted.`,
           );
+
+          // Set up memory pressure callback
+          const memoryPressureCallback = () => {
+            console.warn('Memory pressure detected in calendar view');
+            setMemoryWarning(true);
+          };
+          calendarMemoryManager.onMemoryPressure(memoryPressureCallback);
+
+          return () => {
+            calendarMemoryManager.offMemoryPressure(memoryPressureCallback);
+          };
         } else {
           setMemoryWarning(false);
         }
+
+        // Record performance metrics
+        calendarPerformanceMonitor.setCollectionMetrics(totalPhotos, monthGroups.length);
+        calendarPerformanceMonitor.estimateMemoryUsage(totalPhotos, thumbnailSize);
       }
-    }, [monthGroups]);
+    }, [monthGroups, thumbnailSize]);
 
     // Render visible items
     const renderVisibleItems = () => {

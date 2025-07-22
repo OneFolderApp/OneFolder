@@ -47,3 +47,22 @@ export { CalendarErrorBoundary } from './CalendarErrorBoundary';
 // Responsive layout hook
 export { useResponsiveLayout } from './useResponsiveLayout';
 export type { ResponsiveLayoutConfig, ResponsiveLayoutResult } from './useResponsiveLayout';
+
+// Performance optimization
+export { CalendarPerformanceMonitor, calendarPerformanceMonitor } from './PerformanceMonitor';
+export type { PerformanceMetrics, PerformanceThresholds } from './PerformanceMonitor';
+
+// Memory management
+export { CalendarMemoryManager, calendarMemoryManager } from './MemoryManager';
+export type { MemoryManagerConfig, ThumbnailCacheEntry } from './MemoryManager';
+
+// Optimized date grouping
+export {
+  OptimizedDateGroupingEngine,
+  createOptimizedGroupingEngine,
+} from './OptimizedDateGrouping';
+export type { GroupingConfig, GroupingProgress, GroupingResult } from './OptimizedDateGrouping';
+
+// Progressive loading
+export { ProgressiveLoader, useProgressiveLoader } from './ProgressiveLoader';
+export type { ProgressiveLoaderProps, ProgressiveLoaderState } from './ProgressiveLoader';

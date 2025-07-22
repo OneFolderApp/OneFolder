@@ -17,6 +17,10 @@ import {
   EmptyState,
   LoadingState,
 } from './calendar';
+import { useProgressiveLoader } from './calendar/ProgressiveLoader';
+import { calendarPerformanceMonitor } from './calendar/PerformanceMonitor';
+import { calendarMemoryManager } from './calendar/MemoryManager';
+import { createOptimizedGroupingEngine } from './calendar/OptimizedDateGrouping';
 
 // Generate a unique key for the current search state to persist scroll position
 const generateSearchKey = (searchCriteriaList: any[], searchMatchAny: boolean): string => {
@@ -143,68 +147,58 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
     previousThumbnailSizeRef.current = currentThumbnailSize;
   }, [thumbnailSize, monthGroups, layoutEngine, contentRect.width, fileStore.fileList]);
 
-  // Group files by month when file list changes
+  // Use progressive loader for optimized file processing
+  const progressiveLoader = useProgressiveLoader(fileStore.fileList, {
+    onComplete: (result) => {
+      const validGroups = validateMonthGroups(result.monthGroups);
+      setMonthGroups(validGroups);
+      setIsLoading(false);
+
+      // Update layout engine and keyboard navigation
+      if (validGroups.length > 0) {
+        calendarPerformanceMonitor.startTiming('layout-calculation');
+        layoutEngine.calculateLayout(validGroups);
+        calendarPerformanceMonitor.endTiming('layout-calculation');
+
+        keyboardNavigationRef.current = new CalendarKeyboardNavigation(
+          layoutEngine,
+          fileStore.fileList,
+          validGroups,
+        );
+      }
+
+      // Set initial scroll position when entering calendar view
+      const savedScrollPosition = uiStore.getCalendarScrollPosition(searchKey);
+      setInitialScrollPosition(savedScrollPosition);
+
+      // Log performance summary for large collections
+      if (fileStore.fileList.length > 1000) {
+        calendarPerformanceMonitor.logPerformanceSummary();
+      }
+    },
+    onProgress: (progress) => {
+      setProcessedCount(progress.processed);
+      setProgressiveProgress(Math.round((progress.processed / progress.total) * 100));
+    },
+    onError: (error) => {
+      console.error('Error processing files for calendar view:', error);
+      setMonthGroups([]);
+      setIsLoading(false);
+    },
+    autoStart: true,
+    groupingConfig: {
+      batchSize: fileStore.fileList.length > 10000 ? 3000 : 2000,
+      yieldInterval: fileStore.fileList.length > 10000 ? 1500 : 1000,
+    },
+  });
+
+  // Update loading and collection state based on progressive loader
   useEffect(() => {
-    const processFiles = async () => {
-      const fileCount = fileStore.fileList.length;
-
-      // Determine if this is a large collection
-      const isLarge = fileCount > 1000;
-      setIsLargeCollection(isLarge);
-
-      // Show loading state for large collections or initial load
-      if (isLarge || fileCount > 100) {
-        setIsLoading(true);
-      }
-
-      try {
-        // Use setTimeout to allow UI to update with loading state
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        // Group files with error handling - use progressive loading for very large collections
-        let groups: MonthGroup[];
-        if (fileCount > 5000) {
-          // Use progressive loading for very large collections
-          groups = await progressiveGroupFilesByMonth(
-            fileStore.fileList,
-            1000,
-            (processed, total) => {
-              setProcessedCount(processed);
-              setProgressiveProgress(Math.round((processed / total) * 100));
-            },
-          );
-        } else {
-          groups = safeGroupFilesByMonth(fileStore.fileList);
-        }
-
-        const validGroups = validateMonthGroups(groups);
-
-        setMonthGroups(validGroups);
-
-        // Update layout engine and keyboard navigation
-        if (validGroups.length > 0) {
-          layoutEngine.calculateLayout(validGroups);
-          keyboardNavigationRef.current = new CalendarKeyboardNavigation(
-            layoutEngine,
-            fileStore.fileList,
-            validGroups,
-          );
-        }
-
-        // Set initial scroll position when entering calendar view
-        const savedScrollPosition = uiStore.getCalendarScrollPosition(searchKey);
-        setInitialScrollPosition(savedScrollPosition);
-      } catch (error) {
-        console.error('Error processing files for calendar view:', error);
-        // Set empty groups on error - error boundary will handle display
-        setMonthGroups([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    processFiles();
-  }, [fileStore.fileList, fileStore.fileListLastModified, layoutEngine, searchKey, uiStore]);
+    const fileCount = fileStore.fileList.length;
+    const isLarge = fileCount > 1000;
+    setIsLargeCollection(isLarge);
+    setIsLoading(progressiveLoader.isLoading);
+  }, [fileStore.fileList.length, progressiveLoader.isLoading]);
 
   // Update focused photo when selection changes from outside keyboard navigation
   useEffect(() => {

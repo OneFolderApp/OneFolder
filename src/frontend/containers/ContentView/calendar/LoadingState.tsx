@@ -3,7 +3,14 @@ import { IconSet } from 'widgets';
 
 export interface LoadingStateProps {
   /** Type of loading operation */
-  type: 'initial' | 'grouping' | 'layout' | 'large-collection' | 'virtualization' | 'progressive';
+  type:
+    | 'initial'
+    | 'grouping'
+    | 'layout'
+    | 'large-collection'
+    | 'virtualization'
+    | 'progressive'
+    | 'optimized-grouping';
   /** Optional custom message */
   message?: string;
   /** Show progress indicator */
@@ -14,6 +21,12 @@ export interface LoadingStateProps {
   itemCount?: number;
   /** Number of items processed so far (for progressive loading) */
   processedCount?: number;
+  /** Estimated time remaining (in milliseconds) */
+  estimatedTimeRemaining?: number;
+  /** Current batch being processed */
+  currentBatch?: number;
+  /** Total number of batches */
+  totalBatches?: number;
 }
 
 /**
@@ -26,6 +39,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   progress = 0,
   itemCount,
   processedCount,
+  estimatedTimeRemaining,
+  currentBatch,
+  totalBatches,
 }) => {
   const getDefaultContent = () => {
     switch (type) {
@@ -63,6 +79,18 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
             processedCount && itemCount
               ? `Processed ${processedCount.toLocaleString()} of ${itemCount.toLocaleString()} photos`
               : 'Processing photos in batches for optimal performance.',
+        };
+      case 'optimized-grouping':
+        return {
+          title: 'Optimizing large collection...',
+          message:
+            currentBatch && totalBatches
+              ? `Processing batch ${currentBatch} of ${totalBatches}${
+                  estimatedTimeRemaining
+                    ? ` (${Math.round(estimatedTimeRemaining / 1000)}s remaining)`
+                    : ''
+                }`
+              : 'Using advanced algorithms for optimal performance with large collections.',
         };
       default:
         return {

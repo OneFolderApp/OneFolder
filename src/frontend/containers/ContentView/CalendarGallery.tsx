@@ -7,7 +7,6 @@ import { useWindowResize } from '../../hooks/useWindowResize';
 import { ViewMethod } from '../../stores/UiStore';
 import {
   safeGroupFilesByMonth,
-  progressiveGroupFilesByMonth,
   validateMonthGroups,
   CalendarVirtualizedRenderer,
   MonthGroup,
@@ -20,8 +19,6 @@ import {
 import { KeyboardShortcutsHelp } from './calendar/KeyboardShortcutsHelp';
 import { useProgressiveLoader } from './calendar/ProgressiveLoader';
 import { calendarPerformanceMonitor } from './calendar/PerformanceMonitor';
-import { calendarMemoryManager } from './calendar/MemoryManager';
-import { createOptimizedGroupingEngine } from './calendar/OptimizedDateGrouping';
 
 // Generate a unique key for the current search state to persist scroll position
 const generateSearchKey = (searchCriteriaList: any[], searchMatchAny: boolean): string => {
@@ -64,12 +61,12 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
   }, [contentRect.width, thumbnailSize]);
 
   // Handle window resize events
-  const { isResizing: isWindowResizing } = useWindowResize({
+  useWindowResize({
     debounceDelay: 200,
     trackInnerDimensions: true,
-    onResize: (dimensions) => {
+    onResize: () => {
       // Only trigger layout recalculation if the width changes significantly
-      if (layoutEngine && monthGroups.length > 0) {
+      if (monthGroups.length > 0) {
         console.log('Window resized, updating calendar layout');
         setIsLayoutUpdating(true);
 
@@ -205,7 +202,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
   // Update focused photo when selection changes from outside keyboard navigation
   useEffect(() => {
     const currentIndex = lastSelectionIndex.current;
-    if (currentIndex !== undefined && fileStore.fileList[currentIndex]) {
+    if (currentIndex !== undefined && currentIndex < fileStore.fileList.length) {
       const selectedFile = fileStore.fileList[currentIndex];
       setFocusedPhotoId(selectedFile.id);
     }
@@ -401,7 +398,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
   }
 
   // Show empty state if no valid groups after processing
-  if (monthGroups.length === 0 && fileStore.fileList.length > 0 && !isLoading) {
+  if (monthGroups.length === 0 && fileStore.fileList.length > 0) {
     return (
       <div className="calendar-gallery">
         <EmptyState
@@ -429,7 +426,7 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
           initialScrollTop={initialScrollPosition}
           overscan={2}
           focusedPhotoId={focusedPhotoId}
-          isLoading={isLoading || isLayoutUpdating}
+          isLoading={isLayoutUpdating}
           isLargeCollection={isLargeCollection}
         />
 

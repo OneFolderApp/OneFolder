@@ -37,13 +37,7 @@
   cursor: pointer;
   border-radius: 0;
   overflow: hidden;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
   border: 2px solid transparent;
-
-  &:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
 
   &.selected {
     border-color: var(--accent-color);

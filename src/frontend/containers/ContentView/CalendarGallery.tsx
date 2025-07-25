@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { GroupedVirtuoso } from 'react-virtuoso';
 import { GalleryProps } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
+import { Thumbnail } from './GalleryItem';
 
 // Helper function to create month/year key from date
 const getMonthYearKey = (date: Date): string => {
@@ -40,6 +41,55 @@ const groupFilesByMonth = (files: ClientFile[]) => {
     groupCounts: sortedGroups.map(([, files]) => files.length),
     allFiles: sortedGroups.flatMap(([, files]) => files),
   };
+};
+
+// Individual file row component with thumbnail
+const FileRow = ({ file, onClick }: { file: ClientFile; onClick: () => void }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Mount the thumbnail after a small delay to improve performance
+    const timeout = setTimeout(() => setIsMounted(true), 50);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <div
+      style={{
+        padding: '8px 16px',
+        borderBottom: '1px solid #eee',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+      onClick={onClick}
+    >
+      <div
+        style={{
+          width: '40px',
+          height: '40px',
+          flexShrink: 0,
+          overflow: 'hidden',
+          borderRadius: '4px',
+          backgroundColor: '#f0f0f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Thumbnail mounted={isMounted} file={file} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{file.filename}</div>
+        <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+          {file.dateCreated.toLocaleDateString()} • {file.width} × {file.height}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
@@ -82,42 +132,23 @@ const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
         groupContent={(index) => (
           <div
             style={{
-              padding: '20px 16px 10px',
-              backgroundColor: '#f5f5f5',
-              fontWeight: 'bold',
+              padding: '16px 16px 8px',
+              backgroundColor: '#f8f9fa',
+              fontWeight: '600',
               fontSize: '18px',
-              borderBottom: '1px solid #ddd',
+              borderBottom: '1px solid #e0e0e0',
               position: 'sticky',
               top: 0,
               zIndex: 1,
             }}
           >
-            {groups[index].name} ({groupCounts[index]} files)
+            {groups[index].name}{' '}
+            <span style={{ fontWeight: '400', color: '#666' }}>({groupCounts[index]} files)</span>
           </div>
         )}
         itemContent={(index) => {
           const file = allFiles[index];
-          return (
-            <div
-              style={{
-                padding: '8px 16px',
-                borderBottom: '1px solid #eee',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              onClick={() => select(file, false, false)}
-            >
-              <span style={{ fontSize: '16px' }}>📷</span>
-              <span style={{ fontSize: '14px', color: '#333' }}>{file.filename}</span>
-              <span style={{ fontSize: '12px', color: '#666', marginLeft: 'auto' }}>
-                {file.dateCreated.toLocaleDateString()}
-              </span>
-            </div>
-          );
+          return <FileRow file={file} onClick={() => select(file, false, false)} />;
         }}
       />
     </div>

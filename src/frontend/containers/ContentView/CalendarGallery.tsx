@@ -45,81 +45,122 @@ const groupFilesByMonth = (files: ClientFile[]) => {
 };
 
 // Individual file row component with thumbnail
-const FileRow = ({
-  file,
-  onClick,
-  thumbnailSize,
-}: {
-  file: ClientFile;
-  onClick: () => void;
-  thumbnailSize: number;
-}) => {
-  const [isMounted, setIsMounted] = useState(false);
+const FileRow = observer(
+  ({
+    file,
+    thumbnailSize,
+    onSelect,
+  }: {
+    file: ClientFile;
+    thumbnailSize: number;
+    onSelect: (file: ClientFile, additive: boolean, range: boolean) => void;
+  }) => {
+    const { uiStore } = useStore();
+    const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    // Mount the thumbnail after a small delay to improve performance
-    const timeout = setTimeout(() => setIsMounted(true), 50);
-    return () => clearTimeout(timeout);
-  }, []);
+    useEffect(() => {
+      // Mount the thumbnail after a small delay to improve performance
+      const timeout = setTimeout(() => setIsMounted(true), 50);
+      return () => clearTimeout(timeout);
+    }, []);
 
-  // Scale down the thumbnail size for calendar view (use about 1/4 of the grid size)
-  const calendarThumbnailSize = Math.max(32, Math.min(thumbnailSize * 0.25, 80));
+    // Scale down the thumbnail size for calendar view (use about 1/4 of the grid size)
+    const calendarThumbnailSize = Math.max(32, Math.min(thumbnailSize * 0.25, 80));
+    const isSelected = uiStore.fileSelection.has(file);
 
-  return (
-    <div
-      style={{
-        padding: '4px 8px',
-        borderBottom: '1px solid #eee',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}
-      onClick={onClick}
-    >
+    return (
       <div
-        className="calendar-thumbnail-container"
+        aria-selected={isSelected}
+        className={`calendar-file-row ${isSelected ? 'selected' : ''}`}
         style={{
-          width: `${calendarThumbnailSize}px`,
-          height: `${calendarThumbnailSize}px`,
-          flexShrink: 0,
-          overflow: 'hidden',
-          borderRadius: '4px',
+          padding: '4px 8px',
+          borderBottom: '1px solid #eee',
+          cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          gap: '12px',
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onSelect(file, e.ctrlKey || e.metaKey, e.shiftKey);
+        }}
+        onDoubleClick={() => {
+          if (!file.isBroken) {
+            uiStore.selectFile(file, true);
+            uiStore.enableSlideMode();
+          }
         }}
       >
         <div
+          className="calendar-thumbnail-container"
           style={{
-            width: '100%',
-            height: '100%',
+            width: `${calendarThumbnailSize}px`,
+            height: `${calendarThumbnailSize}px`,
+            flexShrink: 0,
+            overflow: 'hidden',
+            borderRadius: '4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Thumbnail mounted={isMounted} file={file} />
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Thumbnail mounted={isMounted} file={file} />
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{file.filename}</div>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+            {file.dateCreated.toLocaleDateString()} • {file.width} × {file.height}
+          </div>
         </div>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{file.filename}</div>
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-          {file.dateCreated.toLocaleDateString()} • {file.width} × {file.height}
-        </div>
-      </div>
-    </div>
-  );
-};
+    );
+  },
+);
 
-const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
+const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
   const { fileStore, uiStore } = useStore();
+
+  // Remove useCommandHandler to prevent double event handling
+  // useCommandHandler(select);
 
   const { groups, groupCounts, allFiles } = useMemo(() => {
     return groupFilesByMonth(fileStore.fileList);
   }, [fileStore.fileList, fileStore.fileListLastModified]);
 
   const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
+
+  // Add keyboard navigation support like other gallery components
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      let index = lastSelectionIndex.current;
+      if (index === undefined) {
+        return;
+      }
+      if (e.key === 'ArrowUp' && index > 0) {
+        index -= 1;
+      } else if (e.key === 'ArrowDown' && index < fileStore.fileList.length - 1) {
+        index += 1;
+      } else {
+        return;
+      }
+      e.preventDefault();
+      select(fileStore.fileList[index], e.ctrlKey || e.metaKey, e.shiftKey);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [fileStore, select, lastSelectionIndex]);
 
   if (fileStore.fileList.length === 0) {
     return (
@@ -169,13 +210,7 @@ const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
         )}
         itemContent={(index) => {
           const file = allFiles[index];
-          return (
-            <FileRow
-              file={file}
-              onClick={() => select(file, false, false)}
-              thumbnailSize={thumbnailSize}
-            />
-          );
+          return <FileRow file={file} thumbnailSize={thumbnailSize} onSelect={select} />;
         }}
       />
     </div>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import { createPortal } from 'react-dom';
 import { GroupedVirtuoso, GroupedVirtuosoHandle } from 'react-virtuoso';
 import { GalleryProps } from './utils';
 import { getThumbnailSize } from './utils';
@@ -97,6 +98,94 @@ const groupFilesByMonth = (files: ClientFile[]) => {
   };
 };
 
+// Portal-based dropdown component to avoid z-index stacking issues
+const PortalDropdown = ({
+  isOpen,
+  buttonRef,
+  onClose,
+  children,
+}: {
+  isOpen: boolean;
+  buttonRef: React.RefObject<HTMLButtonElement>;
+  onClose: () => void;
+  children: React.ReactNode;
+}) => {
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [isOpen, buttonRef]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Check if click is outside both button AND dropdown
+      const isOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+      if (isOutsideButton && isOutsideDropdown) {
+        onClose();
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    // Use a small delay to allow click events to process first
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose, buttonRef]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'absolute',
+        top: position.top,
+        left: position.left,
+        minWidth: position.width,
+        maxHeight: '300px',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '6px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: 9999,
+        overflow: 'auto',
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+};
+
 // Navigation header component with year/month buttons that toggle dropdowns
 const NavigationHeader = observer(
   ({
@@ -120,11 +209,16 @@ const NavigationHeader = observer(
     onYearChange: (year: number) => void;
     onMonthChange: (month: number) => void;
   }) => {
+    const { uiStore } = useStore();
     const group = groups[groupIndex];
     const [year, month] = group.key.split('-').map(Number);
 
+    // All hooks must be called before any early returns
     const [showYearDropdown, setShowYearDropdown] = useState(false);
     const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+
+    const yearButtonRef = useRef<HTMLButtonElement>(null);
+    const monthButtonRef = useRef<HTMLButtonElement>(null);
 
     // Safety checks to prevent empty arrays
     const yearOptions = availableYears.length > 0 ? availableYears : [year];
@@ -132,6 +226,27 @@ const NavigationHeader = observer(
     const safeMonthOptions = monthOptions.length > 0 ? monthOptions : [month];
 
     const monthName = new Date(2000, month - 1).toLocaleDateString('en-US', { month: 'long' });
+
+    // Always read observables to satisfy MobX (prevent derivation warnings)
+    const isSlideMode = uiStore.isSlideMode;
+    const isPreviewOpen = uiStore.isPreviewOpen;
+    const isPreviewActive = isSlideMode || isPreviewOpen;
+
+    // Return minimal element when preview is active to avoid Virtuoso sizing issues
+    if (isPreviewActive) {
+      return (
+        <div
+          style={{
+            height: '1px', // Minimal height to avoid zero-size warnings
+            width: '100%',
+            position: 'sticky',
+            top: 0,
+            zIndex: -1,
+            visibility: 'hidden',
+          }}
+        />
+      );
+    }
 
     return (
       <div
@@ -143,15 +258,16 @@ const NavigationHeader = observer(
           borderBottom: '1px solid #e0e0e0',
           position: 'sticky',
           top: 0,
-          zIndex: 10,
+          zIndex: 1,
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
         }}
       >
-        {/* Year Button with Dropdown */}
-        <div style={{ position: 'relative' }}>
+        {/* Year Button with Portal Dropdown */}
+        <div>
           <button
+            ref={yearButtonRef}
             onClick={() => setShowYearDropdown(!showYearDropdown)}
             style={{
               padding: '6px 12px',
@@ -172,29 +288,25 @@ const NavigationHeader = observer(
             <span style={{ fontSize: '12px' }}>▼</span>
           </button>
 
-          {showYearDropdown && (
+          <PortalDropdown
+            isOpen={showYearDropdown}
+            buttonRef={yearButtonRef}
+            onClose={() => setShowYearDropdown(false)}
+          >
             <select
               value={year}
               onChange={(e) => {
                 onYearChange(Number(e.target.value));
                 setShowYearDropdown(false);
               }}
-              onBlur={() => setShowYearDropdown(false)}
               style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                zIndex: 20,
-                padding: '6px 12px',
-                border: '1px solid #ccc',
-                borderRadius: '6px',
-                background: 'white',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
+                width: '100%',
+                padding: '8px',
+                border: 'none',
                 outline: 'none',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                minWidth: '100%',
+                background: 'transparent',
+                fontSize: '16px',
+                cursor: 'pointer',
               }}
               size={Math.min(yearOptions.length, 8)}
               autoFocus
@@ -205,12 +317,13 @@ const NavigationHeader = observer(
                 </option>
               ))}
             </select>
-          )}
+          </PortalDropdown>
         </div>
 
-        {/* Month Button with Dropdown */}
-        <div style={{ position: 'relative' }}>
+        {/* Month Button with Portal Dropdown */}
+        <div>
           <button
+            ref={monthButtonRef}
             onClick={() => setShowMonthDropdown(!showMonthDropdown)}
             style={{
               padding: '6px 12px',
@@ -231,29 +344,25 @@ const NavigationHeader = observer(
             <span style={{ fontSize: '12px' }}>▼</span>
           </button>
 
-          {showMonthDropdown && (
+          <PortalDropdown
+            isOpen={showMonthDropdown}
+            buttonRef={monthButtonRef}
+            onClose={() => setShowMonthDropdown(false)}
+          >
             <select
               value={month}
               onChange={(e) => {
                 onMonthChange(Number(e.target.value));
                 setShowMonthDropdown(false);
               }}
-              onBlur={() => setShowMonthDropdown(false)}
               style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                zIndex: 20,
-                padding: '6px 12px',
-                border: '1px solid #ccc',
-                borderRadius: '6px',
-                background: 'white',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
+                width: '100%',
+                padding: '8px',
+                border: 'none',
                 outline: 'none',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                minWidth: '100%',
+                background: 'transparent',
+                fontSize: '16px',
+                cursor: 'pointer',
               }}
               size={Math.min(safeMonthOptions.length, 8)}
               autoFocus
@@ -265,7 +374,7 @@ const NavigationHeader = observer(
                 </option>
               ))}
             </select>
-          )}
+          </PortalDropdown>
         </div>
 
         <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>

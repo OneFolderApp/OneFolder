@@ -49,6 +49,19 @@ const groupFilesByMonth = (files: ClientFile[]) => {
   const availableMonths = (year: number) =>
     Array.from(yearMap.get(year) || []).sort((a, b) => b - a);
 
+  // Calculate photo counts for years and months
+  const getYearPhotoCount = (year: number) => {
+    return sortedGroups
+      .filter(([key]) => key.startsWith(`${year}-`))
+      .reduce((total, [, files]) => total + files.length, 0);
+  };
+
+  const getMonthPhotoCount = (year: number, month: number) => {
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    const group = sortedGroups.find(([groupKey]) => groupKey === key);
+    return group ? group[1].length : 0;
+  };
+
   return {
     groups: sortedGroups.map(([key, files], index) => ({
       key,
@@ -60,6 +73,8 @@ const groupFilesByMonth = (files: ClientFile[]) => {
     allFiles: sortedGroups.flatMap(([, files]) => files),
     availableYears,
     availableMonths,
+    getYearPhotoCount,
+    getMonthPhotoCount,
     findGroupIndex: (year: number, month: number) => {
       const key = `${year}-${String(month).padStart(2, '0')}`;
       return sortedGroups.findIndex(([groupKey]) => groupKey === key);
@@ -90,6 +105,8 @@ const NavigationHeader = observer(
     groupCounts,
     availableYears,
     availableMonths,
+    getYearPhotoCount,
+    getMonthPhotoCount,
     onYearChange,
     onMonthChange,
   }: {
@@ -98,6 +115,8 @@ const NavigationHeader = observer(
     groupCounts: number[];
     availableYears: number[];
     availableMonths: (year: number) => number[];
+    getYearPhotoCount: (year: number) => number;
+    getMonthPhotoCount: (year: number, month: number) => number;
     onYearChange: (year: number) => void;
     onMonthChange: (month: number) => void;
   }) => {
@@ -182,7 +201,7 @@ const NavigationHeader = observer(
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
-                  {y}
+                  {y} ({getYearPhotoCount(y)} files)
                 </option>
               ))}
             </select>
@@ -241,7 +260,8 @@ const NavigationHeader = observer(
             >
               {safeMonthOptions.map((m) => (
                 <option key={m} value={m}>
-                  {new Date(2000, m - 1).toLocaleDateString('en-US', { month: 'long' })}
+                  {new Date(2000, m - 1).toLocaleDateString('en-US', { month: 'long' })} (
+                  {getMonthPhotoCount(year, m)} files)
                 </option>
               ))}
             </select>
@@ -349,10 +369,18 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
   // Remove useCommandHandler to prevent double event handling
   // useCommandHandler(select);
 
-  const { groups, groupCounts, allFiles, availableYears, availableMonths, findItemIndex } =
-    useMemo(() => {
-      return groupFilesByMonth(fileStore.fileList);
-    }, [fileStore.fileList, fileStore.fileListLastModified]);
+  const {
+    groups,
+    groupCounts,
+    allFiles,
+    availableYears,
+    availableMonths,
+    getYearPhotoCount,
+    getMonthPhotoCount,
+    findItemIndex,
+  } = useMemo(() => {
+    return groupFilesByMonth(fileStore.fileList);
+  }, [fileStore.fileList, fileStore.fileListLastModified]);
 
   // Navigation handlers - now just handle scrolling to selected year/month
   const handleYearChange = useCallback(
@@ -452,6 +480,8 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
             groupCounts={groupCounts}
             availableYears={availableYears}
             availableMonths={availableMonths}
+            getYearPhotoCount={getYearPhotoCount}
+            getMonthPhotoCount={getMonthPhotoCount}
             onYearChange={handleYearChange}
             onMonthChange={handleMonthChange}
           />

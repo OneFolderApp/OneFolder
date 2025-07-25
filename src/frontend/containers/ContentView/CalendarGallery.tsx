@@ -6,7 +6,8 @@ import { GalleryProps } from './utils';
 import { getThumbnailSize } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
-import { Thumbnail } from './GalleryItem';
+import { Thumbnail, ThumbnailTags } from './GalleryItem';
+import { CommandDispatcher } from './Commands';
 // Using HTML select elements for better compatibility
 
 // Helper function to create month/year key from date
@@ -230,10 +231,11 @@ const NavigationHeader = observer(
     // Always read observables to satisfy MobX (prevent derivation warnings)
     const isSlideMode = uiStore.isSlideMode;
     const isPreviewOpen = uiStore.isPreviewOpen;
-    const isPreviewActive = isSlideMode || isPreviewOpen;
+    const isTagPopoverOpen = uiStore.isToolbarTagPopoverOpen;
+    const isOverlayActive = isSlideMode || isPreviewOpen || isTagPopoverOpen;
 
-    // Return minimal element when preview is active to avoid Virtuoso sizing issues
-    if (isPreviewActive) {
+    // Return minimal element when overlay is active to avoid Virtuoso sizing issues
+    if (isOverlayActive) {
       return (
         <div
           style={{
@@ -398,6 +400,7 @@ const FileRow = observer(
   }) => {
     const { uiStore } = useStore();
     const [isMounted, setIsMounted] = useState(false);
+    const eventManager = useMemo(() => new CommandDispatcher(file), [file]);
 
     useEffect(() => {
       // Mount the thumbnail after a small delay to improve performance
@@ -459,10 +462,20 @@ const FileRow = observer(
           </div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{file.filename}</div>
+          <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>
+            <span>{file.name.replace(/\.[^/.]+$/, '')}</span>
+            <span style={{ fontSize: '11px', color: '#888', fontWeight: '400' }}>
+              .{file.extension}
+            </span>
+          </div>
           <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
             {file.dateCreated.toLocaleDateString()} • {file.width} × {file.height}
           </div>
+          {file.tags.size > 0 && (
+            <div style={{ marginTop: '4px' }}>
+              <ThumbnailTags file={file} eventManager={eventManager} />
+            </div>
+          )}
         </div>
       </div>
     );

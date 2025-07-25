@@ -1,11 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { GroupedVirtuoso } from 'react-virtuoso';
+import { GroupedVirtuoso, GroupedVirtuosoHandle } from 'react-virtuoso';
 import { GalleryProps } from './utils';
 import { getThumbnailSize } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
+// Using HTML select elements for better compatibility
 
 // Helper function to create month/year key from date
 const getMonthYearKey = (date: Date): string => {
@@ -34,15 +35,226 @@ const groupFilesByMonth = (files: ClientFile[]) => {
   // Sort groups by date (newest first)
   const sortedGroups = Array.from(groupMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
 
+  // Extract years and months for dropdowns
+  const yearMap = new Map<number, Set<number>>();
+  sortedGroups.forEach(([key]) => {
+    const [year, month] = key.split('-').map(Number);
+    if (!yearMap.has(year)) {
+      yearMap.set(year, new Set());
+    }
+    yearMap.get(year)!.add(month);
+  });
+
+  const availableYears = Array.from(yearMap.keys()).sort((a, b) => b - a);
+  const availableMonths = (year: number) =>
+    Array.from(yearMap.get(year) || []).sort((a, b) => b - a);
+
   return {
-    groups: sortedGroups.map(([key, files]) => ({
+    groups: sortedGroups.map(([key, files], index) => ({
+      key,
       name: formatMonthYear(key),
       files: files,
+      groupIndex: index, // For scrolling
     })),
     groupCounts: sortedGroups.map(([, files]) => files.length),
     allFiles: sortedGroups.flatMap(([, files]) => files),
+    availableYears,
+    availableMonths,
+    findGroupIndex: (year: number, month: number) => {
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      return sortedGroups.findIndex(([groupKey]) => groupKey === key);
+    },
+    findItemIndex: (year: number, month: number) => {
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      const groupIndex = sortedGroups.findIndex(([groupKey]) => groupKey === key);
+      if (groupIndex === -1) {
+        return -1;
+      }
+
+      // Calculate the starting item index for this group
+      // Sum all files in previous groups
+      let itemIndex = 0;
+      for (let i = 0; i < groupIndex; i++) {
+        itemIndex += sortedGroups[i][1].length;
+      }
+      return itemIndex;
+    },
   };
 };
+
+// Navigation header component with year/month buttons that toggle dropdowns
+const NavigationHeader = observer(
+  ({
+    groupIndex,
+    groups,
+    groupCounts,
+    availableYears,
+    availableMonths,
+    onYearChange,
+    onMonthChange,
+  }: {
+    groupIndex: number;
+    groups: Array<{ key: string; name: string; files: ClientFile[]; groupIndex: number }>;
+    groupCounts: number[];
+    availableYears: number[];
+    availableMonths: (year: number) => number[];
+    onYearChange: (year: number) => void;
+    onMonthChange: (month: number) => void;
+  }) => {
+    const group = groups[groupIndex];
+    const [year, month] = group.key.split('-').map(Number);
+
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+
+    // Safety checks to prevent empty arrays
+    const yearOptions = availableYears.length > 0 ? availableYears : [year];
+    const monthOptions = availableMonths(year);
+    const safeMonthOptions = monthOptions.length > 0 ? monthOptions : [month];
+
+    const monthName = new Date(2000, month - 1).toLocaleDateString('en-US', { month: 'long' });
+
+    return (
+      <div
+        style={{
+          padding: '16px 16px 8px',
+          backgroundColor: '#f8f9fa',
+          fontWeight: '600',
+          fontSize: '18px',
+          borderBottom: '1px solid #e0e0e0',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
+        {/* Year Button with Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowYearDropdown(!showYearDropdown)}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid #ccc',
+              borderRadius: '6px',
+              background: 'white',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            {year}
+            <span style={{ fontSize: '12px' }}>▼</span>
+          </button>
+
+          {showYearDropdown && (
+            <select
+              value={year}
+              onChange={(e) => {
+                onYearChange(Number(e.target.value));
+                setShowYearDropdown(false);
+              }}
+              onBlur={() => setShowYearDropdown(false)}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                zIndex: 20,
+                padding: '6px 12px',
+                border: '1px solid #ccc',
+                borderRadius: '6px',
+                background: 'white',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                minWidth: '100%',
+              }}
+              size={Math.min(yearOptions.length, 8)}
+              autoFocus
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Month Button with Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid #ccc',
+              borderRadius: '6px',
+              background: 'white',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            {monthName}
+            <span style={{ fontSize: '12px' }}>▼</span>
+          </button>
+
+          {showMonthDropdown && (
+            <select
+              value={month}
+              onChange={(e) => {
+                onMonthChange(Number(e.target.value));
+                setShowMonthDropdown(false);
+              }}
+              onBlur={() => setShowMonthDropdown(false)}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                zIndex: 20,
+                padding: '6px 12px',
+                border: '1px solid #ccc',
+                borderRadius: '6px',
+                background: 'white',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                minWidth: '100%',
+              }}
+              size={Math.min(safeMonthOptions.length, 8)}
+              autoFocus
+            >
+              {safeMonthOptions.map((m) => (
+                <option key={m} value={m}>
+                  {new Date(2000, m - 1).toLocaleDateString('en-US', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>
+          ({groupCounts[groupIndex]} files)
+        </span>
+      </div>
+    );
+  },
+);
 
 // Individual file row component with thumbnail
 const FileRow = observer(
@@ -130,13 +342,53 @@ const FileRow = observer(
 
 const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
   const { fileStore, uiStore } = useStore();
+  const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
+
+  // Navigation state no longer needed - each header shows its own month/year
 
   // Remove useCommandHandler to prevent double event handling
   // useCommandHandler(select);
 
-  const { groups, groupCounts, allFiles } = useMemo(() => {
-    return groupFilesByMonth(fileStore.fileList);
-  }, [fileStore.fileList, fileStore.fileListLastModified]);
+  const { groups, groupCounts, allFiles, availableYears, availableMonths, findItemIndex } =
+    useMemo(() => {
+      return groupFilesByMonth(fileStore.fileList);
+    }, [fileStore.fileList, fileStore.fileListLastModified]);
+
+  // Navigation handlers - now just handle scrolling to selected year/month
+  const handleYearChange = useCallback(
+    (year: number) => {
+      const firstMonthOfYear = availableMonths(year)[0];
+      const itemIndex = findItemIndex(year, firstMonthOfYear);
+      if (itemIndex >= 0 && virtuosoRef.current) {
+        // Try scrolling to the item index with specific alignment
+        virtuosoRef.current.scrollToIndex({
+          index: itemIndex,
+          align: 'start',
+          behavior: 'smooth',
+        });
+      }
+    },
+    [availableMonths, findItemIndex],
+  );
+
+  const handleMonthChange = useCallback(
+    (month: number) => {
+      // Find which year this month belongs to by looking at available data
+      const targetYear = availableYears.find((year) => availableMonths(year).includes(month));
+      if (targetYear) {
+        const itemIndex = findItemIndex(targetYear, month);
+        if (itemIndex >= 0 && virtuosoRef.current) {
+          // Try scrolling to the item index with specific alignment
+          virtuosoRef.current.scrollToIndex({
+            index: itemIndex,
+            align: 'start',
+            behavior: 'smooth',
+          });
+        }
+      }
+    },
+    [availableYears, availableMonths, findItemIndex],
+  );
 
   const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
 
@@ -190,23 +442,19 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
       style={{ height: contentRect.height, width: contentRect.width }}
     >
       <GroupedVirtuoso
+        ref={virtuosoRef}
         style={{ height: '100%', width: '100%' }}
         groupCounts={groupCounts}
         groupContent={(index) => (
-          <div
-            style={{
-              padding: '16px 16px 8px',
-              backgroundColor: '#f8f9fa',
-              fontWeight: '600',
-              fontSize: '18px',
-              borderBottom: '1px solid #e0e0e0',
-              position: 'relative',
-              zIndex: -1,
-            }}
-          >
-            {groups[index].name}{' '}
-            <span style={{ fontWeight: '400', color: '#666' }}>({groupCounts[index]} files)</span>
-          </div>
+          <NavigationHeader
+            groupIndex={index}
+            groups={groups}
+            groupCounts={groupCounts}
+            availableYears={availableYears}
+            availableMonths={availableMonths}
+            onYearChange={handleYearChange}
+            onMonthChange={handleMonthChange}
+          />
         )}
         itemContent={(index) => {
           const file = allFiles[index];

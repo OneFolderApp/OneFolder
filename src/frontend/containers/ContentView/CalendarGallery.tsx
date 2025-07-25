@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { GroupedVirtuoso } from 'react-virtuoso';
 import { GalleryProps } from './utils';
+import { getThumbnailSize } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail } from './GalleryItem';
@@ -44,7 +45,15 @@ const groupFilesByMonth = (files: ClientFile[]) => {
 };
 
 // Individual file row component with thumbnail
-const FileRow = ({ file, onClick }: { file: ClientFile; onClick: () => void }) => {
+const FileRow = ({
+  file,
+  onClick,
+  thumbnailSize,
+}: {
+  file: ClientFile;
+  onClick: () => void;
+  thumbnailSize: number;
+}) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -53,34 +62,45 @@ const FileRow = ({ file, onClick }: { file: ClientFile; onClick: () => void }) =
     return () => clearTimeout(timeout);
   }, []);
 
+  // Scale down the thumbnail size for calendar view (use about 1/4 of the grid size)
+  const calendarThumbnailSize = Math.max(32, Math.min(thumbnailSize * 0.25, 80));
+
   return (
     <div
       style={{
-        padding: '8px 16px',
+        padding: '4px 8px',
         borderBottom: '1px solid #eee',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       onClick={onClick}
     >
       <div
+        className="calendar-thumbnail-container"
         style={{
-          width: '40px',
-          height: '40px',
+          width: `${calendarThumbnailSize}px`,
+          height: `${calendarThumbnailSize}px`,
           flexShrink: 0,
           overflow: 'hidden',
           borderRadius: '4px',
-          backgroundColor: '#f0f0f0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Thumbnail mounted={isMounted} file={file} />
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Thumbnail mounted={isMounted} file={file} />
+        </div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{file.filename}</div>
@@ -93,11 +113,13 @@ const FileRow = ({ file, onClick }: { file: ClientFile; onClick: () => void }) =
 };
 
 const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
-  const { fileStore } = useStore();
+  const { fileStore, uiStore } = useStore();
 
   const { groups, groupCounts, allFiles } = useMemo(() => {
     return groupFilesByMonth(fileStore.fileList);
   }, [fileStore.fileList, fileStore.fileListLastModified]);
+
+  const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
 
   if (fileStore.fileList.length === 0) {
     return (
@@ -137,9 +159,8 @@ const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
               fontWeight: '600',
               fontSize: '18px',
               borderBottom: '1px solid #e0e0e0',
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
+              position: 'relative',
+              zIndex: -1,
             }}
           >
             {groups[index].name}{' '}
@@ -148,7 +169,13 @@ const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
         )}
         itemContent={(index) => {
           const file = allFiles[index];
-          return <FileRow file={file} onClick={() => select(file, false, false)} />;
+          return (
+            <FileRow
+              file={file}
+              onClick={() => select(file, false, false)}
+              thumbnailSize={thumbnailSize}
+            />
+          );
         }}
       />
     </div>

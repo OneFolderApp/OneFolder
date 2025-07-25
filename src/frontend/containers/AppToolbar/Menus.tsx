@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { OrderBy, OrderDirection } from 'src/api/data-storage-search';
 import { FileDTO } from 'src/api/file';
-import { IconSet, KeyCombo } from 'widgets';
+import { IconSet } from 'widgets';
 import { MenuButton, MenuRadioGroup, MenuRadioItem } from 'widgets/menus';
 import { getThumbnailSize } from '../ContentView/utils';
 import { MenuDivider, MenuSliderItem } from 'widgets/menus/menu-items';

@@ -1,25 +1,75 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
 import { GroupedVirtuoso } from 'react-virtuoso';
 import { GalleryProps } from './utils';
+import { useStore } from '../../contexts/StoreContext';
+import { ClientFile } from '../../entities/File';
 
-// Hardcoded example data for testing
-const generateMockData = () => {
-  const groups = [
-    { name: 'January 2024', items: Array.from({ length: 15 }, (_, i) => `Jan Item ${i + 1}`) },
-    { name: 'December 2023', items: Array.from({ length: 23 }, (_, i) => `Dec Item ${i + 1}`) },
-    { name: 'November 2023', items: Array.from({ length: 18 }, (_, i) => `Nov Item ${i + 1}`) },
-    { name: 'October 2023', items: Array.from({ length: 12 }, (_, i) => `Oct Item ${i + 1}`) },
-    { name: 'September 2023', items: Array.from({ length: 30 }, (_, i) => `Sep Item ${i + 1}`) },
-  ];
-
-  const groupCounts = groups.map((group) => group.items.length);
-  const items = groups.flatMap((group) => group.items);
-
-  return { groups, groupCounts, items };
+// Helper function to create month/year key from date
+const getMonthYearKey = (date: Date): string => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const CalendarGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
-  const { groups, groupCounts, items } = generateMockData();
+// Helper function to format month/year for display
+const formatMonthYear = (key: string): string => {
+  const [year, month] = key.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+};
+
+// Group files by creation date (month/year)
+const groupFilesByMonth = (files: ClientFile[]) => {
+  const groupMap = new Map<string, ClientFile[]>();
+
+  for (const file of files) {
+    const monthYearKey = getMonthYearKey(file.dateCreated);
+    if (!groupMap.has(monthYearKey)) {
+      groupMap.set(monthYearKey, []);
+    }
+    groupMap.get(monthYearKey)!.push(file);
+  }
+
+  // Sort groups by date (newest first)
+  const sortedGroups = Array.from(groupMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+
+  return {
+    groups: sortedGroups.map(([key, files]) => ({
+      name: formatMonthYear(key),
+      files: files,
+    })),
+    groupCounts: sortedGroups.map(([, files]) => files.length),
+    allFiles: sortedGroups.flatMap(([, files]) => files),
+  };
+};
+
+const CalendarGallery = observer(({ contentRect, select }: GalleryProps) => {
+  const { fileStore } = useStore();
+
+  const { groups, groupCounts, allFiles } = useMemo(() => {
+    return groupFilesByMonth(fileStore.fileList);
+  }, [fileStore.fileList, fileStore.fileListLastModified]);
+
+  if (fileStore.fileList.length === 0) {
+    return (
+      <div
+        className="calendar-gallery"
+        style={{ height: contentRect.height, width: contentRect.width }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#666',
+            fontSize: '16px',
+          }}
+        >
+          No files to display
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -37,27 +87,41 @@ const CalendarGallery = ({ contentRect, select, lastSelectionIndex }: GalleryPro
               fontWeight: 'bold',
               fontSize: '18px',
               borderBottom: '1px solid #ddd',
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
             }}
           >
-            {groups[index].name}
+            {groups[index].name} ({groupCounts[index]} files)
           </div>
         )}
-        itemContent={(index) => (
-          <div
-            style={{
-              padding: '12px 16px',
-              borderBottom: '1px solid #eee',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            📷 {items[index]}
-          </div>
-        )}
+        itemContent={(index) => {
+          const file = allFiles[index];
+          return (
+            <div
+              style={{
+                padding: '8px 16px',
+                borderBottom: '1px solid #eee',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onClick={() => select(file, false, false)}
+            >
+              <span style={{ fontSize: '16px' }}>📷</span>
+              <span style={{ fontSize: '14px', color: '#333' }}>{file.filename}</span>
+              <span style={{ fontSize: '12px', color: '#666', marginLeft: 'auto' }}>
+                {file.dateCreated.toLocaleDateString()}
+              </span>
+            </div>
+          );
+        }}
       />
     </div>
   );
-};
+});
 
 export default CalendarGallery;

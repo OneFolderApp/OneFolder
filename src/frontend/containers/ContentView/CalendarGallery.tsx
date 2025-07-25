@@ -234,19 +234,34 @@ const NavigationHeader = observer(
     const isTagPopoverOpen = uiStore.isToolbarTagPopoverOpen;
     const isOverlayActive = isSlideMode || isPreviewOpen || isTagPopoverOpen;
 
-    // Return minimal element when overlay is active to avoid Virtuoso sizing issues
+    // Return invisible placeholder when overlay is active to prevent content jumping
     if (isOverlayActive) {
       return (
         <div
           style={{
-            height: '1px', // Minimal height to avoid zero-size warnings
-            width: '100%',
+            padding: '16px 16px 8px', // Same padding as normal header
+            backgroundColor: 'transparent', // Invisible
+            fontWeight: '600',
+            fontSize: '18px',
+            borderBottom: '1px solid transparent', // Same border but transparent
             position: 'sticky',
             top: 0,
             zIndex: -1,
-            visibility: 'hidden',
+            visibility: 'hidden', // Completely invisible but takes space
+            pointerEvents: 'none', // Don't interfere with interactions
           }}
-        />
+        >
+          {/* Invisible content with same structure to maintain height */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ padding: '6px 12px', fontSize: '16px', fontWeight: '600' }}>
+              Placeholder
+            </div>
+            <div style={{ padding: '6px 12px', fontSize: '16px', fontWeight: '600' }}>
+              Placeholder
+            </div>
+            <span style={{ fontWeight: '400', color: 'transparent' }}>(0 files)</span>
+          </div>
+        </div>
       );
     }
 

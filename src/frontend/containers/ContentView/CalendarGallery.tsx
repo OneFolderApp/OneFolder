@@ -1,96 +1,63 @@
 import React from 'react';
+import { GroupedVirtuoso } from 'react-virtuoso';
 import { GalleryProps } from './utils';
-import { shell } from 'electron';
 
-import IMG_1 from 'resources/images/sample-calendar-pictures/photos_1.jpg';
-import IMG_2 from 'resources/images/sample-calendar-pictures/photos_2.jpg';
-import IMG_3 from 'resources/images/sample-calendar-pictures/photos_3.jpg';
-import IMG_4 from 'resources/images/sample-calendar-pictures/photos_4.jpg';
-import IMG_5 from 'resources/images/sample-calendar-pictures/photos_5.jpg';
-import IMG_6 from 'resources/images/sample-calendar-pictures/photos_6.jpg';
-import IMG_7 from 'resources/images/sample-calendar-pictures/photos_7.jpg';
-import IMG_8 from 'resources/images/sample-calendar-pictures/photos_8.jpg';
-import IMG_9 from 'resources/images/sample-calendar-pictures/photos_9.jpg';
-import IMG_10 from 'resources/images/sample-calendar-pictures/photos_10.jpg';
-import IMG_11 from 'resources/images/sample-calendar-pictures/photos_11.jpg';
-import IMG_12 from 'resources/images/sample-calendar-pictures/photos_12.jpg';
-import IMG_13 from 'resources/images/sample-calendar-pictures/photos_13.jpg';
+// Hardcoded example data for testing
+const generateMockData = () => {
+  const groups = [
+    { name: 'January 2024', items: Array.from({ length: 15 }, (_, i) => `Jan Item ${i + 1}`) },
+    { name: 'December 2023', items: Array.from({ length: 23 }, (_, i) => `Dec Item ${i + 1}`) },
+    { name: 'November 2023', items: Array.from({ length: 18 }, (_, i) => `Nov Item ${i + 1}`) },
+    { name: 'October 2023', items: Array.from({ length: 12 }, (_, i) => `Oct Item ${i + 1}`) },
+    { name: 'September 2023', items: Array.from({ length: 30 }, (_, i) => `Sep Item ${i + 1}`) },
+  ];
 
-type ProfilePicProps = {
-  src: string;
+  const groupCounts = groups.map((group) => group.items.length);
+  const items = groups.flatMap((group) => group.items);
+
+  return { groups, groupCounts, items };
 };
 
-const ProfilePic = ({ src }: ProfilePicProps) => {
+const CalendarGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
+  const { groups, groupCounts, items } = generateMockData();
+
   return (
-    <div className="calendar-gallery__profile">
-      <img
-        className="calendar-gallery__profile-picture"
-        src={src}
-        alt={`Profile picture of ${name}`}
+    <div
+      className="calendar-gallery"
+      style={{ height: contentRect.height, width: contentRect.width }}
+    >
+      <GroupedVirtuoso
+        style={{ height: '100%', width: '100%' }}
+        groupCounts={groupCounts}
+        groupContent={(index) => (
+          <div
+            style={{
+              padding: '20px 16px 10px',
+              backgroundColor: '#f5f5f5',
+              fontWeight: 'bold',
+              fontSize: '18px',
+              borderBottom: '1px solid #ddd',
+            }}
+          >
+            {groups[index].name}
+          </div>
+        )}
+        itemContent={(index) => (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #eee',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f9f9')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            📷 {items[index]}
+          </div>
+        )}
       />
     </div>
   );
 };
 
-const ListGallery = ({ contentRect, select, lastSelectionIndex }: GalleryProps) => {
-  return (
-    <div className="calendar-gallery">
-      <div className="wip-container">
-        The calendar is not ready yet.
-        <br />
-        <br />
-        If you want to speed up the development you <br /> can vote on our roadmap:
-        <br />
-        <button
-          className="wip-link"
-          onClick={() => {
-            shell.openExternal('https://onefolder.canny.io/feedback/p/calendar-view');
-          }}
-        >
-          onefolder.canny.io/feedback/p/calendar-view
-        </button>
-        <br />
-        <br />
-        <br />
-        Comments and ideas are welcome 🙏
-      </div>
-
-      <h1>January 2024</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_8} />
-        <ProfilePic src={IMG_9} />
-      </div>
-
-      <h1>December 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_10} />
-        <ProfilePic src={IMG_11} />
-        <ProfilePic src={IMG_12} />
-        <ProfilePic src={IMG_13} />
-      </div>
-
-      <h1>November 2023</h1>
-      <div className="calendar-gallery__month-container">
-        <ProfilePic src={IMG_7} />
-        <ProfilePic src={IMG_9} />
-
-        <ProfilePic src={IMG_1} />
-        <ProfilePic src={IMG_2} />
-        <ProfilePic src={IMG_3} />
-        <ProfilePic src={IMG_4} />
-        <ProfilePic src={IMG_5} />
-        <ProfilePic src={IMG_6} />
-        <ProfilePic src={IMG_8} />
-      </div>
-    </div>
-  );
-};
-
-export default ListGallery;
+export default CalendarGallery;

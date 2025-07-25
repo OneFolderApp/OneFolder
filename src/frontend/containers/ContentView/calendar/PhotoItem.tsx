@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { observer } from 'mobx-react-lite';
 import { PhotoItemProps } from './types';
 import { Thumbnail } from '../GalleryItem';
 import { CommandDispatcher } from '../Commands';
 
-export const PhotoItem = observer(({ photo, isFocused, isSelected, onClick }: PhotoItemProps) => {
+export const PhotoItem = ({ photo, isFocused, isSelected, onClick }: PhotoItemProps) => {
   const [isInView, setIsInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const eventManager = useMemo(() => new CommandDispatcher(photo), [photo]);
@@ -67,4 +66,4 @@ export const PhotoItem = observer(({ photo, isFocused, isSelected, onClick }: Ph
       )}
     </div>
   );
-});
+};

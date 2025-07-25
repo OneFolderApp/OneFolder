@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { VariableSizeList as List } from 'react-window';
+import { GroupedVirtuoso } from 'react-virtuoso';
 import { useStore } from '../../../contexts/StoreContext';
 import { GalleryProps, getThumbnailSize } from '../utils';
 import { MonthGroup } from './types';
 import { groupPhotosChunked } from './grouping';
-import { MonthSection } from './MonthSection';
+import { PhotoItem } from './PhotoItem';
+import { ClientFile } from '../../../entities/File';
 
 type CalendarViewProps = GalleryProps;
 
@@ -15,7 +16,13 @@ export const CalendarView = observer(
     const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [focusedPhotoId, setFocusedPhotoId] = useState<string | undefined>();
-    const listRef = useRef<List>(null);
+
+    // Read MobX observables in reactive context and convert to plain values
+    const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
+    const selectedPhotoIds = useMemo(() => {
+      // Convert MobX ObservableSet to plain Set to avoid reactive context issues
+      return new Set(Array.from(uiStore.fileSelection).map((file) => file.id));
+    }, [uiStore.fileSelection]);
 
     // Update focus when lastSelectionIndex changes (for integration with selection system)
     useEffect(() => {
@@ -54,33 +61,84 @@ export const CalendarView = observer(
       };
     }, [fileStore.fileList]);
 
-    // Calculate height for each month section
-    const getMonthHeight = useCallback(
-      (index: number) => {
-        const group = monthGroups[index];
+    // Calculate grid layout for responsive columns (using memoized thumbnailSize)
+    const photosPerRow = useMemo(() => {
+      return Math.floor((contentRect.width - 32) / (thumbnailSize + 4));
+    }, [contentRect.width, thumbnailSize]);
+
+    // Transform data for GroupedVirtuoso - array of row counts per month
+    const groupCounts = useMemo(() => {
+      return monthGroups.map((group) => Math.ceil(group.photos.length / photosPerRow));
+    }, [monthGroups, photosPerRow]);
+
+    // Render month headers (group headers)
+    const groupContent = useCallback(
+      (groupIndex: number) => {
+        const group = monthGroups[groupIndex];
         if (!group) {
-          return 100;
+          return null;
         }
 
-        const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
-        const photosPerRow = Math.floor((contentRect.width - 32) / (thumbnailSize + 8));
-        const rows = Math.ceil(group.photos.length / photosPerRow);
-
-        return 60 + rows * (thumbnailSize + 8) + 24; // header + grid + margin
+        return (
+          <h2 className="calendar-month-header">
+            {group.displayName} ({group.photos.length})
+          </h2>
+        );
       },
-      [monthGroups, contentRect.width, uiStore.thumbnailSize],
+      [monthGroups],
     );
 
-    // Month section renderer for react-window
-    const MonthRenderer = ({ index, style }: any) => (
-      <div style={style}>
-        <MonthSection
-          group={monthGroups[index]}
-          containerWidth={contentRect.width}
-          onPhotoSelect={select}
-          focusedPhotoId={focusedPhotoId}
-        />
-      </div>
+    // Render rows of photos
+    const itemContent = useCallback(
+      (rowIndex: number, groupIndex: number) => {
+        const group = monthGroups[groupIndex];
+        if (!group) {
+          return null;
+        }
+
+        const startIndex = rowIndex * photosPerRow;
+        const endIndex = Math.min(startIndex + photosPerRow, group.photos.length);
+        const rowPhotos = group.photos.slice(startIndex, endIndex);
+
+        const handlePhotoClick = (photo: ClientFile, event: React.MouseEvent) => {
+          const additive = event.ctrlKey || event.metaKey;
+          const range = event.shiftKey;
+          select(photo, additive, range);
+        };
+
+        return (
+          <div
+            className="calendar-photo-row"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${rowPhotos.length}, 1fr)`, // Use actual photo count, not max
+              gap: '4px',
+              padding: '0 16px',
+              marginBottom: '4px',
+              minHeight: `${thumbnailSize}px`, // Ensure minimum height
+              width: '100%',
+            }}
+          >
+            {rowPhotos.map((photo) => (
+              <div
+                key={photo.id}
+                style={{
+                  width: `${thumbnailSize}px`,
+                  height: `${thumbnailSize}px`,
+                }}
+              >
+                <PhotoItem
+                  photo={photo}
+                  isFocused={focusedPhotoId === photo.id}
+                  isSelected={selectedPhotoIds.has(photo.id)}
+                  onClick={handlePhotoClick}
+                />
+              </div>
+            ))}
+          </div>
+        );
+      },
+      [monthGroups, photosPerRow, thumbnailSize, focusedPhotoId, selectedPhotoIds, select],
     );
 
     // Keyboard navigation - create flat array of all photos for navigation
@@ -98,8 +156,6 @@ export const CalendarView = observer(
         }
 
         let newIndex = currentIndex;
-        const thumbnailSize = getThumbnailSize(uiStore.thumbnailSize);
-        const photosPerRow = Math.floor((contentRect.width - 32) / (thumbnailSize + 8));
 
         switch (e.key) {
           case 'ArrowLeft':
@@ -128,7 +184,7 @@ export const CalendarView = observer(
           select(newPhoto, additive, range);
         }
       },
-      [focusedPhotoId, getAllPhotos, select, uiStore.thumbnailSize, contentRect.width],
+      [focusedPhotoId, getAllPhotos, select, photosPerRow],
     );
 
     // Set up keyboard event listener
@@ -162,16 +218,14 @@ export const CalendarView = observer(
 
     return (
       <div className="calendar-view">
-        <List
-          ref={listRef}
-          height={contentRect.height}
-          width={contentRect.width}
-          itemCount={monthGroups.length}
-          itemSize={getMonthHeight}
-          overscanCount={2} // Render 2 extra items above/below viewport for smooth scrolling
-        >
-          {MonthRenderer}
-        </List>
+        <GroupedVirtuoso
+          style={{ height: contentRect.height }}
+          groupCounts={groupCounts}
+          groupContent={groupContent}
+          itemContent={itemContent}
+          overscan={200}
+          increaseViewportBy={{ top: 600, bottom: 600 }}
+        />
       </div>
     );
   },

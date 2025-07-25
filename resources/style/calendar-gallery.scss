@@ -2,6 +2,11 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
+
+  // Fix sticky header screen shift
+  & > div {
+    scroll-behavior: smooth;
+  }
 }
 
 .calendar-loading,
@@ -15,21 +20,28 @@
   font-size: 1.1em;
 }
 
-.calendar-month-section {
-  padding: 16px 0;
-}
-
 .calendar-month-header {
-  font-size: 1.5em;
+  font-size: 1.375em;
   font-weight: 600;
-  margin: 0 0 16px 16px;
+  margin: 16px 0 16px 16px;
   color: var(--text-color-strong);
+  line-height: 1.4;
+
+  // Ensure consistent height to prevent layout shifts
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
-.calendar-photo-grid {
-  display: grid;
-  gap: 4px;
-  padding: 0 16px;
+.calendar-photo-row {
+  margin: 0;
+  align-items: start; /* Align photos to top of row */
+}
+
+.calendar-photo-row > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .calendar-photo-item {

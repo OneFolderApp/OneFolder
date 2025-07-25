@@ -234,12 +234,22 @@ const NavigationHeader = observer(
     const isTagPopoverOpen = uiStore.isToolbarTagPopoverOpen;
     const isOverlayActive = isSlideMode || isPreviewOpen || isTagPopoverOpen;
 
+    // Use app's design system CSS variables for consistency
+    const headerStyles = {
+      backgroundColor: 'var(--background-color-alt)',
+      color: 'var(--text-color-strong)',
+      borderColor: 'var(--border-color)',
+      buttonColor: 'var(--text-color)',
+      iconColor: 'var(--text-color-muted)',
+      fileCountColor: 'var(--text-color-muted)',
+    };
+
     // Return invisible placeholder when overlay is active to prevent content jumping
     if (isOverlayActive) {
       return (
         <div
           style={{
-            padding: '16px 16px 8px', // Same padding as normal header
+            padding: '8px 16px', // Same padding as normal header
             backgroundColor: 'transparent', // Invisible
             fontWeight: '600',
             fontSize: '18px',
@@ -253,13 +263,11 @@ const NavigationHeader = observer(
         >
           {/* Invisible content with same structure to maintain height */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ padding: '6px 12px', fontSize: '16px', fontWeight: '600' }}>
-              Placeholder
-            </div>
-            <div style={{ padding: '6px 12px', fontSize: '16px', fontWeight: '600' }}>
-              Placeholder
-            </div>
-            <span style={{ fontWeight: '400', color: 'transparent' }}>(0 files)</span>
+            <div style={{ fontSize: '16px', fontWeight: '600' }}>Placeholder ▼</div>
+            <div style={{ fontSize: '16px', fontWeight: '600' }}>Placeholder ▼</div>
+            <span style={{ fontWeight: '400', color: 'transparent', fontSize: '14px' }}>
+              0 files
+            </span>
           </div>
         </div>
       );
@@ -268,11 +276,11 @@ const NavigationHeader = observer(
     return (
       <div
         style={{
-          padding: '16px 16px 8px',
-          backgroundColor: '#f8f9fa',
+          padding: '8px 16px',
+          backgroundColor: headerStyles.backgroundColor,
           fontWeight: '600',
           fontSize: '18px',
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: `1px solid ${headerStyles.borderColor}`,
           position: 'sticky',
           top: 0,
           zIndex: 1,
@@ -287,22 +295,21 @@ const NavigationHeader = observer(
             ref={yearButtonRef}
             onClick={() => setShowYearDropdown(!showYearDropdown)}
             style={{
-              padding: '6px 12px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              background: 'white',
+              border: 'none',
+              background: 'transparent',
               fontSize: '16px',
               fontWeight: '600',
               cursor: 'pointer',
               outline: 'none',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              color: headerStyles.buttonColor,
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
+              padding: '4px',
             }}
           >
             {year}
-            <span style={{ fontSize: '12px' }}>▼</span>
+            <span style={{ fontSize: '12px', color: headerStyles.iconColor }}>▼</span>
           </button>
 
           <PortalDropdown
@@ -343,22 +350,21 @@ const NavigationHeader = observer(
             ref={monthButtonRef}
             onClick={() => setShowMonthDropdown(!showMonthDropdown)}
             style={{
-              padding: '6px 12px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              background: 'white',
+              border: 'none',
+              background: 'transparent',
               fontSize: '16px',
               fontWeight: '600',
               cursor: 'pointer',
               outline: 'none',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              color: headerStyles.buttonColor,
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
+              padding: '4px',
             }}
           >
             {monthName}
-            <span style={{ fontSize: '12px' }}>▼</span>
+            <span style={{ fontSize: '12px', color: headerStyles.iconColor }}>▼</span>
           </button>
 
           <PortalDropdown
@@ -394,8 +400,15 @@ const NavigationHeader = observer(
           </PortalDropdown>
         </div>
 
-        <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>
-          ({groupCounts[groupIndex]} files)
+        <span
+          style={{
+            fontWeight: '400',
+            color: headerStyles.fileCountColor,
+            marginLeft: '8px',
+            fontSize: '14px',
+          }}
+        >
+          {groupCounts[groupIndex]} files
         </span>
       </div>
     );
@@ -427,13 +440,23 @@ const FileRow = observer(
     const calendarThumbnailSize = Math.max(32, Math.min(thumbnailSize * 0.25, 80));
     const isSelected = uiStore.fileSelection.has(file);
 
+    // Use design system colors for dark mode compatibility
+    const rowStyles = {
+      borderColor: 'var(--border-color)',
+      backgroundColor: isSelected ? 'var(--background-color-selected)' : 'transparent',
+      filenameColor: 'var(--text-color-strong)',
+      extensionColor: 'var(--text-color-muted)',
+      metadataColor: 'var(--text-color)',
+    };
+
     return (
       <div
         aria-selected={isSelected}
         className={`calendar-file-row ${isSelected ? 'selected' : ''}`}
         style={{
           padding: '4px 8px',
-          borderBottom: '1px solid #eee',
+          borderBottom: `1px solid ${rowStyles.borderColor}`,
+          backgroundColor: rowStyles.backgroundColor,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -477,13 +500,13 @@ const FileRow = observer(
           </div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>
+          <div style={{ fontSize: '14px', color: rowStyles.filenameColor, fontWeight: '500' }}>
             <span>{file.name.replace(/\.[^/.]+$/, '')}</span>
-            <span style={{ fontSize: '11px', color: '#888', fontWeight: '400' }}>
+            <span style={{ fontSize: '11px', color: rowStyles.extensionColor, fontWeight: '400' }}>
               .{file.extension}
             </span>
           </div>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+          <div style={{ fontSize: '12px', color: rowStyles.metadataColor, marginTop: '2px' }}>
             {file.dateCreated.toLocaleDateString()} • {file.width} × {file.height}
           </div>
           {file.tags.size > 0 && (

@@ -2,7 +2,6 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { IconSet } from 'widgets';
 
-import { MultiSplitPaneProps } from 'widgets/MultiSplit/MultiSplitPane';
 import { useStore } from '../../../contexts/StoreContext';
 
 type NavigationButtonProps = {
@@ -35,7 +34,7 @@ export const NavigationButton = ({
     {/* <p className="navigation-button__label">{text}</p> */}
   </button>
 );
-const TagsPanel = observer((props: Partial<MultiSplitPaneProps>) => {
+const TagsPanel = observer(() => {
   const { uiStore } = useStore();
 
   return (

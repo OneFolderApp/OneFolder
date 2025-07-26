@@ -9,7 +9,6 @@ import { useStore } from '../../contexts/StoreContext';
 import { SortCommand } from './Menus';
 import { ViewCommand } from './Menus';
 import Searchbar from './Searchbar';
-import { MenuRadioItem } from 'widgets/menus';
 import SecondaryCommands from './SecondaryCommands';
 
 const OutlinerToggle = observer(() => {
@@ -49,7 +48,7 @@ const PrimaryCommands = observer(() => {
       <Searchbar />
 
       {/* <ViewCommand /> */}
-      {uiStore.isMasonry && <ViewCommand />}
+      {(uiStore.isMasonry || uiStore.isCalendar) && <ViewCommand />}
 
       <SortCommand />
       <SecondaryCommands />

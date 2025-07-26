@@ -545,31 +545,19 @@ const FileRow = observer(
         onContextMenu={eventManager.showContextMenu}
       >
         <div
-          className="calendar-thumbnail-container"
+          className={`calendar-thumbnail-container${file.isBroken ? ' thumbnail-broken' : ''}`}
           style={{
             width: `${calendarThumbnailSize}px`,
             height: `${calendarThumbnailSize}px`,
             flexShrink: 0,
             overflow: 'hidden',
-            borderRadius: '4px',
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            position: 'relative',
           }}
         >
-          <div
-            className={`thumbnail${file.isBroken ? ' thumbnail-broken' : ''}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Thumbnail mounted={isMounted} file={file} />
-          </div>
+          <Thumbnail mounted={isMounted} file={file} />
           {file.isBroken === true && !fileStore.showsMissingContent && (
             <IconButton
               className="thumbnail-broken-overlay"

@@ -15,7 +15,14 @@ const enum Tooltip {
   Filter = 'Sort view content panel',
 }
 
-export const SortCommand = () => {
+export const SortCommand = observer(() => {
+  const { uiStore } = useStore();
+
+  // Hide sorting options in calendar view since they're not relevant
+  if (uiStore.isCalendar) {
+    return null;
+  }
+
   return (
     <MenuButton
       icon={IconSet.SORT}
@@ -27,9 +34,16 @@ export const SortCommand = () => {
       <SortMenuItems />
     </MenuButton>
   );
-};
+});
 
-export const ViewCommand = () => {
+export const ViewCommand = observer(() => {
+  const { uiStore } = useStore();
+
+  // Hide entire view menu in calendar view since settings are now in each header
+  if (uiStore.isCalendar) {
+    return null;
+  }
+
   return (
     <MenuButton
       icon={IconSet.THUMB_BG}
@@ -39,13 +53,11 @@ export const ViewCommand = () => {
       menuID="__layout-options"
     >
       <LayoutMenuItems />
-
       <MenuDivider />
-
       <ThumbnailSizeSliderMenuItem />
     </MenuButton>
   );
-};
+});
 
 const sortMenuData: Array<{
   prop: OrderBy<FileDTO>;

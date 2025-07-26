@@ -106,11 +106,13 @@ const PortalDropdown = ({
   buttonRef,
   onClose,
   children,
+  alignRight = false,
 }: {
   isOpen: boolean;
   buttonRef: React.RefObject<HTMLButtonElement>;
   onClose: () => void;
   children: React.ReactNode;
+  alignRight?: boolean;
 }) => {
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -120,11 +122,11 @@ const PortalDropdown = ({
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
+        left: alignRight ? rect.right + window.scrollX : rect.left + window.scrollX,
         width: rect.width,
       });
     }
-  }, [isOpen, buttonRef]);
+  }, [isOpen, buttonRef, alignRight]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -171,7 +173,7 @@ const PortalDropdown = ({
       style={{
         position: 'absolute',
         top: position.top,
-        left: position.left,
+        ...(alignRight ? { right: window.innerWidth - position.left } : { left: position.left }),
         minWidth: position.width,
         maxHeight: '300px',
         backgroundColor: 'white',
@@ -218,9 +220,11 @@ const NavigationHeader = observer(
     // All hooks must be called before any early returns
     const [showYearDropdown, setShowYearDropdown] = useState(false);
     const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+    const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
 
     const yearButtonRef = useRef<HTMLButtonElement>(null);
     const monthButtonRef = useRef<HTMLButtonElement>(null);
+    const settingsButtonRef = useRef<HTMLButtonElement>(null);
 
     // Safety checks to prevent empty arrays
     const yearOptions = availableYears.length > 0 ? availableYears : [year];
@@ -411,6 +415,70 @@ const NavigationHeader = observer(
         >
           {groupCounts[groupIndex]} files
         </span>
+
+        {/* Settings Menu (3 dots) */}
+        <div style={{ marginLeft: 'auto' }}>
+          <button
+            ref={settingsButtonRef}
+            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              outline: 'none',
+              color: headerStyles.buttonColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '24px',
+              height: '24px',
+              borderRadius: '4px',
+              padding: '4px',
+            }}
+            title="Thumbnail size settings"
+          >
+            ⋯
+          </button>
+
+          <PortalDropdown
+            isOpen={showSettingsDropdown}
+            buttonRef={settingsButtonRef}
+            onClose={() => setShowSettingsDropdown(false)}
+            alignRight={true}
+          >
+            <div style={{ padding: '8px', minWidth: '200px' }}>
+              <div style={{ marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                Thumbnail Size
+              </div>
+              <input
+                type="range"
+                min="128"
+                max="608"
+                step="20"
+                value={getThumbnailSize(uiStore.thumbnailSize)}
+                onChange={(e) => uiStore.setThumbnailSize(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  margin: '8px 0',
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '12px',
+                  color: headerStyles.iconColor,
+                  marginTop: '4px',
+                }}
+              >
+                <span>Small</span>
+                <span>Large</span>
+              </div>
+            </div>
+          </PortalDropdown>
+        </div>
       </div>
     );
   },

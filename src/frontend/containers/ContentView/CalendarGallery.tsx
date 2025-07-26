@@ -8,6 +8,7 @@ import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail, ThumbnailTags } from './GalleryItem';
 import { CommandDispatcher, useCommandHandler } from './Commands';
+import { IconButton, IconSet } from 'widgets';
 // Using HTML select elements for better compatibility
 
 // Helper function to create month/year key from date
@@ -426,7 +427,7 @@ const FileRow = observer(
     thumbnailSize: number;
     onSelect: (file: ClientFile, additive: boolean, range: boolean) => void;
   }) => {
-    const { uiStore } = useStore();
+    const { uiStore, fileStore } = useStore();
     const [isMounted, setIsMounted] = useState(false);
     const eventManager = useMemo(() => new CommandDispatcher(file), [file]);
 
@@ -486,9 +487,11 @@ const FileRow = observer(
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            position: 'relative',
           }}
         >
           <div
+            className={`thumbnail${file.isBroken ? ' thumbnail-broken' : ''}`}
             style={{
               width: '100%',
               height: '100%',
@@ -499,6 +502,18 @@ const FileRow = observer(
           >
             <Thumbnail mounted={isMounted} file={file} />
           </div>
+          {file.isBroken === true && !fileStore.showsMissingContent && (
+            <IconButton
+              className="thumbnail-broken-overlay"
+              icon={IconSet.WARNING_BROKEN_LINK}
+              onClick={async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                await fileStore.fetchMissingFiles();
+              }}
+              text="This image could not be found. Open the recovery view."
+            />
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '14px', color: rowStyles.filenameColor, fontWeight: '500' }}>

@@ -7,7 +7,7 @@ import { getThumbnailSize } from './utils';
 import { useStore } from '../../contexts/StoreContext';
 import { ClientFile } from '../../entities/File';
 import { Thumbnail, ThumbnailTags } from './GalleryItem';
-import { CommandDispatcher } from './Commands';
+import { CommandDispatcher, useCommandHandler } from './Commands';
 // Using HTML select elements for better compatibility
 
 // Helper function to create month/year key from date
@@ -473,6 +473,7 @@ const FileRow = observer(
             uiStore.enableSlideMode();
           }
         }}
+        onContextMenu={eventManager.showContextMenu}
       >
         <div
           className="calendar-thumbnail-container"
@@ -526,8 +527,8 @@ const CalendarGallery = observer(({ contentRect, select, lastSelectionIndex }: G
 
   // Navigation state no longer needed - each header shows its own month/year
 
-  // Remove useCommandHandler to prevent double event handling
-  // useCommandHandler(select);
+  // Enable command handler for context menu functionality
+  useCommandHandler(select);
 
   const {
     groups,

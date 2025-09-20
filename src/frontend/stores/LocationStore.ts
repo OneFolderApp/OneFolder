@@ -412,7 +412,7 @@ class LocationStore {
 
       AppToaster.show(
         {
-          message: `Loading ${percentage}% \n ${totalFormatted}/${completedFormatted}`,
+          message: `Loading ${percentage}% \n ${completedFormatted}/${totalFormatted}`,
           timeout: 0,
         },
         toastKey,

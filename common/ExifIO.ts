@@ -84,6 +84,35 @@ class ExifIO {
     return filepath.toLowerCase().match(/\.(mp4|webm|ogg)$/) !== null;
   }
 
+  /**
+   * Helper method to determine if an ExifTool error message is just a warning that can be ignored
+   * @param errorMessage The error message from ExifTool
+   * @returns true if the error is a harmless warning
+   */
+  private isIgnorableWarning(errorMessage: string): boolean {
+    const ignorableWarnings = [
+      // Metadata sync warnings
+      'IPTCDigest',
+      'XMP may be out of sync',
+      
+      // Video-specific warnings
+      'ExtractEmbedded option may find more tags',
+      'media data',
+      
+      // General ExifTool warnings
+      '[minor]', // General minor warnings
+      'Warning:', // General warnings that don't prevent metadata reading
+      
+      // Additional common warnings
+      'Unknown maker note',
+      'Bad format',
+      'Invalid',
+      'Corrupted',
+    ];
+    
+    return ignorableWarnings.some(warning => errorMessage.includes(warning));
+  }
+
   constructor(hierarchicalSeparator: string = '|') {
     this.hierarchicalSeparator = hierarchicalSeparator;
 
@@ -139,12 +168,9 @@ class ExifIO {
 
     // Handle warnings vs actual errors (same logic as readDescription)
     if (metadata.error) {
-      // Silently ignore common sync warnings that don't affect functionality
-      if (
-        metadata.error.includes('IPTCDigest') ||
-        metadata.error.includes('XMP may be out of sync')
-      ) {
-        // These are common metadata sync warnings that don't affect functionality
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
         // Just continue without logging - the metadata is still readable
       } else {
         // Only throw for actual errors
@@ -174,9 +200,23 @@ class ExifIO {
       'XMP:regionInfo',
       ...this.extraArgs,
     ]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+    
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+    
+    if (!metadata.data?.[0]) {
+      return undefined; // No face annotations found, not an error
+    }
+    
     const entry = metadata.data[0];
     if (!entry.RegionInfo) {
       return undefined;
@@ -186,9 +226,23 @@ class ExifIO {
 
   async readExifTags(filepath: string, tags: string[]): Promise<(string | undefined)[]> {
     const metadata = await ep.readMetadata(filepath, [...tags, ...this.extraArgs]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+    
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+    
+    if (!metadata.data?.[0]) {
+      throw new Error('No metadata entry');
+    }
+    
     const entry = metadata.data[0];
     return tags.map((t) => entry[t]?.toString() || undefined);
   }
@@ -198,12 +252,10 @@ class ExifIO {
 
     // Handle warnings vs actual errors
     if (metadata.error) {
-      // Log warning but don't throw for sync warnings
-      if (
-        metadata.error.includes('IPTCDigest') ||
-        metadata.error.includes('XMP may be out of sync')
-      ) {
-        console.warn('Metadata sync warning for', filepath, ':', metadata.error);
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
       } else {
         // Only throw for actual errors
         throw new Error(metadata.error);
@@ -220,18 +272,46 @@ class ExifIO {
 
   async readParameters(filepath: string): Promise<string | undefined> {
     const metadata = await ep.readMetadata(filepath, ['Parameters', ...this.extraArgs]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+    
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+    
+    if (!metadata.data?.[0]) {
+      return undefined; // No parameters found, not an error
+    }
+    
     const entry = metadata.data[0];
     return entry.Parameters?.toString();
   }
 
   async readPrompt(filepath: string): Promise<string | undefined> {
     const metadata = await ep.readMetadata(filepath, ['Prompt', ...this.extraArgs]);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+    
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+    
+    if (!metadata.data?.[0]) {
+      return undefined; // No prompt found, not an error
+    }
+    
     const entry = metadata.data[0];
     return entry.Prompt?.toString();
   }
@@ -257,12 +337,9 @@ class ExifIO {
       
       // Handle warnings vs actual errors (consistent with other methods)
       if (metadata.error) {
-        // Silently ignore common sync warnings that don't affect functionality
-        if (
-          metadata.error.includes('IPTCDigest') ||
-          metadata.error.includes('XMP may be out of sync')
-        ) {
-          // These are common metadata sync warnings that don't affect functionality
+        // Silently ignore common warnings that don't affect functionality
+        if (this.isIgnorableWarning(metadata.error)) {
+          // These are common warnings that don't affect functionality
           // Just continue without logging - the metadata is still readable
         } else {
           // Only throw for actual errors
@@ -316,12 +393,9 @@ class ExifIO {
 
       // Handle warnings vs actual errors (same logic as readTags)
       if (metadata.error) {
-        // Silently ignore common sync warnings that don't affect functionality
-        if (
-          metadata.error.includes('IPTCDigest') ||
-          metadata.error.includes('XMP may be out of sync')
-        ) {
-          // These are common metadata sync warnings that don't affect functionality
+        // Silently ignore common warnings that don't affect functionality
+        if (this.isIgnorableWarning(metadata.error)) {
+          // These are common warnings that don't affect functionality
           // Just continue without logging - the metadata is still readable
         } else {
           // Only throw for actual errors
@@ -364,9 +438,23 @@ class ExifIO {
 
   async readAllExifTags(filepath: string): Promise<exiftool.IMetadata> {
     const metadata = await ep.readMetadata(filepath, ['-File:all']);
-    if (metadata.error || !metadata.data?.[0]) {
-      throw new Error(metadata.error || 'No metadata entry');
+    
+    // Handle warnings vs actual errors
+    if (metadata.error) {
+      // Silently ignore common warnings that don't affect functionality
+      if (this.isIgnorableWarning(metadata.error)) {
+        // These are common warnings that don't affect functionality
+        // Just continue without logging - the metadata is still readable
+      } else {
+        // Only throw for actual errors
+        throw new Error(metadata.error);
+      }
     }
+    
+    if (!metadata.data?.[0]) {
+      throw new Error('No metadata entry');
+    }
+    
     return metadata.data[0];
   }
 
@@ -610,6 +698,11 @@ class ExifIO {
     }
 
     const res = await ep.readMetadata(input, ['ThumbnailImage', 'PhotoshopThumbnail', 'b']);
+
+    // Handle warnings vs actual errors (but don't throw - this method returns boolean)
+    if (res.error && !this.isIgnorableWarning(res.error)) {
+      console.warn('Warning while extracting thumbnail from', input, ':', res.error);
+    }
 
     let data = res.data?.[0]?.ThumbnailImage || res.data?.[0]?.PhotoshopThumbnail;
     if (data) {

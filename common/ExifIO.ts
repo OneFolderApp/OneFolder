@@ -75,6 +75,15 @@ class ExifIO {
   // https://www.npmjs.com/package/node-exiftool#reading-utf8-encoded-filename-on-windows
   extraArgs = IS_WIN ? ['charset filename=utf8'] : [];
 
+  /**
+   * Helper method to determine if a file is a video based on its path
+   * @param filepath The file path to check
+   * @returns true if the file is a video file
+   */
+  private isVideoFile(filepath: string): boolean {
+    return filepath.toLowerCase().match(/\.(mp4|webm|ogg)$/) !== null;
+  }
+
   constructor(hierarchicalSeparator: string = '|') {
     this.hierarchicalSeparator = hierarchicalSeparator;
 
@@ -235,18 +244,46 @@ class ExifIO {
   async getDimensions(filepath: string): Promise<{ width: number; height: number }> {
     let metadata: Awaited<ReturnType<typeof ep.readMetadata>> | undefined = undefined;
     try {
+      // Check if this is a video file to use appropriate metadata fields
+      const isVideo = this.isVideoFile(filepath);
+      const fields = isVideo 
+        ? ['s3', 'ImageWidth', 'ImageHeight', 'VideoWidth', 'VideoHeight', 'SourceImageWidth', 'SourceImageHeight']
+        : ['s3', 'ImageWidth', 'ImageHeight'];
+        
       metadata = await ep.readMetadata(filepath, [
-        's3',
-        'ImageWidth',
-        'ImageHeight',
+        ...fields,
         ...this.extraArgs,
       ]);
-      if (metadata.error || !metadata.data?.[0]) {
-        throw new Error(metadata.error || 'No metadata entry');
+      
+      // Handle warnings vs actual errors (consistent with other methods)
+      if (metadata.error) {
+        // Silently ignore common sync warnings that don't affect functionality
+        if (
+          metadata.error.includes('IPTCDigest') ||
+          metadata.error.includes('XMP may be out of sync')
+        ) {
+          // These are common metadata sync warnings that don't affect functionality
+          // Just continue without logging - the metadata is still readable
+        } else {
+          // Only throw for actual errors
+          throw new Error(metadata.error);
+        }
       }
+      
+      if (!metadata.data?.[0]) {
+        throw new Error('No metadata entry');
+      }
+      
       const entry = metadata.data[0];
-      const { ImageWidth, ImageHeight } = entry;
-      return { width: ImageWidth, height: ImageHeight };
+      // Try multiple dimension field names, prioritizing video-specific fields for video files
+      const width = isVideo 
+        ? (entry.VideoWidth || entry.SourceImageWidth || entry.ImageWidth || 0)
+        : (entry.ImageWidth || 0);
+      const height = isVideo 
+        ? (entry.VideoHeight || entry.SourceImageHeight || entry.ImageHeight || 0)
+        : (entry.ImageHeight || 0);
+        
+      return { width, height };
     } catch (e) {
       console.error('Could not read image dimensions from ', filepath, e, metadata);
       return { width: 0, height: 0 };
@@ -263,10 +300,14 @@ class ExifIO {
   }> {
     let metadata: Awaited<ReturnType<typeof ep.readMetadata>> | undefined = undefined;
     try {
+      // Check if this is a video file to use appropriate metadata fields
+      const isVideo = this.isVideoFile(filepath);
+      const dimensionFields = isVideo 
+        ? ['s3', 'ImageWidth', 'ImageHeight', 'VideoWidth', 'VideoHeight', 'SourceImageWidth', 'SourceImageHeight']
+        : ['s3', 'ImageWidth', 'ImageHeight'];
+        
       metadata = await ep.readMetadata(filepath, [
-        's3',
-        'ImageWidth',
-        'ImageHeight',
+        ...dimensionFields,
         'HierarchicalSubject',
         'Subject',
         'Keywords',
@@ -293,13 +334,16 @@ class ExifIO {
       }
 
       const entry = metadata.data[0];
-      const { ImageWidth, ImageHeight } = entry;
 
-      // Extract dimensions (with fallback to 0 if not available)
-      const dimensions = {
-        width: ImageWidth || 0,
-        height: ImageHeight || 0,
-      };
+      // Extract dimensions with video-aware field selection
+      const width = isVideo 
+        ? (entry.VideoWidth || entry.SourceImageWidth || entry.ImageWidth || 0)
+        : (entry.ImageWidth || 0);
+      const height = isVideo 
+        ? (entry.VideoHeight || entry.SourceImageHeight || entry.ImageHeight || 0)
+        : (entry.ImageHeight || 0);
+
+      const dimensions = { width, height };
 
       // Extract tags using existing conversion logic
       const tags = ExifIO.convertMetadataToHierarchy(

@@ -295,13 +295,26 @@ const ZoomableImage: React.FC<ZoomableImageProps> = observer(
                 let img;
                 if (isFileExtensionVideo(fileExtension)) {
                   img = document.createElement('video');
-                  img.onload = function (this: any) {
-                    // TODO: would be better to resolve once transition is complete: for large resolution images, the transition freezes for ~.4s bc of a re-paint task when the image changes
+                  img.onloadedmetadata = function (this: any) {
+                    // Videos fire 'loadedmetadata' event, not 'onload'
+                    // Use videoWidth/videoHeight for actual video dimensions
+                    const videoWidth = this.videoWidth || imgWidth || 1920;
+                    const videoHeight = this.videoHeight || imgHeight || 1080;
                     resolve({
                       src,
-                      dimension: createDimension(this.videoWidth, this.videoHeight),
+                      dimension: createDimension(videoWidth, videoHeight),
                     });
                   };
+                  img.onerror = (error) => {
+                    // Fallback to stored dimensions if video metadata loading fails
+                    console.warn('Video metadata loading failed, using stored dimensions:', error);
+                    resolve({
+                      src,
+                      dimension: createDimension(imgWidth || 1920, imgHeight || 1080),
+                    });
+                  };
+                  // Only load metadata, not the full video content
+                  img.preload = 'metadata';
                 } else {
                   img = new Image();
                   img.onload = function (this: any) {
@@ -311,9 +324,9 @@ const ZoomableImage: React.FC<ZoomableImageProps> = observer(
                       dimension: createDimension(this.naturalWidth, this.naturalHeight),
                     });
                   };
+                  img.onerror = reject;
                 }
 
-                img.onerror = reject;
                 img.src = encodeFilePath(src);
               },
             );
@@ -322,17 +335,33 @@ const ZoomableImage: React.FC<ZoomableImageProps> = observer(
             throw source.value.err;
           }
         } else {
+          // Fallback for when source is not ready - provide reasonable defaults for videos
+          const fallbackWidth = isFileExtensionVideo(fileExtension) 
+            ? (imgWidth || 1920) 
+            : (imgWidth || 0);
+          const fallbackHeight = isFileExtensionVideo(fileExtension) 
+            ? (imgHeight || 1080) 
+            : (imgHeight || 0);
+            
           return {
             src: thumbnailSrc || absolutePath,
-            dimension: createDimension(imgWidth, imgHeight),
+            dimension: createDimension(fallbackWidth, fallbackHeight),
           };
         }
       },
     );
 
     if (image.tag === 'ready' && 'err' in image.value) {
+      const isVideo = isFileExtensionVideo(file.extension);
       console.log(image.value.err);
-      return <ImageFallback error={image.value.err} absolutePath={absolutePath} />;
+      return (
+        <ImageFallback 
+          error={image.value.err} 
+          absolutePath={absolutePath}
+          isVideo={isVideo}
+          customMessage={isVideo ? "Video metadata could not be read" : undefined}
+        />
+      );
     } else {
       const { src, dimension } =
         image.tag === 'ready' && 'ok' in image.value
@@ -444,27 +473,53 @@ const NavigationButtons = ({ isStart, isEnd, prevImage, nextImage }: NavigationB
 interface ImageFallbackProps {
   error: any;
   absolutePath: string;
+  isVideo?: boolean;
+  customMessage?: string;
 }
 
-const ImageFallback = ({ error, absolutePath }: ImageFallbackProps) => {
+const ImageFallback = ({ error, absolutePath, isVideo, customMessage }: ImageFallbackProps) => {
+  const fileExtension = SysPath.extname(absolutePath).toLowerCase();
+  const isVideoFile = isVideo || isFileExtensionVideo(fileExtension.slice(1));
+  
+  const getErrorMessage = () => {
+    if (customMessage) return customMessage;
+    
+    if (isVideoFile) {
+      return 'Could not load video';
+    }
+    
+    return `Could not load ${error ? '' : 'full '}image`;
+  };
+  
+  const getHelpText = () => {
+    if (isVideoFile) {
+      return 'This may be due to video metadata issues or unsupported codec. Try opening in an external video player.';
+    }
+    
+    return 'Try opening in an external application to verify the file is not corrupted.';
+  };
+
   return (
     <div style={CONTAINER_DEFAULT_STYLE} className="image-fallback">
       <div style={{ maxHeight: 360, maxWidth: 360 }} className="image-error" />
       <br />
-      <span>Could not load {error ? '' : 'full '}image </span>
+      <span>{getErrorMessage()}</span>
       <pre
         title={absolutePath}
         style={{ maxWidth: '40ch', overflow: 'hidden', textOverflow: 'ellipsis' }}
       >
         {SysPath.basename(absolutePath)}
       </pre>
+      <p style={{ fontSize: '0.9em', color: '#888', maxWidth: '50ch', textAlign: 'center' }}>
+        {getHelpText()}
+      </p>
       <Button
         onClick={() =>
           shell
             .openExternal(encodeFilePath(absolutePath))
             .catch((e) => console.error(e, absolutePath))
         }
-        text="Open in external application"
+        text={isVideoFile ? "Open in external video player" : "Open in external application"}
       />
     </div>
   );
